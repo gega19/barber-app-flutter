@@ -8,7 +8,10 @@ import '../../../domain/usecases/auth/get_current_user_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
 import '../../../domain/usecases/auth/become_barber_usecase.dart';
 import '../../../domain/usecases/auth/delete_account_usecase.dart';
+import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
+import '../../../core/services/notification_service.dart';
+import 'dart:io';
 
 part 'auth_state.dart';
 
@@ -20,6 +23,8 @@ class AuthCubit extends Cubit<AuthState> {
   final UpdateProfileUseCase updateProfileUseCase;
   final BecomeBarberUseCase becomeBarberUseCase;
   final DeleteAccountUseCase deleteAccountUseCase;
+  final FcmTokenRepository fcmTokenRepository;
+  final NotificationService notificationService;
 
   AuthCubit({
     required this.loginUseCase,
@@ -29,6 +34,8 @@ class AuthCubit extends Cubit<AuthState> {
     required this.updateProfileUseCase,
     required this.becomeBarberUseCase,
     required this.deleteAccountUseCase,
+    required this.fcmTokenRepository,
+    required this.notificationService,
   }) : super(AuthInitial());
 
   Future<void> init() async {
@@ -36,8 +43,46 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await getCurrentUserUseCase();
     result.fold(
       (failure) => emit(AuthInitial()),
-      (user) => user != null ? emit(AuthAuthenticated(user)) : emit(AuthInitial()),
+      (user) async {
+        if (user != null) {
+          emit(AuthAuthenticated(user));
+          // Registrar token FCM si el usuario está autenticado
+          await _registerFcmToken();
+        } else {
+          emit(AuthInitial());
+        }
+      },
     );
+  }
+
+  /// Registra el token FCM en el backend
+  Future<void> _registerFcmToken() async {
+    try {
+      final token = await notificationService.getToken();
+      if (token != null) {
+        final deviceType = Platform.isAndroid ? 'android' : 'ios';
+        print('📱 Registrando token FCM: ${token.substring(0, 20)}... (deviceType: $deviceType)');
+        
+        final result = await fcmTokenRepository.registerToken(
+          token: token,
+          deviceType: deviceType,
+        );
+        
+        result.fold(
+          (failure) {
+            print('❌ Error al registrar token FCM: ${failure.message}');
+          },
+          (_) {
+            print('✅ Token FCM registrado exitosamente en el backend');
+          },
+        );
+      } else {
+        print('⚠️ No se pudo obtener el token FCM');
+      }
+    } catch (e) {
+      // No emitir error, solo loggear - las notificaciones no son críticas
+      print('❌ Error inesperado al registrar token FCM: $e');
+    }
   }
 
   Future<void> login({
@@ -50,7 +95,11 @@ class AuthCubit extends Cubit<AuthState> {
     
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+      (user) async {
+        emit(AuthAuthenticated(user));
+        // Registrar token FCM después de login exitoso
+        await _registerFcmToken();
+      },
     );
   }
 
@@ -69,12 +118,26 @@ class AuthCubit extends Cubit<AuthState> {
     
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (user) => emit(AuthAuthenticated(user)),
+      (user) async {
+        emit(AuthAuthenticated(user));
+        // Registrar token FCM después de registro exitoso
+        await _registerFcmToken();
+      },
     );
   }
 
   Future<void> logout() async {
     emit(AuthLoading());
+    
+    // Eliminar token FCM antes de hacer logout
+    try {
+      await fcmTokenRepository.deleteUserTokens();
+      await notificationService.deleteToken();
+    } catch (e) {
+      // No emitir error, solo loggear
+      print('Error deleting FCM token: $e');
+    }
+    
     final result = await logoutUseCase();
     result.fold(
       (failure) => emit(AuthError(failure.message)),

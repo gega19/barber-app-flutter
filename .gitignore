@@ -85,3 +85,8 @@ backoffice/.vercel
 # TypeScript
 *.tsbuildinfo
 
+# Firebase Configuration Files (DO NOT COMMIT)
+barber-app-flutter/android/app/google-services.json
+barber-app-flutter/ios/Runner/GoogleService-Info.plist
+barber-app-backend/*-firebase-adminsdk-*.json
+

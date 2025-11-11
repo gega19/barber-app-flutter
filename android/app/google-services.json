@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "143460895055",
+    "project_id": "bartop-a29a5",
+    "storage_bucket": "bartop-a29a5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143460895055:android:b4f71c502caebd1b5d5d3a",
+        "android_client_info": {
+          "package_name": "com.bartop.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCjWT1Y_jhhmmJlTGzjxP7X72qctDpAx7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

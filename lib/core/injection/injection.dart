@@ -17,7 +17,9 @@ import '../../data/datasources/remote/promotion_remote_datasource.dart';
 import '../../data/datasources/remote/review_remote_datasource.dart';
 import '../../data/datasources/remote/payment_method_remote_datasource.dart';
 import '../../data/datasources/remote/barber_availability_remote_datasource.dart';
+import '../../data/datasources/remote/fcm_token_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
+import '../../data/repositories/fcm_token_repository_impl.dart';
 import '../../data/repositories/barber_repository_impl.dart';
 import '../../data/repositories/appointment_repository_impl.dart';
 import '../../data/repositories/promotion_repository_impl.dart';
@@ -33,6 +35,7 @@ import '../../domain/repositories/workplace_repository.dart';
 import '../../domain/repositories/review_repository.dart';
 import '../../domain/repositories/payment_method_repository.dart';
 import '../../domain/repositories/barber_availability_repository.dart';
+import '../../domain/repositories/fcm_token_repository.dart';
 import '../../domain/usecases/auth/login_usecase.dart';
 import '../../domain/usecases/auth/register_usecase.dart';
 import '../../domain/usecases/auth/logout_usecase.dart';
@@ -57,6 +60,7 @@ import '../../domain/usecases/payment_method/get_payment_methods_usecase.dart';
 import '../../domain/usecases/barber_availability/get_my_availability_usecase.dart';
 import '../../domain/usecases/barber_availability/update_my_availability_usecase.dart';
 import '../../domain/usecases/barber_availability/get_available_slots_usecase.dart';
+import '../../core/services/notification_service.dart';
 import '../../presentation/cubit/auth/auth_cubit.dart';
 import '../../presentation/cubit/barber/barber_cubit.dart';
 import '../../presentation/cubit/appointment/appointment_cubit.dart';
@@ -262,6 +266,9 @@ Future<void> init() async {
   sl.registerLazySingleton<BarberAvailabilityRemoteDataSource>(
     () => BarberAvailabilityRemoteDataSourceImpl(sl()),
   );
+  sl.registerLazySingleton<FcmTokenRemoteDataSource>(
+    () => FcmTokenRemoteDataSourceImpl(sl()),
+  );
 
   // Repositories
   sl.registerLazySingleton<AuthRepository>(
@@ -283,6 +290,9 @@ Future<void> init() async {
   );
   sl.registerLazySingleton<BarberAvailabilityRepository>(
     () => BarberAvailabilityRepositoryImpl(sl()),
+  );
+  sl.registerLazySingleton<FcmTokenRepository>(
+    () => FcmTokenRepositoryImpl(sl()),
   );
 
   // Use Cases
@@ -311,6 +321,9 @@ Future<void> init() async {
   sl.registerLazySingleton(() => UpdateMyAvailabilityUseCase(sl()));
   sl.registerLazySingleton(() => GetAvailableSlotsUseCase(sl()));
 
+  // Services
+  sl.registerLazySingleton(() => NotificationService());
+
   // Cubits
   sl.registerSingleton<AuthCubit>(
     AuthCubit(
@@ -321,6 +334,8 @@ Future<void> init() async {
       updateProfileUseCase: sl(),
       becomeBarberUseCase: sl(),
       deleteAccountUseCase: sl(),
+      fcmTokenRepository: sl(),
+      notificationService: sl(),
     )..init(),
   );
   sl.registerFactory(

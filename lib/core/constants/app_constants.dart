@@ -2,13 +2,14 @@ class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    // Producción - Render
-    return 'https://barber-app-backend-kj6s.onrender.com';
-    
-    // Desarrollo local (descomentar para desarrollo)
+    // Desarrollo local
     // return 'http://10.0.2.2:3000';  // Android Emulator
     // return 'http://localhost:3000';  // iOS Simulator o Web
-    // return 'http://10.225.1.16:3000';  // Physical device
+    return 'http://192.168.7.140:3000';  // Physical device (IP local actual)
+    // return 'http://10.225.1.16:3000';  // IP alternativa si la anterior no funciona
+    
+    // Producción - Render (descomentar para producción)
+    // return 'https://barber-app-backend-kj6s.onrender.com';
   }
   
   static const Duration connectTimeout = Duration(seconds: 30);
