@@ -1,0 +1,1 @@
+ /Users/macbook/Desktop/projects/barber-application/barber-app-flutter/.dart_tool/flutter_build/44c3656eed9a026f2b130be8a3c79c57/native_assets.json: 

@@ -9,7 +9,7 @@ import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Configurar orientación vertical
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -33,7 +33,7 @@ class BarberApp extends StatelessWidget {
     return BlocProvider.value(
       value: sl<AuthCubit>(),
       child: MaterialApp.router(
-        title: 'Barber Shop',
+        title: 'bartop',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
         routerConfig: appRouter,

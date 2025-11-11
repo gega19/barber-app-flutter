@@ -26,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? userStats;
   bool isLoadingStats = false;
   String? _userBarberId;
+  bool _isBarber = false; // Variable para rastrear si el usuario es barbero
   final GetUserStatsUseCase getUserStatsUseCase = GetUserStatsUseCase(sl());
   bool _isUploadingAvatar = false;
   final UploadRemoteDataSource _uploadDataSource = sl<UploadRemoteDataSource>();
@@ -38,6 +39,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserBarberId();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Recargar cuando se regrese a esta pantalla (útil después de convertirse en barbero)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadUserBarberId();
+      }
+    });
+  }
+
   Future<void> _loadUserBarberId() async {
     if (!mounted) return;
     
@@ -47,13 +59,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     final currentState = authCubit.state;
     final userEmail = currentState is AuthAuthenticated ? currentState.user.email : null;
-    final userRole = currentState is AuthAuthenticated ? currentState.user.role : null;
     
-    if (currentState is! AuthAuthenticated || userEmail == null) return;
-    if (userRole != 'BARBER') {
+    if (currentState is! AuthAuthenticated || userEmail == null) {
       if (mounted) {
         setState(() {
           _userBarberId = null;
+          _isBarber = false;
         });
       }
       return;
@@ -75,6 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         if (matchingBarbers.isNotEmpty && mounted) {
           setState(() {
             _userBarberId = matchingBarbers.first['id'] as String;
+            _isBarber = true; // Usuario tiene perfil de barbero
           });
           return;
         }
@@ -99,6 +111,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (matchingBarbers.isNotEmpty && mounted) {
               setState(() {
                 _userBarberId = matchingBarbers.first['id'] as String;
+                _isBarber = true; // Usuario tiene perfil de barbero
               });
               return;
             }
@@ -107,16 +120,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Search failed, continue
         }
         
-        // If still not found, set to null
-        setState(() {
-          _userBarberId = null;
-        });
+        // If still not found, set to null and mark as not barber
+        if (mounted) {
+          setState(() {
+            _userBarberId = null;
+            _isBarber = false; // Usuario no tiene perfil de barbero
+          });
+        }
       }
     } catch (e) {
       // Error loading barber ID, continue without showing the button
       if (mounted) {
         setState(() {
           _userBarberId = null;
+          _isBarber = false;
         });
       }
     }
@@ -128,11 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     result.fold(
       (failure) {
         setState(() {
-          final authCubit = context.read<AuthCubit>();
-          final currentState = authCubit.state;
-          final isBarber = currentState is AuthAuthenticated && currentState.user.role == 'BARBER';
-          
-          userStats = isBarber
+          userStats = _isBarber
               ? {
                   'totalAppointments': 0,
                   'uniqueClients': 0,
@@ -287,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                        padding: const EdgeInsets.symmetric(horizontal: 16),
                        child: AppCard(
                          padding: const EdgeInsets.all(16),
-                         child: user.role == 'BARBER'
+                         child: _isBarber
                              ? Row(
                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                                  children: [
@@ -424,7 +437,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                      ),
                    ),
                                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                   if (user.role == 'BARBER' && _userBarberId != null)
+                   if (_isBarber && _userBarberId != null)
                      SliverToBoxAdapter(
                        child: Padding(
                          padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -499,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                          ),
                        ),
                      ),
-                   if (user.role == 'BARBER' && _userBarberId != null)
+                   if (_isBarber && _userBarberId != null)
                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
                    SliverToBoxAdapter(
                      child: Padding(
@@ -522,7 +535,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                              padding: const EdgeInsets.all(16),
                              child: Column(
                                children: [
-                                                                   if (user.role != 'BARBER')
+                                                                   if (!_isBarber)
                                     _buildSettingsRow(
                                       icon: Icons.content_cut,
                                       title: 'Convertirse en Barbero',
@@ -531,7 +544,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         context.push('/become-barber');
                                       },
                                     ),
-                                                                     if (user.role != 'BARBER')
+                                                                     if (!_isBarber)
                                      Divider(color: AppColors.borderGold),
                                  _buildSettingsRow(
                                    icon: Icons.settings,

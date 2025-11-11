@@ -16,13 +16,20 @@ class AppointmentCubit extends Cubit<AppointmentState> {
   }) : super(AppointmentInitial());
 
   Future<void> loadAppointments() async {
+    if (isClosed) return;
     emit(AppointmentLoading());
 
     final result = await getAppointmentsUseCase();
 
+    if (isClosed) return;
+    
     result.fold(
-      (failure) => emit(AppointmentError(failure.message)),
-      (appointments) => emit(AppointmentLoaded(appointments)),
+      (failure) {
+        if (!isClosed) emit(AppointmentError(failure.message));
+      },
+      (appointments) {
+        if (!isClosed) emit(AppointmentLoaded(appointments));
+      },
     );
   }
 
@@ -35,6 +42,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     String? paymentProof,
     String? notes,
   }) async {
+    if (isClosed) return false;
     emit(AppointmentCreating());
 
     final result = await createAppointmentUseCase(
@@ -47,14 +55,18 @@ class AppointmentCubit extends Cubit<AppointmentState> {
       notes: notes,
     );
 
+    if (isClosed) return false;
+
     return result.fold(
       (failure) {
-        emit(AppointmentError(failure.message));
+        if (!isClosed) emit(AppointmentError(failure.message));
         return false;
       },
       (appointment) {
         // Recargar citas después de crear una nueva
-        loadAppointments();
+        if (!isClosed) {
+          loadAppointments();
+        }
         return true;
       },
     );

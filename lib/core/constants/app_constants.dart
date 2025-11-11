@@ -2,7 +2,11 @@ class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    return 'http://10.0.2.2:3000';  // Android Emulator
+    // Producción - Render
+    return 'https://barber-app-backend-kj6s.onrender.com';
+    
+    // Desarrollo local (descomentar para desarrollo)
+    // return 'http://10.0.2.2:3000';  // Android Emulator
     // return 'http://localhost:3000';  // iOS Simulator o Web
     // return 'http://10.225.1.16:3000';  // Physical device
   }
@@ -19,7 +23,7 @@ class AppConstants {
   static const String biometricEnabledKey = 'biometric_enabled';
 
   // App Info
-  static const String appName = 'Barber Shop';
+  static const String appName = 'bartop';
   static const String appTagline = 'Encuentra a tu barbero ideal';
 }
 

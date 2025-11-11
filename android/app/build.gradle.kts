@@ -6,8 +6,8 @@ plugins {
 }
 
 android {
-    namespace = "com.example.flutterapp"
-    compileSdk = flutter.compileSdkVersion
+    namespace = "com.bartop.app"
+    compileSdk = 36  // Android SDK 36 - Requerido por los plugins más recientes
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,12 +20,12 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.flutterapp"
+        // Application ID único para bartop
+        applicationId = "com.bartop.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = flutter.minSdkVersion  // Android 5.0 (Lollipop) - Compatible con la mayoría de dispositivos
+        targetSdk = 34  // Android 14 - Versión objetivo actual recomendada
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dio/dio.dart';
@@ -75,19 +76,21 @@ Future<void> init() async {
 
   // HTTP Client
   sl.registerLazySingleton<Dio>(() {
-    final dio = Dio(BaseOptions(
-      baseUrl: AppConstants.baseUrl,
-      connectTimeout: AppConstants.connectTimeout,
-      receiveTimeout: AppConstants.receiveTimeout,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-    ));
-    
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: AppConstants.baseUrl,
+        connectTimeout: AppConstants.connectTimeout,
+        receiveTimeout: AppConstants.receiveTimeout,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+
     bool isRefreshing = false;
     final List<Map<String, dynamic>> failedQueue = [];
-    
+
     // Add auth interceptor to include token in requests and handle token refresh
     dio.interceptors.add(
       InterceptorsWrapper(
@@ -97,18 +100,18 @@ Future<void> init() async {
             handler.next(options);
             return;
           }
-          
+
           try {
             final localStorage = sl<LocalStorage>();
             final token = await localStorage.getToken();
-            
+
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
             }
           } catch (e) {
             print('⚠️ Error getting token: $e');
           }
-          
+
           handler.next(options);
         },
         onError: (error, handler) async {
@@ -117,12 +120,12 @@ Future<void> init() async {
             handler.next(error);
             return;
           }
-          
+
           // Handle 401 Unauthorized
           if (error.response?.statusCode == 401) {
             final localStorage = sl<LocalStorage>();
             final refreshToken = await localStorage.getRefreshToken();
-            
+
             if (refreshToken == null || refreshToken.isEmpty) {
               // No refresh token available, logout
               print('⚠️ No refresh token available, logging out...');
@@ -130,7 +133,7 @@ Future<void> init() async {
               handler.next(error);
               return;
             }
-            
+
             // If already refreshing, queue this request
             if (isRefreshing) {
               failedQueue.add({
@@ -139,51 +142,57 @@ Future<void> init() async {
               });
               return;
             }
-            
+
             isRefreshing = true;
-            
+
             try {
               // Try to refresh the token
               final authDataSource = sl<AuthRemoteDataSource>();
-              final newAccessToken = await authDataSource.refreshToken(refreshToken);
-              
+              final newAccessToken = await authDataSource.refreshToken(
+                refreshToken,
+              );
+
               // Save new token
               await localStorage.saveToken(newAccessToken);
-              
+
               // Update the failed request with new token
-              error.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-              
+              error.requestOptions.headers['Authorization'] =
+                  'Bearer $newAccessToken';
+
               // Retry the original request
               final response = await dio.fetch(error.requestOptions);
               handler.resolve(response);
-              
+
               // Process queued requests
               for (final item in failedQueue) {
                 try {
-                  final requestOptions = item['requestOptions'] as RequestOptions;
-                  final itemHandler = item['handler'] as ErrorInterceptorHandler;
-                  requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+                  final requestOptions =
+                      item['requestOptions'] as RequestOptions;
+                  final itemHandler =
+                      item['handler'] as ErrorInterceptorHandler;
+                  requestOptions.headers['Authorization'] =
+                      'Bearer $newAccessToken';
                   final retryResponse = await dio.fetch(requestOptions);
                   itemHandler.resolve(retryResponse);
                 } catch (e) {
-                  final itemHandler = item['handler'] as ErrorInterceptorHandler;
+                  final itemHandler =
+                      item['handler'] as ErrorInterceptorHandler;
                   itemHandler.reject(error);
                 }
               }
               failedQueue.clear();
-              
             } catch (refreshError) {
               // Refresh failed, logout and reject all requests
               print('⚠️ Token refresh failed, logging out...');
               await localStorage.clearAll();
-              
+
               // Reject all queued requests
               for (final item in failedQueue) {
                 final itemHandler = item['handler'] as ErrorInterceptorHandler;
                 itemHandler.reject(error);
               }
               failedQueue.clear();
-              
+
               handler.next(error);
             } finally {
               isRefreshing = false;
@@ -194,38 +203,37 @@ Future<void> init() async {
         },
       ),
     );
-    
-    // Add logging interceptor for development
-    dio.interceptors.add(
-      LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        requestHeader: true,
-        responseHeader: false,
-        error: true,
-      ),
-    );
-    
+
+    if (kDebugMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          requestBody: true,
+          responseBody: true,
+          requestHeader: true,
+          responseHeader: false,
+          error: true,
+        ),
+      );
+    }
+
     return dio;
   });
 
   // Data Sources
-  sl.registerLazySingleton<LocalStorage>(
-    () => LocalStorageImpl(sl()),
-  );
+  sl.registerLazySingleton<LocalStorage>(() => LocalStorageImpl(sl()));
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(sl()),
   );
-      sl.registerLazySingleton<BarberRemoteDataSource>(
-      () => BarberRemoteDataSourceImpl(sl()),
-    );
-    sl.registerLazySingleton<SpecialtyRemoteDataSource>(
-      () => SpecialtyRemoteDataSourceImpl(sl()),
-    );
-    sl.registerLazySingleton<WorkplaceRemoteDataSource>(
-      () => WorkplaceRemoteDataSourceImpl(sl()),
-    );
-      sl.registerLazySingleton<ServiceRemoteDataSource>(
+  sl.registerLazySingleton<BarberRemoteDataSource>(
+    () => BarberRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<SpecialtyRemoteDataSource>(
+    () => SpecialtyRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<WorkplaceRemoteDataSource>(
+    () => WorkplaceRemoteDataSourceImpl(sl()),
+  );
+  sl.registerLazySingleton<ServiceRemoteDataSource>(
     () => ServiceRemoteDataSourceImpl(sl()),
   );
   sl.registerLazySingleton<BarberMediaRemoteDataSource>(
@@ -259,9 +267,7 @@ Future<void> init() async {
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepositoryImpl(sl(), sl()),
   );
-  sl.registerLazySingleton<BarberRepository>(
-    () => BarberRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<BarberRepository>(() => BarberRepositoryImpl(sl()));
   sl.registerLazySingleton<AppointmentRepository>(
     () => AppointmentRepositoryImpl(sl()),
   );
@@ -271,9 +277,7 @@ Future<void> init() async {
   sl.registerLazySingleton<WorkplaceRepository>(
     () => WorkplaceRepositoryImpl(sl()),
   );
-  sl.registerLazySingleton<ReviewRepository>(
-    () => ReviewRepositoryImpl(sl()),
-  );
+  sl.registerLazySingleton<ReviewRepository>(() => ReviewRepositoryImpl(sl()));
   sl.registerLazySingleton<PaymentMethodRepository>(
     () => PaymentMethodRepositoryImpl(sl()),
   );
@@ -332,16 +336,8 @@ Future<void> init() async {
       createAppointmentUseCase: sl(),
     ),
   );
-  sl.registerFactory(
-    () => PromotionCubit(
-      getPromotionsUseCase: sl(),
-    ),
-  );
-  sl.registerFactory(
-    () => WorkplaceCubit(
-      getWorkplacesUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => PromotionCubit(getPromotionsUseCase: sl()));
+  sl.registerFactory(() => WorkplaceCubit(getWorkplacesUseCase: sl()));
   sl.registerFactory(
     () => ReviewCubit(
       getReviewsByBarberUseCase: sl(),
@@ -351,11 +347,7 @@ Future<void> init() async {
       hasUserReviewedWorkplaceUseCase: sl(),
     ),
   );
-  sl.registerFactory(
-    () => PaymentMethodCubit(
-      getPaymentMethodsUseCase: sl(),
-    ),
-  );
+  sl.registerFactory(() => PaymentMethodCubit(getPaymentMethodsUseCase: sl()));
   sl.registerFactory(
     () => BarberAvailabilityCubit(
       getMyAvailabilityUseCase: sl(),
@@ -363,5 +355,3 @@ Future<void> init() async {
     ),
   );
 }
-
-
