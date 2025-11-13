@@ -11,16 +11,39 @@ class AuthHeader extends StatelessWidget {
       children: [
         // Logo
         Container(
-          width: 80,
-          height: 80,
-          decoration: const BoxDecoration(
-            color: AppColors.primaryGold,
+          width: 120,
+          height: 120,
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primaryGold.withValues(alpha: 0.3),
+                blurRadius: 20,
+                spreadRadius: 5,
+              ),
+            ],
           ),
-          child: const Icon(
-            Icons.content_cut,
-            size: 40,
-            color: AppColors.textDark,
+          child: ClipOval(
+            child: Image.asset(
+              'assets/logo.png',
+              width: 120,
+              height: 120,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback si no se encuentra la imagen
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGold,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.content_cut,
+                    size: 50,
+                    color: AppColors.textDark,
+                  ),
+                );
+              },
+            ),
           ),
         ),
         const SizedBox(height: 24),

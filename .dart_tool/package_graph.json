@@ -30,6 +30,7 @@
         "logger",
         "shared_preferences",
         "shimmer",
+        "socket_io_client",
         "table_calendar",
         "uuid",
         "video_player",
@@ -330,6 +331,15 @@
         "shared_preferences_platform_interface",
         "shared_preferences_web",
         "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "socket_io_client",
+      "version": "2.0.3+1",
+      "dependencies": [
+        "js",
+        "logging",
+        "socket_io_common"
       ]
     },
     {
@@ -1271,6 +1281,20 @@
       ]
     },
     {
+      "name": "socket_io_common",
+      "version": "2.0.3",
+      "dependencies": [
+        "logging"
+      ]
+    },
+    {
+      "name": "js",
+      "version": "0.6.7",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
       "name": "dio_web_adapter",
       "version": "2.1.1",
       "dependencies": [
@@ -1514,13 +1538,6 @@
       "version": "2.0.32",
       "dependencies": [
         "flutter"
-      ]
-    },
-    {
-      "name": "js",
-      "version": "0.6.7",
-      "dependencies": [
-        "meta"
       ]
     },
     {

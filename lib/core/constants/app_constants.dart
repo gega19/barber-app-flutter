@@ -1,17 +1,31 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+
 class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    // Desarrollo local
-    // return 'http://10.0.2.2:3000';  // Android Emulator
-    // return 'http://localhost:3000';  // iOS Simulator o Web
-    return 'http://192.168.7.140:3000';  // Physical device (IP local actual)
-    // return 'http://10.225.1.16:3000';  // IP alternativa si la anterior no funciona
-    
+    // Producción - Render
+    //return 'https://barber-app-backend-kj6s.onrender.com';
+
+    // Desarrollo local - Detecta automáticamente la plataforma
+    if (kIsWeb) {
+      // Web usa localhost
+      return 'http://localhost:3000';
+    } else if (Platform.isAndroid) {
+      return 'http://192.168.7.140:3000';
+    } else if (Platform.isIOS) {
+      // iOS Simulator puede usar localhost directamente
+      return 'http://localhost:3000';
+    } else {
+      // Otras plataformas (Linux, Windows, macOS)
+      return 'http://localhost:3000';
+    }
+
     // Producción - Render (descomentar para producción)
     // return 'https://barber-app-backend-kj6s.onrender.com';
   }
-  
+
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 
@@ -26,6 +40,23 @@ class AppConstants {
   // App Info
   static const String appName = 'bartop';
   static const String appTagline = 'Encuentra a tu barbero ideal';
+
+  /// Construye una URL completa a partir de una URL relativa o absoluta
+  /// Si la URL ya es absoluta (empieza con http), la devuelve tal cual
+  /// Si es relativa, la concatena con baseUrl
+  static String buildImageUrl(String? url) {
+    if (url == null || url.isEmpty) {
+      return '';
+    }
+
+    // Si ya es una URL absoluta, devolverla tal cual
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    // Si es relativa, construir la URL completa
+    // Asegurarse de que la URL relativa empiece con /
+    final relativeUrl = url.startsWith('/') ? url : '/$url';
+    return '$baseUrl$relativeUrl';
+  }
 }
-
-

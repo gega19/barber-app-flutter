@@ -55,10 +55,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
   }
 
   String _getMediaUrl(String url) {
-    if (url.startsWith('http')) {
-      return url;
-    }
-    return '${AppConstants.baseUrl}$url';
+    return AppConstants.buildImageUrl(url);
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 
 /// Avatar reutilizable con fallback
 class AppAvatar extends StatelessWidget {
@@ -37,7 +38,7 @@ class AppAvatar extends StatelessWidget {
         child: imageUrl != null && imageUrl!.isNotEmpty
             ? CachedNetworkImage(
                 key: ValueKey('avatar_image_$imageUrl'), // Force rebuild when image changes
-                imageUrl: imageUrl!,
+                imageUrl: AppConstants.buildImageUrl(imageUrl!),
                 fit: BoxFit.cover,
                 placeholder: (context, url) => _buildDefaultAvatar(),
                 errorWidget: (context, url, error) => _buildDefaultAvatar(),

@@ -139,9 +139,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                         ? ClipRRect(
                                             borderRadius: BorderRadius.circular(12),
                                             child: CachedNetworkImage(
-                                              imageUrl: workplace.image!.startsWith('http')
-                                                  ? workplace.image!
-                                                  : '${AppConstants.baseUrl}${workplace.image}',
+                                              imageUrl: AppConstants.buildImageUrl(workplace.image),
                                               fit: BoxFit.cover,
                                               width: 56,
                                               height: 56,
@@ -498,6 +496,11 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
 
     return AppCard(
       padding: const EdgeInsets.all(16),
+      onTap: promotion.barber != null
+          ? () {
+              context.push('/barber/${promotion.barber!.id}');
+            }
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

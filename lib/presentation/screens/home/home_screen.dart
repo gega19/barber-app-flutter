@@ -11,6 +11,7 @@ import '../../widgets/common/app_text_field.dart';
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/barber/barber_card_widget.dart';
+import '../../widgets/barber_queue/barber_queue_widget.dart';
 import '../../../domain/entities/workplace_entity.dart';
 import '../../../domain/entities/barber_entity.dart';
 
@@ -25,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   final _searchController = TextEditingController();
   late TabController _tabController;
-  
+
   // Filtros
   String _sortBy = 'rating'; // 'rating', 'reviews'
   String _sortOrder = 'desc'; // 'asc', 'desc'
@@ -37,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController = TabController(length: 2, vsync: this);
     context.read<BarberCubit>().loadBestBarbers();
     context.read<WorkplaceCubit>().loadWorkplaces();
-    
+
     _tabController.addListener(() {
       setState(() {});
     });
@@ -54,7 +55,7 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       _searchQuery = query;
     });
-    
+
     // Recargar datos si la búsqueda está vacía para mostrar todos los resultados
     if (query.isEmpty) {
       if (_tabController.index == 0) {
@@ -77,9 +78,11 @@ class _HomeScreenState extends State<HomeScreen>
     final lowerQuery = query.toLowerCase();
     return workplaces.where((workplace) {
       final nameMatch = workplace.name.toLowerCase().contains(lowerQuery);
-      final cityMatch = workplace.city?.toLowerCase().contains(lowerQuery) ?? false;
-      final addressMatch = workplace.address?.toLowerCase().contains(lowerQuery) ?? false;
-      
+      final cityMatch =
+          workplace.city?.toLowerCase().contains(lowerQuery) ?? false;
+      final addressMatch =
+          workplace.address?.toLowerCase().contains(lowerQuery) ?? false;
+
       return nameMatch || cityMatch || addressMatch;
     }).toList();
   }
@@ -96,8 +99,10 @@ class _HomeScreenState extends State<HomeScreen>
     return barbers.where((barber) {
       final nameMatch = barber.name.toLowerCase().contains(lowerQuery);
       final locationMatch = barber.location.toLowerCase().contains(lowerQuery);
-      final specialtyMatch = barber.specialty.toLowerCase().contains(lowerQuery);
-      
+      final specialtyMatch = barber.specialty.toLowerCase().contains(
+        lowerQuery,
+      );
+
       return nameMatch || locationMatch || specialtyMatch;
     }).toList();
   }
@@ -126,13 +131,13 @@ class _HomeScreenState extends State<HomeScreen>
   List<BarberEntity> _applyBarberFilters(List<BarberEntity> barbers) {
     // Primero filtrar por búsqueda
     final filtered = _filterBarbersBySearch(barbers, _searchQuery);
-    
+
     // Luego ordenar
     final sorted = List<BarberEntity>.from(filtered);
-    
+
     sorted.sort((a, b) {
       int comparison = 0;
-      
+
       switch (_sortBy) {
         case 'rating':
           comparison = a.rating.compareTo(b.rating);
@@ -143,23 +148,25 @@ class _HomeScreenState extends State<HomeScreen>
         default:
           comparison = a.rating.compareTo(b.rating);
       }
-      
+
       return _sortOrder == 'desc' ? -comparison : comparison;
     });
-    
+
     return sorted;
   }
 
-  List<WorkplaceEntity> _applyWorkplaceFilters(List<WorkplaceEntity> workplaces) {
+  List<WorkplaceEntity> _applyWorkplaceFilters(
+    List<WorkplaceEntity> workplaces,
+  ) {
     // Primero filtrar por búsqueda
     final filtered = _filterWorkplacesBySearch(workplaces, _searchQuery);
-    
+
     // Luego ordenar
     final sorted = List<WorkplaceEntity>.from(filtered);
-    
+
     sorted.sort((a, b) {
       int comparison = 0;
-      
+
       switch (_sortBy) {
         case 'rating':
           comparison = a.rating.compareTo(b.rating);
@@ -170,25 +177,37 @@ class _HomeScreenState extends State<HomeScreen>
         default:
           comparison = a.rating.compareTo(b.rating);
       }
-      
+
       return _sortOrder == 'desc' ? -comparison : comparison;
     });
-    
+
     return sorted;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: BlocBuilder<AuthCubit, AuthState>(
+        builder: (context, authState) {
+          if (authState is AuthAuthenticated &&
+              authState.user.isBarber &&
+              authState.user.barberId != null) {
+            return BarberQueueFAB(
+              barberId: authState.user.barberId!,
+              onTap: () {
+                // TODO: Navegar a vista detallada de la cola
+              },
+            );
+          }
+          return const SizedBox.shrink();
+        },
+      ),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: SafeArea(
@@ -202,10 +221,12 @@ class _HomeScreenState extends State<HomeScreen>
                   children: [
                     BlocBuilder<AuthCubit, AuthState>(
                       builder: (context, authState) {
-                        final userName = authState is AuthAuthenticated 
-                            ? authState.user.name.split(' ').first // Solo el primer nombre
+                        final userName = authState is AuthAuthenticated
+                            ? authState.user.name
+                                  .split(' ')
+                                  .first // Solo el primer nombre
                             : 'Usuario';
-                        
+
                         return Text(
                           'Hola, $userName',
                           style: const TextStyle(
@@ -265,7 +286,9 @@ class _HomeScreenState extends State<HomeScreen>
                               ? BlocBuilder<BarberCubit, BarberState>(
                                   builder: (context, state) {
                                     if (state is BarberLoaded) {
-                                      final filtered = _applyBarberFilters(state.barbers);
+                                      final filtered = _applyBarberFilters(
+                                        state.barbers,
+                                      );
                                       return Text(
                                         '${filtered.length} barberos encontrados',
                                         style: const TextStyle(
@@ -280,7 +303,9 @@ class _HomeScreenState extends State<HomeScreen>
                               : BlocBuilder<WorkplaceCubit, WorkplaceState>(
                                   builder: (context, state) {
                                     if (state is WorkplaceLoaded) {
-                                      final filtered = _applyWorkplaceFilters(state.workplaces);
+                                      final filtered = _applyWorkplaceFilters(
+                                        state.workplaces,
+                                      );
                                       return Text(
                                         '${filtered.length} barberías encontradas',
                                         style: const TextStyle(
@@ -338,7 +363,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: () {
-                                    context.read<BarberCubit>().loadBestBarbers();
+                                    context
+                                        .read<BarberCubit>()
+                                        .loadBestBarbers();
                                   },
                                   child: const Text('Reintentar'),
                                 ),
@@ -348,8 +375,10 @@ class _HomeScreenState extends State<HomeScreen>
                         }
 
                         if (state is BarberLoaded) {
-                          final filteredBarbers = _applyBarberFilters(state.barbers);
-                          
+                          final filteredBarbers = _applyBarberFilters(
+                            state.barbers,
+                          );
+
                           if (filteredBarbers.isEmpty) {
                             return RefreshIndicator(
                               onRefresh: () async {
@@ -359,7 +388,8 @@ class _HomeScreenState extends State<HomeScreen>
                               child: SingleChildScrollView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 child: SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.5,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
                                   child: const Center(
                                     child: Text(
                                       'No se encontraron barberos',
@@ -424,7 +454,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 const SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: () {
-                                    context.read<WorkplaceCubit>().loadWorkplaces();
+                                    context
+                                        .read<WorkplaceCubit>()
+                                        .loadWorkplaces();
                                   },
                                   child: const Text('Reintentar'),
                                 ),
@@ -434,8 +466,10 @@ class _HomeScreenState extends State<HomeScreen>
                         }
 
                         if (state is WorkplaceLoaded) {
-                          final filteredWorkplaces = _applyWorkplaceFilters(state.workplaces);
-                          
+                          final filteredWorkplaces = _applyWorkplaceFilters(
+                            state.workplaces,
+                          );
+
                           if (filteredWorkplaces.isEmpty) {
                             return RefreshIndicator(
                               onRefresh: () async {
@@ -445,7 +479,8 @@ class _HomeScreenState extends State<HomeScreen>
                               child: SingleChildScrollView(
                                 physics: const AlwaysScrollableScrollPhysics(),
                                 child: SizedBox(
-                                  height: MediaQuery.of(context).size.height * 0.5,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.5,
                                   child: const Center(
                                     child: Text(
                                       'No se encontraron barberías',
@@ -481,33 +516,50 @@ class _HomeScreenState extends State<HomeScreen>
                                         width: 64,
                                         height: 64,
                                         decoration: BoxDecoration(
-                                          color: AppColors.primaryGold.withValues(alpha: 0.2),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: AppColors.primaryGold
+                                              .withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
-                                        child: (workplace.image != null && workplace.image!.isNotEmpty)
+                                        child:
+                                            (workplace.image != null &&
+                                                workplace.image!.isNotEmpty)
                                             ? ClipRRect(
-                                                borderRadius: BorderRadius.circular(12),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
                                                 child: CachedNetworkImage(
-                                                  imageUrl: workplace.image!.startsWith('http')
-                                                      ? workplace.image!
-                                                      : '${AppConstants.baseUrl}${workplace.image}',
+                                                  imageUrl:
+                                                      AppConstants.buildImageUrl(
+                                                        workplace.image,
+                                                      ),
                                                   fit: BoxFit.cover,
                                                   width: 64,
                                                   height: 64,
-                                                  placeholder: (context, url) => Container(
-                                                    color: AppColors.primaryGold.withValues(alpha: 0.2),
-                                                    child: const Center(
-                                                      child: CircularProgressIndicator(
-                                                        color: AppColors.primaryGold,
-                                                        strokeWidth: 2,
+                                                  placeholder: (context, url) =>
+                                                      Container(
+                                                        color: AppColors
+                                                            .primaryGold
+                                                            .withValues(
+                                                              alpha: 0.2,
+                                                            ),
+                                                        child: const Center(
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                color: AppColors
+                                                                    .primaryGold,
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                  errorWidget: (context, url, error) => const Icon(
-                                                    Icons.store,
-                                                    color: AppColors.primaryGold,
-                                                    size: 32,
-                                                  ),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          const Icon(
+                                                            Icons.store,
+                                                            color: AppColors
+                                                                .primaryGold,
+                                                            size: 32,
+                                                          ),
                                                 ),
                                               )
                                             : const Icon(
@@ -519,7 +571,8 @@ class _HomeScreenState extends State<HomeScreen>
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               workplace.name,
@@ -534,7 +587,8 @@ class _HomeScreenState extends State<HomeScreen>
                                               Text(
                                                 workplace.city!,
                                                 style: const TextStyle(
-                                                  color: AppColors.textSecondary,
+                                                  color:
+                                                      AppColors.textSecondary,
                                                   fontSize: 14,
                                                 ),
                                               ),
@@ -549,9 +603,11 @@ class _HomeScreenState extends State<HomeScreen>
                                                 ),
                                                 const SizedBox(width: 4),
                                                 Text(
-                                                  workplace.rating.toStringAsFixed(1),
+                                                  workplace.rating
+                                                      .toStringAsFixed(1),
                                                   style: const TextStyle(
-                                                    color: AppColors.textPrimary,
+                                                    color:
+                                                        AppColors.textPrimary,
                                                     fontSize: 14,
                                                     fontWeight: FontWeight.w600,
                                                   ),
@@ -560,7 +616,8 @@ class _HomeScreenState extends State<HomeScreen>
                                                 Text(
                                                   '(${workplace.reviews} reseñas)',
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontSize: 12,
                                                   ),
                                                 ),
@@ -734,10 +791,7 @@ class _FiltersModalState extends State<_FiltersModal> {
               ),
               child: const Text(
                 'Aplicar Filtros',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
@@ -764,18 +818,14 @@ class _FiltersModalState extends State<_FiltersModal> {
               : AppColors.backgroundCardDark,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected
-                ? AppColors.primaryGold
-                : AppColors.borderGold,
+            color: isSelected ? AppColors.primaryGold : AppColors.borderGold,
             width: isSelected ? 2 : 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected
-                ? AppColors.textDark
-                : AppColors.textPrimary,
+            color: isSelected ? AppColors.textDark : AppColors.textPrimary,
             fontSize: 14,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
@@ -784,4 +834,3 @@ class _FiltersModalState extends State<_FiltersModal> {
     );
   }
 }
-

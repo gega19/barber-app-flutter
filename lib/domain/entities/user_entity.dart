@@ -12,6 +12,8 @@ class UserEntity extends Equatable {
   final String? country;
   final String? gender;
   final String role;
+  final bool isBarber;
+  final String? barberId;
 
   const UserEntity({
     required this.id,
@@ -24,10 +26,23 @@ class UserEntity extends Equatable {
     this.country,
     this.gender,
     this.role = 'CLIENT',
+    this.isBarber = false,
+    this.barberId,
   });
 
   @override
-  List<Object?> get props => [id, name, email, avatar, avatarSeed, phone, location, country, gender, role];
+  List<Object?> get props => [
+    id,
+    name,
+    email,
+    avatar,
+    avatarSeed,
+    phone,
+    location,
+    country,
+    gender,
+    role,
+    isBarber,
+    barberId,
+  ];
 }
-
-

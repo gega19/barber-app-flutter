@@ -1194,13 +1194,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              // Guardar referencias antes de la operación asíncrona
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
               final authCubit = context.read<AuthCubit>();
+              
+              Navigator.of(context).pop();
+              
               await authCubit.updateProfile(avatar: '');
+              
               if (mounted) {
                 // Force rebuild to update avatar
                 setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   const SnackBar(
                     content: Text('Foto eliminada correctamente'),
                     backgroundColor: AppColors.success,

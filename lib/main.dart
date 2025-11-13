@@ -7,6 +7,7 @@ import 'core/injection/injection.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/socket_service.dart';
 import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
@@ -34,7 +35,28 @@ void main() async {
   // Inicializar formato de fechas para español
   await initializeDateFormatting('es_ES', null);
 
+  // Configurar conexión/desconexión automática de Socket.IO basada en autenticación
+  _setupSocketConnection();
+
   runApp(const BarberApp());
+}
+
+/// Configura la conexión/desconexión automática del socket basada en el estado de autenticación
+void _setupSocketConnection() {
+  final authCubit = sl<AuthCubit>();
+  final socketService = sl<SocketService>();
+
+  authCubit.stream.listen((authState) {
+    if (authState is AuthAuthenticated) {
+      // Conectar socket cuando el usuario se autentica
+      socketService.connect().catchError((error) {
+        print('⚠️ Error connecting socket after authentication: $error');
+      });
+    } else if (authState is AuthInitial || authState is AuthError) {
+      // Desconectar socket cuando el usuario se desautentica
+      socketService.disconnect();
+    }
+  });
 }
 
 class BarberApp extends StatelessWidget {

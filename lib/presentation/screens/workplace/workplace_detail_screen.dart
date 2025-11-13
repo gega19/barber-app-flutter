@@ -270,9 +270,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                               child: ClipOval(
                                 child: CachedNetworkImage(
                                   imageUrl: (workplace.image != null && workplace.image!.isNotEmpty)
-                                      ? (workplace.image!.startsWith('http')
-                                          ? workplace.image!
-                                          : '${AppConstants.baseUrl}${workplace.image}')
+                                      ? AppConstants.buildImageUrl(workplace.image)
                                       : 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200&h=200&fit=crop',
                                   width: 96,
                                   height: 96,
@@ -619,15 +617,11 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                   body: Center(
                     child: media.type == 'video'
                         ? MediaPlayer(
-                            videoUrl: media.url.startsWith('http')
-                                ? media.url
-                                : '${AppConstants.baseUrl}${media.url}',
-                            thumbnailUrl: media.thumbnail,
+                            videoUrl: AppConstants.buildImageUrl(media.url),
+                            thumbnailUrl: media.thumbnail != null ? AppConstants.buildImageUrl(media.thumbnail) : null,
                           )
                         : CachedNetworkImage(
-                            imageUrl: media.url.startsWith('http')
-                                ? media.url
-                                : '${AppConstants.baseUrl}${media.url}',
+                            imageUrl: AppConstants.buildImageUrl(media.url),
                             fit: BoxFit.contain,
                           ),
                   ),
@@ -709,9 +703,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                       fit: StackFit.expand,
                       children: [
                         CachedNetworkImage(
-                          imageUrl: media.url.startsWith('http')
-                              ? media.url
-                              : '${AppConstants.baseUrl}${media.url}',
+                          imageUrl: AppConstants.buildImageUrl(media.url),
                           fit: BoxFit.cover,
                           placeholder: (context, url) => const Center(
                             child: CircularProgressIndicator(

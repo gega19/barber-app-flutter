@@ -614,7 +614,7 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                 children: [
                   if (media.type == 'IMAGE')
                     CachedNetworkImage(
-                      imageUrl: media.url,
+                      imageUrl: AppConstants.buildImageUrl(media.url),
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
                         color: AppColors.backgroundCardDark,
@@ -638,7 +638,7 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                       fit: StackFit.expand,
                       children: [
                         CachedNetworkImage(
-                          imageUrl: media.thumbnail ?? media.url,
+                          imageUrl: AppConstants.buildImageUrl(media.thumbnail ?? media.url),
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             color: AppColors.backgroundCardDark,

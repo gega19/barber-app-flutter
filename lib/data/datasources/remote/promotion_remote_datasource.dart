@@ -15,6 +15,7 @@ class NetworkException implements Exception {
 
 abstract class PromotionRemoteDataSource {
   Future<List<PromotionModel>> getPromotions();
+  Future<List<PromotionModel>> getPromotionsByBarber(String barberId);
   Future<PromotionModel?> getPromotionById(String id);
 }
 
@@ -45,6 +46,32 @@ class PromotionRemoteDataSourceImpl implements PromotionRemoteDataSource {
       throw ServerException(e.response?.data['message'] ?? 'Error de red al obtener promociones');
     } catch (e) {
       appLogger.e('GetPromotions unexpected error: $e', error: e);
+      throw ServerException('Error inesperado al obtener promociones');
+    }
+  }
+
+  @override
+  Future<List<PromotionModel>> getPromotionsByBarber(String barberId) async {
+    try {
+      final response = await dio.get('${AppConstants.baseUrl}/api/promotions/barber/$barberId');
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as List;
+        return data
+            .map((json) => PromotionModel.fromJson(json as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw ServerException(response.data['message'] ?? 'Error al obtener promociones del barbero');
+      }
+    } on DioException catch (e) {
+      appLogger.e('GetPromotionsByBarber error: ${e.message}', error: e);
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw NetworkException('Error de conexión. Verifica tu internet.');
+      }
+      throw ServerException(e.response?.data['message'] ?? 'Error de red al obtener promociones');
+    } catch (e) {
+      appLogger.e('GetPromotionsByBarber unexpected error: $e', error: e);
       throw ServerException('Error inesperado al obtener promociones');
     }
   }

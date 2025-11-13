@@ -19,6 +19,8 @@ import '../../../data/datasources/remote/workplace_remote_datasource.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/barber_media_model.dart';
 import '../../../data/models/workplace_model.dart';
+import '../../../data/models/promotion_model.dart';
+import '../../../data/datasources/remote/promotion_remote_datasource.dart';
 import '../../../core/constants/app_constants.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
@@ -45,6 +47,8 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
   String? _serviceType;
   bool _loadingDetails = true;
   String? _currentUserBarberId;
+  List<PromotionModel> _promotions = [];
+  final PromotionRemoteDataSource _promotionDataSource = sl<PromotionRemoteDataSource>();
 
   @override
   void initState() {
@@ -52,8 +56,26 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
     _tabController = TabController(length: 3, vsync: this);
     _loadBarberDetails();
     _loadCurrentUserBarberId();
+    _loadPromotions();
     // Cargar reseñas al iniciar
     context.read<ReviewCubit>().loadReviewsByBarber(widget.barberId);
+  }
+
+  Future<void> _loadPromotions() async {
+    try {
+      final promotions = await _promotionDataSource.getPromotionsByBarber(widget.barberId);
+      if (mounted) {
+        setState(() {
+          _promotions = promotions;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _promotions = [];
+        });
+      }
+    }
   }
 
   Future<void> _loadCurrentUserBarberId() async {
@@ -576,6 +598,25 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                             ),
                           ),
                         ],
+                        // Promotions Section
+                        if (_promotions.isNotEmpty) ...[
+                          const SizedBox(height: 24),
+                          const Text(
+                            'Promociones',
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          ..._promotions.map((promotion) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: _buildPromotionCard(promotion),
+                            );
+                          }),
+                        ],
                         const SizedBox(height: 24),
                         // Recent Reviews Section
                         BlocBuilder<ReviewCubit, ReviewState>(
@@ -855,9 +896,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                       fit: StackFit.expand,
                       children: [
                         CachedNetworkImage(
-                          imageUrl: media.url.startsWith('http')
-                              ? media.url
-                              : '${AppConstants.baseUrl}${media.url}',
+                          imageUrl: AppConstants.buildImageUrl(media.url),
                           fit: BoxFit.cover,
                           placeholder: (context, url) => const Center(
                             child: CircularProgressIndicator(
@@ -1002,6 +1041,129 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
             value: barber.specialty,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPromotionCard(PromotionModel promotion) {
+    final dateFormat = DateFormat('d MMM yyyy', 'es_ES');
+    final validUntil = dateFormat.format(promotion.validUntil);
+
+    String discountText = '';
+    if (promotion.discount != null) {
+      discountText = '${promotion.discount!.toStringAsFixed(0)}% OFF';
+    } else if (promotion.discountAmount != null) {
+      discountText = '\$${promotion.discountAmount!.toStringAsFixed(0)} OFF';
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGold.withValues(alpha: 0.15),
+            AppColors.primaryGold.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryGold,
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    promotion.title,
+                    style: const TextStyle(
+                      color: AppColors.primaryGold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (discountText.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryGold,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      discountText,
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              promotion.description,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundCardDark,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.primaryGold,
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      promotion.code,
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.access_time,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Hasta $validUntil',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

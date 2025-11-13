@@ -32,10 +32,7 @@ class _MediaPlayerState extends State<MediaPlayer> {
   }
 
   String _getMediaUrl(String url) {
-    if (url.startsWith('http')) {
-      return url;
-    }
-    return '${AppConstants.baseUrl}$url';
+    return AppConstants.buildImageUrl(url);
   }
 
   Future<void> _initializePlayer() async {

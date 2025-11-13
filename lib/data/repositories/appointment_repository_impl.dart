@@ -34,6 +34,20 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @override
+  Future<Either<Failure, List<AppointmentEntity>>> getBarberQueue(String barberId, {DateTime? date}) async {
+    try {
+      final appointments = await remoteDataSource.getBarberQueue(barberId, date: date);
+      return Right(appointments);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, AppointmentEntity>> createAppointment({
     required String barberId,
     String? serviceId,
@@ -65,7 +79,30 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
 
   @override
   Future<Either<Failure, void>> cancelAppointment(String appointmentId) async {
-    return const Left(ServerFailure('Not implemented yet'));
+    try {
+      await remoteDataSource.cancelAppointment(appointmentId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> markAsAttended(String appointmentId) async {
+    try {
+      await remoteDataSource.markAsAttended(appointmentId);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
   }
 
   @override

@@ -61,9 +61,12 @@ import '../../domain/usecases/barber_availability/get_my_availability_usecase.da
 import '../../domain/usecases/barber_availability/update_my_availability_usecase.dart';
 import '../../domain/usecases/barber_availability/get_available_slots_usecase.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/socket_service.dart';
 import '../../presentation/cubit/auth/auth_cubit.dart';
+import '../../presentation/cubit/socket/socket_cubit.dart';
 import '../../presentation/cubit/barber/barber_cubit.dart';
 import '../../presentation/cubit/appointment/appointment_cubit.dart';
+import '../../presentation/cubit/barber_queue/barber_queue_cubit.dart';
 import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../presentation/cubit/workplace/workplace_cubit.dart';
 import '../../presentation/cubit/review/review_cubit.dart';
@@ -323,6 +326,7 @@ Future<void> init() async {
 
   // Services
   sl.registerLazySingleton(() => NotificationService());
+  sl.registerLazySingleton(() => SocketService());
 
   // Cubits
   sl.registerSingleton<AuthCubit>(
@@ -345,6 +349,10 @@ Future<void> init() async {
       searchBarbersUseCase: sl(),
     ),
   );
+  sl.registerFactory(
+    () => BarberQueueCubit(sl()),
+  );
+
   sl.registerFactory(
     () => AppointmentCubit(
       getAppointmentsUseCase: sl(),
@@ -369,4 +377,5 @@ Future<void> init() async {
       updateMyAvailabilityUseCase: sl(),
     ),
   );
+  sl.registerFactory(() => SocketCubit(sl()));
 }

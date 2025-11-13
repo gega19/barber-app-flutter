@@ -9,8 +9,10 @@ import '../../../domain/entities/barber_entity.dart';
 import '../../../domain/entities/payment_method_entity.dart';
 import '../../../domain/repositories/payment_method_repository.dart';
 import '../../../data/models/service_model.dart';
+import '../../../data/models/promotion_model.dart';
 import '../../../data/datasources/remote/service_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_availability_remote_datasource.dart';
+import '../../../data/datasources/remote/promotion_remote_datasource.dart';
 import '../../cubit/payment_method/payment_method_cubit.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
 import '../../widgets/common/app_button.dart';
@@ -46,15 +48,35 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _loadingServices = true;
   List<String> _availableSlots = [];
   bool _loadingSlots = false;
+  List<PromotionModel> _promotions = [];
   final BarberAvailabilityRemoteDataSource _availabilityDataSource = sl<BarberAvailabilityRemoteDataSource>();
   final PaymentMethodRepository _paymentMethodRepository = sl<PaymentMethodRepository>();
+  final PromotionRemoteDataSource _promotionDataSource = sl<PromotionRemoteDataSource>();
 
   @override
   void initState() {
     super.initState();
     _loadServices();
+    _loadPromotions();
     context.read<PaymentMethodCubit>().loadPaymentMethods();
     _loadAvailableSlots();
+  }
+
+  Future<void> _loadPromotions() async {
+    try {
+      final promotions = await _promotionDataSource.getPromotionsByBarber(widget.barber.id);
+      if (mounted) {
+        setState(() {
+          _promotions = promotions;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _promotions = [];
+        });
+      }
+    }
   }
 
   Future<void> _loadAvailableSlots() async {
@@ -254,12 +276,40 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  double get _totalPrice {
+  PromotionModel? get _activePromotion {
+    if (_promotions.isEmpty) return null;
+    final now = DateTime.now();
+    // Obtener la primera promoción activa y válida
+    return _promotions.firstWhere(
+      (p) => p.isActive && 
+            p.validFrom.isBefore(now) && 
+            p.validUntil.isAfter(now),
+      orElse: () => _promotions.first,
+    );
+  }
+
+  double get _basePrice {
     if (_selectedService == null) {
       return widget.barber.price;
     }
     final service = _services.firstWhere((s) => s.id == _selectedService);
     return service.price;
+  }
+
+  double get _discountAmount {
+    final promotion = _activePromotion;
+    if (promotion == null) return 0.0;
+    
+    if (promotion.discountAmount != null) {
+      return promotion.discountAmount!;
+    } else if (promotion.discount != null) {
+      return _basePrice * (promotion.discount! / 100);
+    }
+    return 0.0;
+  }
+
+  double get _totalPrice {
+    return _basePrice - _discountAmount;
   }
 
   @override
@@ -515,6 +565,9 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
         ),
         const SizedBox(height: 24),
+        // Mostrar promoción activa si existe
+        if (_activePromotion != null) _buildPromotionBanner(),
+        const SizedBox(height: 16),
         ..._services.map((service) {
           final isSelected = _selectedService == service.id;
 
@@ -587,15 +640,45 @@ class _BookingScreenState extends State<BookingScreen> {
                           ],
                         ),
                       ),
-                      Text(
-                        '\$${service.price.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          color: isSelected
-                              ? AppColors.primaryGold
-                              : AppColors.textPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Builder(
+                        builder: (context) {
+                          final promotion = _activePromotion;
+                          double serviceDiscount = 0.0;
+                          if (promotion != null) {
+                            if (promotion.discountAmount != null) {
+                              serviceDiscount = promotion.discountAmount!;
+                            } else if (promotion.discount != null) {
+                              serviceDiscount = service.price * (promotion.discount! / 100);
+                            }
+                          }
+                          final finalPrice = service.price - serviceDiscount;
+                          final hasDiscount = serviceDiscount > 0;
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              if (hasDiscount)
+                                Text(
+                                  '\$${service.price.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              Text(
+                                '\$${finalPrice.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? AppColors.primaryGold
+                                      : AppColors.textPrimary,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -984,6 +1067,76 @@ class _BookingScreenState extends State<BookingScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              // Mostrar precio con descuento si hay promoción
+              if (_activePromotion != null && _discountAmount > 0) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundCardDark,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.borderGold),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Precio original',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            '\$${_basePrice.toStringAsFixed(0)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.local_offer,
+                                color: AppColors.primaryGold,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _activePromotion!.discount != null
+                                    ? '${_activePromotion!.discount!.toStringAsFixed(0)}% OFF'
+                                    : 'Descuento',
+                                style: const TextStyle(
+                                  color: AppColors.primaryGold,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '-\$${_discountAmount.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              color: AppColors.primaryGold,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1017,6 +1170,110 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPromotionBanner() {
+    final promotion = _activePromotion!;
+    final discountText = promotion.discount != null
+        ? '${promotion.discount!.toStringAsFixed(0)}% OFF'
+        : promotion.discountAmount != null
+            ? '\$${promotion.discountAmount!.toStringAsFixed(0)} OFF'
+            : 'PROMOCIÓN';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primaryGold.withValues(alpha: 0.2),
+            AppColors.primaryGold.withValues(alpha: 0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.primaryGold,
+          width: 2,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.local_offer,
+                color: AppColors.textDark,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        discountText,
+                        style: const TextStyle(
+                          color: AppColors.primaryGold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGold,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'ACTIVA',
+                          style: TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    promotion.title,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (promotion.description.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      promotion.description,
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

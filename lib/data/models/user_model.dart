@@ -13,6 +13,8 @@ class UserModel extends UserEntity {
     super.country,
     super.gender,
     super.role,
+    super.isBarber,
+    super.barberId,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,8 @@ class UserModel extends UserEntity {
       country: json['country'] as String?,
       gender: json['gender'] as String?,
       role: json['role'] as String? ?? 'CLIENT',
+      isBarber: json['isBarber'] as bool? ?? false,
+      barberId: json['barberId'] as String?,
     );
   }
 
@@ -42,6 +46,8 @@ class UserModel extends UserEntity {
       'country': country,
       'gender': gender,
       'role': role,
+      'isBarber': isBarber,
+      'barberId': barberId,
     };
   }
 
@@ -57,6 +63,8 @@ class UserModel extends UserEntity {
       country: entity.country,
       gender: entity.gender,
       role: entity.role,
+      isBarber: entity.isBarber,
+      barberId: entity.barberId,
     );
   }
 }
