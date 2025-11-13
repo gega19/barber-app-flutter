@@ -1,29 +1,23 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
     // Producción - Render
-    //return 'https://barber-app-backend-kj6s.onrender.com';
+    return 'https://barber-app-backend-kj6s.onrender.com';
 
     // Desarrollo local - Detecta automáticamente la plataforma
-    if (kIsWeb) {
-      // Web usa localhost
-      return 'http://localhost:3000';
-    } else if (Platform.isAndroid) {
-      return 'http://192.168.7.140:3000';
-    } else if (Platform.isIOS) {
-      // iOS Simulator puede usar localhost directamente
-      return 'http://localhost:3000';
-    } else {
-      // Otras plataformas (Linux, Windows, macOS)
-      return 'http://localhost:3000';
-    }
-
-    // Producción - Render (descomentar para producción)
-    // return 'https://barber-app-backend-kj6s.onrender.com';
+    // if (kIsWeb) {
+    //   // Web usa localhost
+    //   return 'http://localhost:3000';
+    // } else if (Platform.isAndroid) {
+    //   return 'http://192.168.7.140:3000';
+    // } else if (Platform.isIOS) {
+    //   // iOS Simulator puede usar localhost directamente
+    //   return 'http://localhost:3000';
+    // } else {
+    //   // Otras plataformas (Linux, Windows, macOS)
+    //   return 'http://localhost:3000';
+    // }
   }
 
   static const Duration connectTimeout = Duration(seconds: 30);

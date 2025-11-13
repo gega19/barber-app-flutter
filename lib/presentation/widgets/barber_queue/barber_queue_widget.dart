@@ -5,6 +5,7 @@ import '../../../core/injection/injection.dart';
 import '../../../domain/entities/appointment_entity.dart';
 import '../../cubit/barber_queue/barber_queue_cubit.dart';
 import '../../cubit/barber_queue/barber_queue_state.dart';
+import '../common/app_avatar.dart';
 
 /// Widget flotante para mostrar la cola del día del barbero
 /// Se muestra como un FloatingActionButton con badge de cantidad
@@ -37,11 +38,11 @@ class BarberQueueFAB extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                const Icon(
-                  Icons.calendar_today,
-                  color: AppColors.textDark,
-                  size: 28,
-                ),
+          const Icon(
+            Icons.content_cut,
+            color: AppColors.textDark,
+            size: 28,
+          ),
                 // Badge con el número de citas
                 if (count > 0)
                   Positioned(
@@ -216,7 +217,7 @@ class _QueueBottomSheet extends StatelessWidget {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.calendar_today,
+                            Icons.content_cut,
                             color: AppColors.primaryGold,
                             size: 24,
                           ),
@@ -300,6 +301,7 @@ class _QueueAvatarItem extends StatelessWidget {
     final client = appointment.client;
     final name = client?.name ?? 'Cliente';
     final avatar = client?.avatar;
+    final avatarSeed = client?.avatarSeed;
     final time = appointment.time;
     final status = appointment.status.toString().split('.').last;
 
@@ -315,34 +317,13 @@ class _QueueAvatarItem extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Avatar
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primaryGold, width: 2.5),
-                gradient: avatar != null && avatar.isNotEmpty
-                    ? null
-                    : LinearGradient(
-                        colors: [
-                          AppColors.primaryGold.withValues(alpha: 0.6),
-                          AppColors.primaryGoldDark.withValues(alpha: 0.8),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-              ),
-              child: avatar != null && avatar.isNotEmpty
-                  ? ClipOval(
-                      child: Image.network(
-                        avatar,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildDefaultAvatar(name),
-                      ),
-                    )
-                  : _buildDefaultAvatar(name),
+            // Avatar usando AppAvatar para manejar el seed correctamente
+            AppAvatar(
+              imageUrl: avatar,
+              name: name,
+              avatarSeed: avatarSeed,
+              size: 60,
+              borderColor: AppColors.primaryGold,
             ),
             const SizedBox(width: 16),
             // Información
@@ -586,36 +567,6 @@ class _QueueAvatarItem extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDefaultAvatar(String name) {
-    final initials = name.isNotEmpty
-        ? name.split(' ').map((n) => n[0]).take(2).join().toUpperCase()
-        : '?';
-
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            AppColors.primaryGold.withValues(alpha: 0.6),
-            AppColors.primaryGoldDark.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          initials,
-          style: const TextStyle(
-            color: AppColors.textDark,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
     );
   }

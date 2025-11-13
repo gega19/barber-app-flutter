@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/main/main_screen.dart';
+import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/barber/barber_detail_screen.dart';
 import '../../presentation/screens/workplace/workplace_detail_screen.dart';
 import '../../presentation/screens/profile/become_barber_screen.dart';
@@ -14,6 +15,7 @@ import '../../presentation/screens/profile/security_settings_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
 import '../../core/injection/injection.dart';
+import '../../data/datasources/local/local_storage.dart';
 import '../../presentation/cubit/auth/auth_cubit.dart';
 import '../../presentation/cubit/barber/barber_cubit.dart';
 import '../../presentation/cubit/workplace/workplace_cubit.dart';
@@ -45,21 +47,41 @@ class AuthStreamNotifier extends ChangeNotifier {
 GoRouter createAppRouter() {
   final authCubit = sl<AuthCubit>();
   final authNotifier = AuthStreamNotifier(authCubit);
+  final localStorage = sl<LocalStorage>();
   
   return GoRouter(
     initialLocation: '/login',
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final authState = authCubit.state;
+      final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
       
       final isAuthenticated = authState is AuthAuthenticated || authState is AuthProfileUpdateError;
       final isLoading = authState is AuthLoading;
       
+      // Verificar si el onboarding ya se completó
+      final onboardingCompleted = await localStorage.isOnboardingCompleted();
+      
+      // Si viene con parámetro return, permitir ver el onboarding aunque esté completado
+      final hasReturnParam = state.uri.queryParameters.containsKey('return');
+      
+      // Si no ha completado el onboarding y no está en la pantalla de onboarding, redirigir
+      if (!onboardingCompleted && !isOnboarding && !isLoading) {
+        return '/onboarding';
+      }
+      
+      // Si ya completó el onboarding y está en la pantalla de onboarding (sin return param), redirigir
+      // Pero si tiene return param, permitir verlo (viene del perfil)
+      if (onboardingCompleted && isOnboarding && !hasReturnParam) {
+        // Si está autenticado, ir a home, si no, a login
+        return isAuthenticated ? '/home' : '/login';
+      }
+      
       if (isAuthenticated && isLoggingIn) {
         return '/home';
       }
       
-      if (!isAuthenticated && !isLoading && !isLoggingIn) {
+      if (!isAuthenticated && !isLoading && !isLoggingIn && onboardingCompleted) {
         return '/login';
       }
       
@@ -67,6 +89,13 @@ GoRouter createAppRouter() {
     },
     refreshListenable: authNotifier,
     routes: [
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) {
+          final returnRoute = state.uri.queryParameters['return'];
+          return OnboardingScreen(returnRoute: returnRoute);
+        },
+      ),
       GoRoute(
         path: '/login',
         builder: (context, state) => BlocProvider.value(

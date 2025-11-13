@@ -19,6 +19,10 @@ abstract class LocalStorage {
   Future<String?> getSavedEmail();
   Future<void> saveBiometricEnabled(bool enabled);
   Future<bool> getBiometricEnabled();
+  
+  // Onboarding
+  Future<void> setOnboardingCompleted(bool completed);
+  Future<bool> isOnboardingCompleted();
 }
 
 class LocalStorageImpl implements LocalStorage {
@@ -94,6 +98,16 @@ class LocalStorageImpl implements LocalStorage {
   @override
   Future<bool> getBiometricEnabled() async {
     return sharedPreferences.getBool(AppConstants.biometricEnabledKey) ?? false;
+  }
+
+  @override
+  Future<void> setOnboardingCompleted(bool completed) async {
+    await sharedPreferences.setBool('onboarding_completed', completed);
+  }
+
+  @override
+  Future<bool> isOnboardingCompleted() async {
+    return sharedPreferences.getBool('onboarding_completed') ?? false;
   }
 }
 

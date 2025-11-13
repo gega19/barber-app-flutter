@@ -8,6 +8,7 @@ import '../../widgets/common/app_avatar.dart';
 import '../../../core/injection/injection.dart';
 import '../../../domain/usecases/auth/get_user_stats_usecase.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../data/datasources/local/local_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
@@ -579,6 +580,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     titleColor: AppColors.error,
                                     subtitleColor: AppColors.error,
                                   ),
+                               ],
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                   ),
+                   const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                   SliverToBoxAdapter(
+                     child: Padding(
+                       padding: const EdgeInsets.symmetric(horizontal: 16),
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           const Padding(
+                             padding: EdgeInsets.only(left: 4, bottom: 12),
+                             child: Text(
+                               'Otros',
+                               style: TextStyle(
+                                 color: AppColors.textPrimary,
+                                 fontSize: 18,
+                                 fontWeight: FontWeight.w600,
+                               ),
+                             ),
+                           ),
+                           AppCard(
+                             padding: const EdgeInsets.all(16),
+                             child: Column(
+                               children: [
+                                 _buildSettingsRow(
+                                   icon: Icons.school,
+                                   title: 'Ver Tutorial',
+                                   subtitle: 'Revisa la guía de bienvenida',
+                                   onTap: () async {
+                                     final localStorage = sl<LocalStorage>();
+                                     await localStorage.setOnboardingCompleted(false);
+                                     if (context.mounted) {
+                                       context.go('/onboarding?return=/home');
+                                     }
+                                   },
+                                 ),
                                ],
                              ),
                            ),
