@@ -15,15 +15,12 @@ import '../../../core/constants/app_constants.dart';
 import '../../../data/datasources/remote/workplace_remote_datasource.dart';
 import '../../../data/datasources/remote/workplace_media_remote_datasource.dart';
 import '../../../data/models/workplace_media_model.dart';
-import '../../widgets/media/media_player.dart';
+import '../../widgets/media/media_viewer_screen.dart';
 
 class WorkplaceDetailScreen extends StatefulWidget {
   final String workplaceId;
 
-  const WorkplaceDetailScreen({
-    super.key,
-    required this.workplaceId,
-  });
+  const WorkplaceDetailScreen({super.key, required this.workplaceId});
 
   @override
   State<WorkplaceDetailScreen> createState() => _WorkplaceDetailScreenState();
@@ -58,7 +55,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
 
     try {
       // Load workplace by ID directly
-      final workplaceModel = await sl<WorkplaceRemoteDataSource>().getWorkplaceById(widget.workplaceId);
+      final workplaceModel = await sl<WorkplaceRemoteDataSource>()
+          .getWorkplaceById(widget.workplaceId);
       _workplace = workplaceModel;
 
       // Load workplace media
@@ -89,7 +87,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
     });
 
     try {
-      final media = await sl<WorkplaceMediaRemoteDataSource>().getWorkplaceMedia(widget.workplaceId);
+      final media = await sl<WorkplaceMediaRemoteDataSource>()
+          .getWorkplaceMedia(widget.workplaceId);
       setState(() {
         _workplaceMedia = media;
         _loadingMedia = false;
@@ -111,16 +110,11 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF1A1A1A),
-                Color(0xFF0F0F0F),
-              ],
+              colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
             ),
           ),
           child: const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primaryGold,
-            ),
+            child: CircularProgressIndicator(color: AppColors.primaryGold),
           ),
         ),
       );
@@ -134,10 +128,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: CustomScrollView(
@@ -154,10 +145,12 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                 children: [
                   // Banner Image
                   CachedNetworkImage(
-                    imageUrl: (workplace.banner != null && workplace.banner!.isNotEmpty)
+                    imageUrl:
+                        (workplace.banner != null &&
+                            workplace.banner!.isNotEmpty)
                         ? (workplace.banner!.startsWith('http')
-                            ? workplace.banner!
-                            : '${AppConstants.baseUrl}${workplace.banner}')
+                              ? workplace.banner!
+                              : '${AppConstants.baseUrl}${workplace.banner}')
                         : 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=1200&h=600&fit=crop',
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
@@ -269,8 +262,12 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                               ),
                               child: ClipOval(
                                 child: CachedNetworkImage(
-                                  imageUrl: (workplace.image != null && workplace.image!.isNotEmpty)
-                                      ? AppConstants.buildImageUrl(workplace.image)
+                                  imageUrl:
+                                      (workplace.image != null &&
+                                          workplace.image!.isNotEmpty)
+                                      ? AppConstants.buildImageUrl(
+                                          workplace.image,
+                                        )
                                       : 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=200&h=200&fit=crop',
                                   width: 96,
                                   height: 96,
@@ -279,7 +276,9 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                                     width: 96,
                                     height: 96,
                                     decoration: BoxDecoration(
-                                      color: AppColors.primaryGold.withValues(alpha: 0.2),
+                                      color: AppColors.primaryGold.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Center(
@@ -289,19 +288,21 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                                       ),
                                     ),
                                   ),
-                                  errorWidget: (context, url, error) => Container(
-                                    width: 96,
-                                    height: 96,
-                                    decoration: BoxDecoration(
-                                      color: AppColors.primaryGold.withValues(alpha: 0.2),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.store,
-                                      color: AppColors.primaryGold,
-                                      size: 48,
-                                    ),
-                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        width: 96,
+                                        height: 96,
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryGold
+                                              .withValues(alpha: 0.2),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.store,
+                                          color: AppColors.primaryGold,
+                                          size: 48,
+                                        ),
+                                      ),
                                 ),
                               ),
                             ),
@@ -449,7 +450,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                           ),
                       ],
                     ),
-                    if (workplace.description != null && workplace.description!.isNotEmpty) ...[
+                    if (workplace.description != null &&
+                        workplace.description!.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       AppCard(
                         padding: const EdgeInsets.all(16),
@@ -528,22 +530,22 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                               ],
                             ),
                           ),
-                              SizedBox(
-                                height: 400,
-                                child: TabBarView(
-                                  controller: _tabController,
-                                  children: [
-                                    // Multimedia Tab
-                                    _buildMultimediaTab(workplace),
-                                    // Barbers Tab
-                                    _buildBarbersTab(),
-                                    // Info Tab
-                                    _buildInfoTab(workplace),
-                                    // Reviews Tab
-                                    WorkplaceReviewsTab(workplace: workplace),
-                                  ],
-                                ),
-                              ),
+                          SizedBox(
+                            height: 400,
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: [
+                                // Multimedia Tab
+                                _buildMultimediaTab(workplace),
+                                // Barbers Tab
+                                _buildBarbersTab(),
+                                // Info Tab
+                                _buildInfoTab(workplace),
+                                // Reviews Tab
+                                WorkplaceReviewsTab(workplace: workplace),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -561,9 +563,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
   Widget _buildMultimediaTab(WorkplaceEntity workplace) {
     if (_loadingMedia) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryGold,
-        ),
+        child: CircularProgressIndicator(color: AppColors.primaryGold),
       );
     }
 
@@ -580,10 +580,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
             const SizedBox(height: 16),
             Text(
               'No hay multimedia disponible',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
             ),
           ],
         ),
@@ -603,28 +600,11 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
         final media = _workplaceMedia[index];
         return GestureDetector(
           onTap: () {
-            // Convert WorkplaceMediaModel to BarberMediaModel for MediaViewerScreen
-            // Since MediaViewerScreen expects BarberMediaModel, we'll create a simple viewer
-            // or we can update MediaViewerScreen to accept a generic media type
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => Scaffold(
-                  backgroundColor: Colors.black,
-                  appBar: AppBar(
-                    backgroundColor: Colors.transparent,
-                    iconTheme: const IconThemeData(color: Colors.white),
-                  ),
-                  body: Center(
-                    child: media.type == 'video'
-                        ? MediaPlayer(
-                            videoUrl: AppConstants.buildImageUrl(media.url),
-                            thumbnailUrl: media.thumbnail != null ? AppConstants.buildImageUrl(media.thumbnail) : null,
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: AppConstants.buildImageUrl(media.url),
-                            fit: BoxFit.contain,
-                          ),
-                  ),
+                builder: (context) => MediaViewerScreen.fromWorkplaceMedia(
+                  mediaList: _workplaceMedia,
+                  initialIndex: index,
                 ),
               ),
             );
@@ -644,8 +624,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                         CachedNetworkImage(
                           imageUrl: media.thumbnail != null
                               ? (media.thumbnail!.startsWith('http')
-                                  ? media.thumbnail!
-                                  : '${AppConstants.baseUrl}${media.thumbnail}')
+                                    ? media.thumbnail!
+                                    : '${AppConstants.baseUrl}${media.thumbnail}')
                               : 'https://via.placeholder.com/300',
                           fit: BoxFit.cover,
                           placeholder: (context, url) => const Center(
@@ -710,10 +690,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                               color: AppColors.primaryGold,
                             ),
                           ),
-                          errorWidget: (context, url, error) => const Icon(
-                            Icons.error,
-                            color: AppColors.error,
-                          ),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.error, color: AppColors.error),
                         ),
                         if (media.caption != null && media.caption!.isNotEmpty)
                           Positioned(
@@ -766,10 +744,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
             const SizedBox(height: 16),
             Text(
               'No hay barberos disponibles',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
             ),
           ],
         ),
@@ -838,10 +813,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                   ],
                 ),
               ),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-              ),
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),
         );
@@ -882,7 +854,8 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
           _buildInfoItem(
             icon: Icons.star,
             label: 'Calificación',
-            value: '${workplace.rating.toStringAsFixed(1)} (${workplace.reviews} reseñas)',
+            value:
+                '${workplace.rating.toStringAsFixed(1)} (${workplace.reviews} reseñas)',
           ),
         ],
       ),
@@ -897,11 +870,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          color: AppColors.primaryGold,
-          size: 20,
-        ),
+        Icon(icon, color: AppColors.primaryGold, size: 20),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -930,4 +899,3 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
     );
   }
 }
-

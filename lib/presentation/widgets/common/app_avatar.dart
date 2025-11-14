@@ -40,6 +40,10 @@ class AppAvatar extends StatelessWidget {
                 key: ValueKey('avatar_image_$imageUrl'), // Force rebuild when image changes
                 imageUrl: AppConstants.buildImageUrl(imageUrl!),
                 fit: BoxFit.cover,
+                memCacheWidth: size.toInt(),
+                memCacheHeight: size.toInt(),
+                maxWidthDiskCache: (size * 2).toInt(),
+                maxHeightDiskCache: (size * 2).toInt(),
                 placeholder: (context, url) => _buildDefaultAvatar(),
                 errorWidget: (context, url, error) => _buildDefaultAvatar(),
               )
@@ -63,6 +67,8 @@ class AppAvatar extends StatelessWidget {
       fit: BoxFit.cover,
       memCacheWidth: size.toInt(),
       memCacheHeight: size.toInt(),
+      maxWidthDiskCache: (size * 2).toInt(),
+      maxHeightDiskCache: (size * 2).toInt(),
       placeholder: (context, url) => Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

@@ -67,7 +67,16 @@ class LocalStorageImpl implements LocalStorage {
 
   @override
   Future<void> clearAll() async {
+    // Preservar el estado del onboarding antes de limpiar
+    final onboardingCompleted = await isOnboardingCompleted();
+    
+    // Limpiar todas las preferencias
     await sharedPreferences.clear();
+    
+    // Restaurar el estado del onboarding
+    if (onboardingCompleted) {
+      await setOnboardingCompleted(true);
+    }
   }
 
   @override

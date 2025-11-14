@@ -8,19 +8,25 @@ part 'promotion_state.dart';
 class PromotionCubit extends Cubit<PromotionState> {
   final GetPromotionsUseCase getPromotionsUseCase;
 
-  PromotionCubit({
-    required this.getPromotionsUseCase,
-  }) : super(PromotionInitial());
+  PromotionCubit({required this.getPromotionsUseCase})
+    : super(PromotionInitial());
 
   Future<void> loadPromotions() async {
     emit(PromotionLoading());
 
     final result = await getPromotionsUseCase();
 
-    result.fold(
-      (failure) => emit(PromotionError(failure.message)),
-      (promotions) => emit(PromotionLoaded(promotions)),
-    );
+    result.fold((failure) => emit(PromotionError(failure.message)), (
+      promotions,
+    ) {
+      // Filtrar promociones expiradas y solo activas
+      final now = DateTime.now();
+      final activePromotions = promotions.where((promotion) {
+        return promotion.isActive &&
+            promotion.validUntil.isAfter(now) &&
+            promotion.validFrom.isBefore(now);
+      }).toList();
+      emit(PromotionLoaded(activePromotions));
+    });
   }
 }
-

@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/barber_media_model.dart';
+import '../../../data/models/workplace_media_model.dart';
 import 'media_player.dart';
 
 class MediaViewerScreen extends StatefulWidget {
@@ -14,6 +15,31 @@ class MediaViewerScreen extends StatefulWidget {
     required this.mediaList,
     this.initialIndex = 0,
   });
+
+  /// Factory constructor para crear desde WorkplaceMediaModel
+  factory MediaViewerScreen.fromWorkplaceMedia({
+    required List<WorkplaceMediaModel> mediaList,
+    int initialIndex = 0,
+  }) {
+    // Convertir WorkplaceMediaModel a BarberMediaModel
+    final barberMediaList = mediaList.map((workplaceMedia) {
+      return BarberMediaModel(
+        id: workplaceMedia.id,
+        barberId: workplaceMedia.workplaceId, // Usar workplaceId como barberId temporalmente
+        type: workplaceMedia.type.toUpperCase(), // Normalizar a mayúsculas
+        url: workplaceMedia.url,
+        thumbnail: workplaceMedia.thumbnail,
+        caption: workplaceMedia.caption,
+        createdAt: workplaceMedia.createdAt,
+        updatedAt: workplaceMedia.updatedAt,
+      );
+    }).toList();
+
+    return MediaViewerScreen(
+      mediaList: barberMediaList,
+      initialIndex: initialIndex,
+    );
+  }
 
   @override
   State<MediaViewerScreen> createState() => _MediaViewerScreenState();
@@ -157,7 +183,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
   }
 
   Widget _buildMediaItem(BarberMediaModel media) {
-    if (media.type == 'IMAGE' || media.type == 'GIF') {
+    // Normalizar el tipo a mayúsculas para comparación
+    final normalizedType = media.type.toUpperCase();
+    if (normalizedType == 'IMAGE' || normalizedType == 'GIF') {
       return InteractiveViewer(
         minScale: 0.5,
         maxScale: 4.0,
@@ -166,21 +194,15 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
             imageUrl: _getMediaUrl(media.url),
             fit: BoxFit.contain,
             placeholder: (context, url) => const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryGold,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryGold),
             ),
             errorWidget: (context, url, error) => const Center(
-              child: Icon(
-                Icons.error,
-                color: Colors.white,
-                size: 64,
-              ),
+              child: Icon(Icons.error, color: Colors.white, size: 64),
             ),
           ),
         ),
       );
-    } else if (media.type == 'VIDEO') {
+    } else if (normalizedType == 'VIDEO') {
       return Center(
         child: MediaPlayer(
           videoUrl: _getMediaUrl(media.url),
@@ -191,11 +213,7 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
       );
     }
     return const Center(
-      child: Icon(
-        Icons.error,
-        color: Colors.white,
-        size: 64,
-      ),
+      child: Icon(Icons.error, color: Colors.white, size: 64),
     );
   }
 
@@ -214,16 +232,9 @@ class _MediaViewerScreenState extends State<MediaViewerScreen> {
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.6),
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.primaryGold,
-              width: 2,
-            ),
+            border: Border.all(color: AppColors.primaryGold, width: 2),
           ),
-          child: Icon(
-            icon,
-            color: AppColors.primaryGold,
-            size: 28,
-          ),
+          child: Icon(icon, color: AppColors.primaryGold, size: 28),
         ),
       ),
     );

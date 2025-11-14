@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/appointment_utils.dart';
 import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
-import '../../widgets/common/app_card.dart';
-import '../../widgets/common/app_avatar.dart';
-import '../../widgets/common/app_badge.dart';
-import '../../widgets/common/loading_widget.dart';
+import '../../widgets/appointment/appointment_card.dart';
+import '../../widgets/appointment/appointment_card_skeleton.dart';
+import '../../widgets/appointment/appointment_header_widget.dart';
+import '../../widgets/appointment/appointment_tabs_widget.dart';
+import '../../widgets/appointment/appointment_empty_state_widget.dart';
 import '../../widgets/common/error_widget.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -23,6 +24,9 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  List<AppointmentEntity>? _cachedFiltered;
+  int? _cachedTabIndex;
+  int? _cachedAppointmentsLength;
 
   @override
   void initState() {
@@ -41,14 +45,19 @@ class _HistoryScreenState extends State<HistoryScreen>
     List<AppointmentEntity> appointments,
     int tabIndex,
   ) {
+    if (_cachedFiltered != null &&
+        _cachedTabIndex == tabIndex &&
+        _cachedAppointmentsLength == appointments.length) {
+      return _cachedFiltered!;
+    }
+
     List<AppointmentEntity> filtered;
-    
+
     if (tabIndex == 0) {
-      filtered = appointments;
+      filtered = List.from(appointments);
     } else if (tabIndex == 1) {
       filtered = appointments
-          .where((a) => a.status == AppointmentStatus.pending ||
-              a.status == AppointmentStatus.upcoming)
+          .where((a) => AppointmentUtils.isUpcoming(a))
           .toList();
     } else {
       filtered = appointments
@@ -58,29 +67,17 @@ class _HistoryScreenState extends State<HistoryScreen>
 
     // Ordenar por fecha y hora (más próximas primero)
     filtered.sort((a, b) {
-      // Combinar fecha y hora para comparar
-      final dateTimeA = _getAppointmentDateTime(a);
-      final dateTimeB = _getAppointmentDateTime(b);
+      final dateTimeA = AppointmentUtils.parseAppointmentDateTime(a);
+      final dateTimeB = AppointmentUtils.parseAppointmentDateTime(b);
       return dateTimeA.compareTo(dateTimeB);
     });
 
+    // Guardar en caché
+    _cachedFiltered = filtered;
+    _cachedTabIndex = tabIndex;
+    _cachedAppointmentsLength = appointments.length;
+
     return filtered;
-  }
-
-  DateTime _getAppointmentDateTime(AppointmentEntity appointment) {
-    // Parsear la hora (formato "HH:mm")
-    final timeParts = appointment.time.split(':');
-    final hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
-
-    // Combinar fecha y hora
-    return DateTime(
-      appointment.date.year,
-      appointment.date.month,
-      appointment.date.day,
-      hour,
-      minute,
-    );
   }
 
   UserEntity? _getCurrentUser() {
@@ -102,136 +99,29 @@ class _HistoryScreenState extends State<HistoryScreen>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Citas',
-                      style: TextStyle(
-                        color: AppColors.primaryGold,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isBarber
-                          ? 'Tus citas programadas y completadas'
-                          : 'Tus citas pasadas y futuras',
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    BlocBuilder<AppointmentCubit, AppointmentState>(
-                      builder: (context, state) {
-                        if (state is AppointmentLoaded) {
-                          final all = state.appointments;
-                          final upcoming = all
-                              .where((a) =>
-                                  a.status == AppointmentStatus.pending ||
-                                  a.status == AppointmentStatus.upcoming)
-                              .toList();
-                          return Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGold
-                                        .withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: AppColors.borderGold,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '${all.length} Total',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGold,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primaryGold
-                                        .withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: AppColors.borderGold,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    '${upcoming.length} Próximas',
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      color: AppColors.primaryGold,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCard,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.borderGold),
-                ),
-                child: TabBar(
-                  controller: _tabController,
-                  indicatorColor: AppColors.primaryGold,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  labelColor: AppColors.textDark,
-                  unselectedLabelColor: AppColors.textSecondary,
-                  indicator: BoxDecoration(
-                    color: AppColors.primaryGold,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  tabs: const [
-                    Tab(text: 'Todas'),
-                    Tab(text: 'Próximas'),
-                    Tab(text: 'Completadas'),
-                  ],
-                  onTap: (index) {
-                    setState(() {});
-                  },
-                ),
+              AppointmentHeaderWidget(isBarber: isBarber),
+              AppointmentTabsWidget(
+                tabController: _tabController,
+                onTabChanged: () {
+                  // Limpiar caché al cambiar de tab
+                  _cachedFiltered = null;
+                  _cachedTabIndex = null;
+                  _cachedAppointmentsLength = null;
+                  setState(() {});
+                },
               ),
               Expanded(
                 child: BlocBuilder<AppointmentCubit, AppointmentState>(
+                  buildWhen: (previous, current) => previous != current,
                   builder: (context, state) {
                     if (state is AppointmentLoading) {
-                      return const LoadingWidget();
+                      return _buildSkeletonList();
                     }
 
                     if (state is AppointmentError) {
@@ -244,11 +134,18 @@ class _HistoryScreenState extends State<HistoryScreen>
                     }
 
                     if (state is AppointmentLoaded) {
+                      // Limpiar caché cuando se cargan nuevas citas
+                      if (_cachedAppointmentsLength !=
+                          state.appointments.length) {
+                        _cachedFiltered = null;
+                        _cachedTabIndex = null;
+                        _cachedAppointmentsLength = null;
+                      }
                       final filtered = _filterAppointments(
                         state.appointments,
                         _tabController.index,
                       );
-                      return _buildAppointmentsList(filtered, isBarber);
+                      return _buildAppointmentsList(filtered, isBarber, user);
                     }
 
                     return const SizedBox.shrink();
@@ -265,27 +162,13 @@ class _HistoryScreenState extends State<HistoryScreen>
   Widget _buildAppointmentsList(
     List<AppointmentEntity> appointments,
     bool isBarber,
+    UserEntity? user,
   ) {
     if (appointments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _getEmptyIcon(),
-              size: 64,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _getEmptyMessage(),
-              style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
-            ),
-          ],
-        ),
+      return AppointmentEmptyStateWidget(
+        icon: _getEmptyIcon(),
+        message: _getEmptyMessage(),
+        submessage: _getEmptySubmessage(),
       );
     }
 
@@ -298,186 +181,41 @@ class _HistoryScreenState extends State<HistoryScreen>
         padding: const EdgeInsets.all(16),
         itemCount: appointments.length,
         itemBuilder: (context, index) {
-          return _buildAppointmentCard(appointments[index], isBarber);
+          return AppointmentCard(
+                appointment: appointments[index],
+                isBarber: isBarber,
+                currentUser: user,
+              )
+              .animate()
+              .fadeIn(
+                duration: const Duration(milliseconds: 300),
+                delay: Duration(milliseconds: index * 50),
+              )
+              .slideY(
+                begin: 0.1,
+                end: 0,
+                duration: const Duration(milliseconds: 300),
+                delay: Duration(milliseconds: index * 50),
+              );
         },
+        addAutomaticKeepAlives: false,
+        addRepaintBoundaries: true,
+        addSemanticIndexes: false,
       ),
     );
   }
 
-  Widget _buildAppointmentCard(
-    AppointmentEntity appointment,
-    bool isBarber,
-  ) {
-    final statusConfig = _getStatusConfig(appointment.status);
-    final dateFormat = DateFormat('EEEE, d MMMM yyyy', 'es_ES');
-
-    String? avatarUrl;
-    String? avatarSeed;
-    String name;
-    String? specialtyOrPhone;
-
-    if (isBarber) {
-      name = appointment.client?.name ?? 'Cliente desconocido';
-      avatarUrl = appointment.client?.avatar;
-      avatarSeed = appointment.client?.avatarSeed;
-      specialtyOrPhone = appointment.client?.phone;
-    } else {
-      name = appointment.barber?.name ?? 'Barbero desconocido';
-      avatarUrl = appointment.barber?.image;
-      avatarSeed = appointment.barber?.avatarSeed;
-      specialtyOrPhone = appointment.barber?.specialty;
-    }
-
-    return AppCard(
+  Widget _buildSkeletonList() {
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.only(bottom: 16),
-      onTap: () {
-        context.push('/appointment/${appointment.id}');
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return const AppointmentCardSkeleton();
       },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AppAvatar(
-            imageUrl: avatarUrl,
-            name: name,
-            avatarSeed: avatarSeed,
-            size: 64,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    AppBadge(
-                      text: statusConfig['label'] as String,
-                      type: statusConfig['badgeType'] as BadgeType,
-                    ),
-                  ],
-                ),
-                if (specialtyOrPhone != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    specialtyOrPhone,
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.calendar_today,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        dateFormat.format(appointment.date),
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      appointment.time,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                if (appointment.paymentMethod != null) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.payment,
-                        size: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _getPaymentMethodLabel(appointment.paymentMethod!),
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+      addAutomaticKeepAlives: false,
+      addRepaintBoundaries: true,
+      addSemanticIndexes: false,
     );
-  }
-
-  String _getPaymentMethodLabel(String method) {
-    switch (method.toLowerCase()) {
-      case 'cash':
-        return 'Efectivo';
-      case 'card':
-        return 'Tarjeta';
-      case 'transfer':
-        return 'Transferencia';
-      default:
-        return method;
-    }
-  }
-
-  Map<String, dynamic> _getStatusConfig(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.completed:
-        return {
-          'label': 'Completada',
-          'badgeType': BadgeType.success,
-          'icon': Icons.check_circle,
-        };
-      case AppointmentStatus.upcoming:
-      case AppointmentStatus.pending:
-        return {
-          'label': status == AppointmentStatus.pending ? 'Pendiente' : 'Próxima',
-          'badgeType': BadgeType.outline,
-          'icon': Icons.access_time,
-        };
-      case AppointmentStatus.cancelled:
-        return {
-          'label': 'Cancelada',
-          'badgeType': BadgeType.error,
-          'icon': Icons.cancel,
-        };
-    }
   }
 
   IconData _getEmptyIcon() {
@@ -491,6 +229,14 @@ class _HistoryScreenState extends State<HistoryScreen>
     if (_tabController.index == 1) return 'No tienes citas próximas';
     return 'No tienes citas completadas';
   }
+
+  String _getEmptySubmessage() {
+    if (_tabController.index == 0) {
+      return 'Cuando reserves una cita, aparecerá aquí';
+    }
+    if (_tabController.index == 1) {
+      return 'Tus próximas citas aparecerán aquí cuando las reserves';
+    }
+    return 'Las citas que completes aparecerán aquí';
+  }
 }
-
-

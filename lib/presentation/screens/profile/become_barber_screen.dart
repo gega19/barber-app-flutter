@@ -34,9 +34,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
   final _formKeyStep1 = GlobalKey<FormState>();
   final _formKeyStep2 = GlobalKey<FormState>();
   final _formKeyStep3 = GlobalKey<FormState>();
-  
+
   int _currentStep = 1;
-  
+
   // Step 1 fields
   SpecialtyModel? _selectedSpecialty;
   final _experienceController = TextEditingController();
@@ -97,8 +97,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
         _specialtiesError = null;
       });
 
-      final specialties = await sl<SpecialtyRemoteDataSource>().getSpecialties();
-      
+      final specialties = await sl<SpecialtyRemoteDataSource>()
+          .getSpecialties();
+
       setState(() {
         _specialties = specialties;
         _loadingSpecialties = false;
@@ -119,7 +120,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
       });
 
       final workplaces = await sl<WorkplaceRemoteDataSource>().getWorkplaces();
-      
+
       setState(() {
         _workplaces = workplaces;
         _loadingWorkplaces = false;
@@ -160,7 +161,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
     if (experienceYears == null || experienceYears < 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Por favor ingresa un número válido de años de experiencia'),
+          content: Text(
+            'Por favor ingresa un número válido de años de experiencia',
+          ),
           backgroundColor: AppColors.error,
         ),
       );
@@ -188,7 +191,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
 
       // Update user in cubit by reloading from cache
       await authCubit.init();
-      
+
       setState(() {
         _barberId = barberId;
         _currentStep = 2;
@@ -444,10 +447,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: SafeArea(
@@ -458,8 +458,8 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                 child: _currentStep == 1
                     ? _buildStep1()
                     : _currentStep == 2
-                        ? _buildStep2()
-                        : _buildStep3(),
+                    ? _buildStep2()
+                    : _buildStep3(),
               ),
               _buildNavigationButtons(),
             ],
@@ -485,30 +485,30 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
               ),
             ),
           ),
-                        const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _currentStep >= 2
-                        ? AppColors.primaryGold
-                        : AppColors.borderGold,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: _currentStep >= 2
+                    ? AppColors.primaryGold
+                    : AppColors.borderGold,
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _currentStep >= 3
-                        ? AppColors.primaryGold
-                        : AppColors.borderGold,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: _currentStep >= 3
+                    ? AppColors.primaryGold
+                    : AppColors.borderGold,
+                borderRadius: BorderRadius.circular(2),
               ),
+            ),
+          ),
         ],
       ),
     );
@@ -517,9 +517,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
   Widget _buildStep1() {
     if (_loadingSpecialties) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryGold,
-        ),
+        child: CircularProgressIndicator(color: AppColors.primaryGold),
       );
     }
 
@@ -528,18 +526,11 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppColors.error,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             const Text(
               'Error al cargar especialidades',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
             ),
             const SizedBox(height: 16),
             AppButton(
@@ -570,10 +561,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
             const SizedBox(height: 8),
             const Text(
               'Completa la información básica de tu perfil como barbero',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 32),
             AppDropdown<SpecialtyModel>(
@@ -639,9 +627,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
   Widget _buildStep2() {
     if (_loadingWorkplaces) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: AppColors.primaryGold,
-        ),
+        child: CircularProgressIndicator(color: AppColors.primaryGold),
       );
     }
 
@@ -663,10 +649,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
             const SizedBox(height: 8),
             const Text(
               'Configura tu lugar de trabajo y los servicios que ofreces',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 32),
             AppDropdown<WorkplaceModel>(
@@ -843,10 +826,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: AppColors.error,
-                        ),
+                        icon: const Icon(Icons.delete, color: AppColors.error),
                         onPressed: () => _removeService(index),
                       ),
                     ],
@@ -879,10 +859,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
             const SizedBox(height: 8),
             const Text(
               'Comparte fotos, videos y gifs de tu trabajo',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 32),
             Row(
@@ -895,7 +872,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                         context: context,
                         backgroundColor: AppColors.backgroundCardDark,
                         shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
                         ),
                         builder: (context) => Container(
                           padding: const EdgeInsets.all(24),
@@ -903,16 +882,32 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ListTile(
-                                leading: const Icon(Icons.photo_library, color: AppColors.primaryGold),
-                                title: const Text('Seleccionar Imagen', style: TextStyle(color: AppColors.textPrimary)),
+                                leading: const Icon(
+                                  Icons.photo_library,
+                                  color: AppColors.primaryGold,
+                                ),
+                                title: const Text(
+                                  'Seleccionar Imagen',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                                 onTap: () {
                                   Navigator.pop(context);
                                   _pickImage(ImageSource.gallery);
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.video_library, color: AppColors.primaryGold),
-                                title: const Text('Seleccionar Video', style: TextStyle(color: AppColors.textPrimary)),
+                                leading: const Icon(
+                                  Icons.video_library,
+                                  color: AppColors.primaryGold,
+                                ),
+                                title: const Text(
+                                  'Seleccionar Video',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                                 onTap: () {
                                   Navigator.pop(context);
                                   _pickVideo(ImageSource.gallery);
@@ -935,7 +930,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                         context: context,
                         backgroundColor: AppColors.backgroundCardDark,
                         shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
                         ),
                         builder: (context) => Container(
                           padding: const EdgeInsets.all(24),
@@ -943,16 +940,32 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               ListTile(
-                                leading: const Icon(Icons.camera_alt, color: AppColors.primaryGold),
-                                title: const Text('Tomar Foto', style: TextStyle(color: AppColors.textPrimary)),
+                                leading: const Icon(
+                                  Icons.camera_alt,
+                                  color: AppColors.primaryGold,
+                                ),
+                                title: const Text(
+                                  'Tomar Foto',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                                 onTap: () {
                                   Navigator.pop(context);
                                   _pickImage(ImageSource.camera);
                                 },
                               ),
                               ListTile(
-                                leading: const Icon(Icons.videocam, color: AppColors.primaryGold),
-                                title: const Text('Grabar Video', style: TextStyle(color: AppColors.textPrimary)),
+                                leading: const Icon(
+                                  Icons.videocam,
+                                  color: AppColors.primaryGold,
+                                ),
+                                title: const Text(
+                                  'Grabar Video',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
                                 onTap: () {
                                   Navigator.pop(context);
                                   _pickVideo(ImageSource.camera);
@@ -971,7 +984,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
             if (_selectedFile != null) ...[
               const SizedBox(height: 24),
               Container(
-                height: 200,
+                height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: AppColors.backgroundCardDark,
@@ -981,14 +994,43 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _selectedMediaType == 'IMAGE'
-                      ? Image.file(
-                          _selectedFile!,
-                          fit: BoxFit.cover,
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.file(
+                              _selectedFile!,
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: AppColors.backgroundCardDark,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: AppColors.textSecondary,
+                                      size: 48,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         )
-                      : Icon(
-                          Icons.video_library,
-                          size: 64,
-                          color: AppColors.textSecondary,
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Container(
+                              color: AppColors.backgroundCardDark,
+                              child: const Center(
+                                child: Icon(
+                                  Icons.video_library,
+                                  size: 64,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                 ),
               ),
@@ -999,9 +1041,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                   onPressed: _uploadingFile ? null : _uploadFile,
                 ),
             ],
-                                     if (_selectedFileUrl != null) ...[
-              const SizedBox(height: 16),
-            ],
+            if (_selectedFileUrl != null) ...[const SizedBox(height: 16)],
             const SizedBox(height: 16),
             AppTextField(
               controller: _mediaCaptionController,
@@ -1046,8 +1086,8 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                               media['type'] == 'IMAGE'
                                   ? 'Imagen'
                                   : media['type'] == 'VIDEO'
-                                      ? 'Video'
-                                      : 'GIF',
+                                  ? 'Video'
+                                  : 'GIF',
                               style: const TextStyle(
                                 color: AppColors.textPrimary,
                                 fontSize: 16,
@@ -1057,35 +1097,67 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                             const SizedBox(height: 4),
                             if (media['type'] == 'IMAGE')
                               Container(
-                                height: 60,
-                                width: 60,
+                                height: 80,
+                                width: 80,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.borderGold),
+                                  border: Border.all(
+                                    color: AppColors.borderGold,
+                                  ),
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8),
-                                  child: CachedNetworkImage(
-                                    imageUrl: media['url'],
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => const Center(
-                                      child: CircularProgressIndicator(color: AppColors.primaryGold),
-                                    ),
-                                    errorWidget: (context, url, error) => const Icon(
-                                      Icons.error,
-                                      color: AppColors.error,
-                                    ),
-                                  ),
+                                  child: media['url'] != null
+                                      ? CachedNetworkImage(
+                                          imageUrl: media['url'].toString(),
+                                          fit: BoxFit.cover,
+                                          width: 80,
+                                          height: 80,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                                color: AppColors
+                                                    .backgroundCardDark,
+                                                child: const Center(
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        color: AppColors
+                                                            .primaryGold,
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              Container(
+                                                color: AppColors
+                                                    .backgroundCardDark,
+                                                child: const Icon(
+                                                  Icons.broken_image,
+                                                  color:
+                                                      AppColors.textSecondary,
+                                                  size: 32,
+                                                ),
+                                              ),
+                                        )
+                                      : Container(
+                                          color: AppColors.backgroundCardDark,
+                                          child: const Icon(
+                                            Icons.image,
+                                            color: AppColors.textSecondary,
+                                            size: 32,
+                                          ),
+                                        ),
                                 ),
                               )
                             else
                               Container(
-                                height: 60,
-                                width: 60,
+                                height: 80,
+                                width: 80,
                                 decoration: BoxDecoration(
                                   color: AppColors.backgroundCardDark,
                                   borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: AppColors.borderGold),
+                                  border: Border.all(
+                                    color: AppColors.borderGold,
+                                  ),
                                 ),
                                 child: const Icon(
                                   Icons.play_circle_filled,
@@ -1107,10 +1179,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: AppColors.error,
-                        ),
+                        icon: const Icon(Icons.delete, color: AppColors.error),
                         onPressed: () => _removeMedia(index),
                       ),
                     ],
@@ -1164,7 +1233,7 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
             backgroundColor: AppColors.success,
           ),
         );
-        
+
         // Navigate back to profile - use go instead of pop to ensure we go to profile
         context.go('/home');
       }
@@ -1204,13 +1273,13 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
               text: _currentStep == 1
                   ? 'Siguiente'
                   : _currentStep == 2
-                      ? 'Siguiente'
-                      : 'Completar',
+                  ? 'Siguiente'
+                  : 'Completar',
               onPressed: _currentStep == 1
                   ? _handleNextStep1
                   : _currentStep == 2
-                      ? _handleSubmitStep2
-                      : _handleSubmitStep3,
+                  ? _handleSubmitStep2
+                  : _handleSubmitStep3,
             ),
           ),
         ],
