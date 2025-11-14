@@ -1,1 +1,0 @@
- /Users/macbook/Desktop/projects/barber-application/barber-app-flutter/.dart_tool/flutter_build/6e93082d9d1848011acb5bfa89d60e89/dart_build_result.json: 
