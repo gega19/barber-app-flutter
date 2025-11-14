@@ -37,6 +37,7 @@ class WorkplaceCardWidget extends StatelessWidget {
                     child: CachedNetworkImage(
                       imageUrl: AppConstants.buildImageUrl(workplace.image),
                       fit: BoxFit.cover,
+                      alignment: Alignment.center,
                       width: 64,
                       height: 64,
                       placeholder: (context, url) => Container(

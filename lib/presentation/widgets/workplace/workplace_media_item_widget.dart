@@ -48,14 +48,11 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
                     : '${AppConstants.baseUrl}${media.thumbnail}')
               : 'https://via.placeholder.com/300',
           fit: BoxFit.cover,
-          memCacheWidth: 400,
-          memCacheHeight: 400,
+          alignment: Alignment.center,
           maxWidthDiskCache: 800,
           maxHeightDiskCache: 800,
           placeholder: (context, url) => const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primaryGold,
-            ),
+            child: CircularProgressIndicator(color: AppColors.primaryGold),
           ),
           errorWidget: (context, url, error) => Container(
             color: AppColors.backgroundCardDark,
@@ -67,11 +64,7 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
           ),
         ),
         const Center(
-          child: Icon(
-            Icons.play_circle_filled,
-            color: Colors.white,
-            size: 48,
-          ),
+          child: Icon(Icons.play_circle_filled, color: Colors.white, size: 48),
         ),
         if (media.caption != null && media.caption!.isNotEmpty)
           Positioned(
@@ -92,10 +85,7 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
               ),
               child: Text(
                 media.caption!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -112,14 +102,11 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
         CachedNetworkImage(
           imageUrl: AppConstants.buildImageUrl(media.url),
           fit: BoxFit.cover,
-          memCacheWidth: 400,
-          memCacheHeight: 400,
+          alignment: Alignment.center,
           maxWidthDiskCache: 800,
           maxHeightDiskCache: 800,
           placeholder: (context, url) => const Center(
-            child: CircularProgressIndicator(
-              color: AppColors.primaryGold,
-            ),
+            child: CircularProgressIndicator(color: AppColors.primaryGold),
           ),
           errorWidget: (context, url, error) =>
               const Icon(Icons.error, color: AppColors.error),
@@ -143,10 +130,7 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
               ),
               child: Text(
                 media.caption!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -156,4 +140,3 @@ class WorkplaceMediaItemWidget extends StatelessWidget {
     );
   }
 }
-

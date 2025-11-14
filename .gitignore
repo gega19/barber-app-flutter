@@ -41,23 +41,42 @@ uploads/
 backend/uploads/
 backoffice/uploads/
 
-# Flutter
-barber_app_flutter/.dart_tool/
-barber_app_flutter/.flutter-plugins
-barber_app_flutter/.flutter-plugins-dependencies
-barber_app_flutter/.packages
-barber_app_flutter/.pub-cache/
-barber_app_flutter/.pub/
-barber_app_flutter/build/
-barber_app_flutter/.flutter-plugins-dependencies
-barber_app_flutter/ios/Pods/
-barber_app_flutter/ios/.symlinks/
-barber_app_flutter/ios/Flutter/Flutter.framework
-barber_app_flutter/ios/Flutter/Flutter.podspec
-barber_app_flutter/android/.gradle/
-barber_app_flutter/android/app/debug/
-barber_app_flutter/android/app/profile/
-barber_app_flutter/android/app/release/
+# Flutter/Dart/Pub related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+*.ipr
+*.iws
+
+# iOS related
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral
+ios/Flutter/app.flx
+ios/Flutter/app.zip
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Android related
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+android/app/debug/
+android/app/profile/
+android/app/release/
 
 # Prisma
 backend/prisma/dev.db

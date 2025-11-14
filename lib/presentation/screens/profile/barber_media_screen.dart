@@ -24,7 +24,8 @@ class BarberMediaScreen extends StatefulWidget {
 }
 
 class _BarberMediaScreenState extends State<BarberMediaScreen> {
-  final BarberMediaRemoteDataSource _mediaDataSource = sl<BarberMediaRemoteDataSource>();
+  final BarberMediaRemoteDataSource _mediaDataSource =
+      sl<BarberMediaRemoteDataSource>();
   final UploadRemoteDataSource _uploadDataSource = sl<UploadRemoteDataSource>();
   final ImagePicker _imagePicker = ImagePicker();
   List<BarberMediaModel> _media = [];
@@ -50,9 +51,9 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
       if (response.statusCode == 200) {
         final data = response.data['data'] as List;
         final userEmail = currentState.user.email;
-        final matchingBarbers = data.where(
-          (b) => b['email'] == userEmail,
-        ).toList();
+        final matchingBarbers = data
+            .where((b) => b['email'] == userEmail)
+            .toList();
 
         if (matchingBarbers.isNotEmpty && mounted) {
           setState(() {
@@ -167,11 +168,7 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
       final fileUrl = await _uploadDataSource.uploadFile(file);
 
       // Create media entry
-      await _mediaDataSource.createMedia(
-        _barberId!,
-        type: type,
-        url: fileUrl,
-      );
+      await _mediaDataSource.createMedia(_barberId!, type: type, url: fileUrl);
 
       // Reload media list
       await _loadMedia();
@@ -219,9 +216,18 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             ),
             const SizedBox(height: 24),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primaryGold),
-              title: const Text('Galería', style: TextStyle(color: AppColors.textPrimary)),
-              subtitle: const Text('Seleccionar imagen o video', style: TextStyle(color: AppColors.textSecondary)),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primaryGold,
+              ),
+              title: const Text(
+                'Galería',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+              subtitle: const Text(
+                'Seleccionar imagen o video',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _showMediaSourceSelector();
@@ -229,9 +235,18 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             ),
             Divider(color: AppColors.borderGold),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primaryGold),
-              title: const Text('Cámara', style: TextStyle(color: AppColors.textPrimary)),
-              subtitle: const Text('Tomar foto o grabar video', style: TextStyle(color: AppColors.textSecondary)),
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.primaryGold,
+              ),
+              title: const Text(
+                'Cámara',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
+              subtitle: const Text(
+                'Tomar foto o grabar video',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _showCameraOptions();
@@ -267,8 +282,14 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             ),
             const SizedBox(height: 24),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: AppColors.primaryGold),
-              title: const Text('Imagen', style: TextStyle(color: AppColors.textPrimary)),
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primaryGold,
+              ),
+              title: const Text(
+                'Imagen',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -276,8 +297,14 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             ),
             Divider(color: AppColors.borderGold),
             ListTile(
-              leading: const Icon(Icons.video_library, color: AppColors.primaryGold),
-              title: const Text('Video', style: TextStyle(color: AppColors.textPrimary)),
+              leading: const Icon(
+                Icons.video_library,
+                color: AppColors.primaryGold,
+              ),
+              title: const Text(
+                'Video',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickVideo(ImageSource.gallery);
@@ -313,8 +340,14 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             ),
             const SizedBox(height: 24),
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: AppColors.primaryGold),
-              title: const Text('Tomar Foto', style: TextStyle(color: AppColors.textPrimary)),
+              leading: const Icon(
+                Icons.camera_alt,
+                color: AppColors.primaryGold,
+              ),
+              title: const Text(
+                'Tomar Foto',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
@@ -323,7 +356,10 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
             Divider(color: AppColors.borderGold),
             ListTile(
               leading: const Icon(Icons.videocam, color: AppColors.primaryGold),
-              title: const Text('Grabar Video', style: TextStyle(color: AppColors.textPrimary)),
+              title: const Text(
+                'Grabar Video',
+                style: TextStyle(color: AppColors.textPrimary),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 _pickVideo(ImageSource.camera);
@@ -395,7 +431,7 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
 
   Future<void> _showEditCaptionModal(BarberMediaModel media) async {
     final controller = TextEditingController(text: media.caption ?? '');
-    
+
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -444,13 +480,13 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
               text: 'Guardar',
               onPressed: () async {
                 final caption = controller.text.trim();
-                
+
                 try {
                   await _mediaDataSource.updateMedia(
                     media.id,
                     caption: caption.isEmpty ? null : caption,
                   );
-                  
+
                   if (mounted) {
                     Navigator.pop(context);
                     await _loadMedia();
@@ -506,72 +542,67 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryGold,
-                ),
+                child: CircularProgressIndicator(color: AppColors.primaryGold),
               )
             : _barberId == null
-                ? const Center(
-                    child: Text(
-                      'No se pudo cargar la información del barbero',
-                      style: TextStyle(color: AppColors.textSecondary),
+            ? const Center(
+                child: Text(
+                  'No se pudo cargar la información del barbero',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              )
+            : _media.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.photo_library_outlined,
+                      size: 64,
+                      color: AppColors.textSecondary.withValues(alpha: 0.5),
                     ),
-                  )
-                : _media.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.photo_library_outlined,
-                              size: 64,
-                              color: AppColors.textSecondary.withValues(alpha: 0.5),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'No tienes multimedia registrada',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Agrega fotos y videos de tu trabajo',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: _loadMedia,
-                        color: AppColors.primaryGold,
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 0.8,
-                          ),
-                          itemCount: _media.length,
-                          itemBuilder: (context, index) {
-                            final media = _media[index];
-                            return _buildMediaCard(media);
-                          },
-                        ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No tienes multimedia registrada',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Agrega fotos y videos de tu trabajo',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : RefreshIndicator(
+                onRefresh: _loadMedia,
+                color: AppColors.primaryGold,
+                child: GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 0.8,
+                  ),
+                  itemCount: _media.length,
+                  itemBuilder: (context, index) {
+                    final media = _media[index];
+                    return _buildMediaCard(media);
+                  },
+                ),
+              ),
       ),
       floatingActionButton: _barberId != null
           ? FloatingActionButton.extended(
@@ -616,6 +647,7 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                     CachedNetworkImage(
                       imageUrl: AppConstants.buildImageUrl(media.url),
                       fit: BoxFit.cover,
+                      alignment: Alignment.center,
                       placeholder: (context, url) => Container(
                         color: AppColors.backgroundCardDark,
                         child: const Center(
@@ -638,8 +670,11 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                       fit: StackFit.expand,
                       children: [
                         CachedNetworkImage(
-                          imageUrl: AppConstants.buildImageUrl(media.thumbnail ?? media.url),
+                          imageUrl: AppConstants.buildImageUrl(
+                            media.thumbnail ?? media.url,
+                          ),
                           fit: BoxFit.cover,
+                          alignment: Alignment.center,
                           placeholder: (context, url) => Container(
                             color: AppColors.backgroundCardDark,
                             child: const Center(
@@ -657,16 +692,16 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                             ),
                           ),
                         ),
-                                                 Container(
-                           color: Colors.black.withValues(alpha: 0.3),
-                           child: const Center(
-                             child: Icon(
-                               Icons.play_circle_filled,
-                               color: Colors.white,
-                               size: 48,
-                             ),
-                           ),
-                         ),
+                        Container(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          child: const Center(
+                            child: Icon(
+                              Icons.play_circle_filled,
+                              color: Colors.white,
+                              size: 48,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   Positioned(
@@ -698,7 +733,11 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                           value: 'edit',
                           child: Row(
                             children: [
-                              Icon(Icons.edit, color: AppColors.textPrimary, size: 20),
+                              Icon(
+                                Icons.edit,
+                                color: AppColors.textPrimary,
+                                size: 20,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'Editar',
@@ -711,7 +750,11 @@ class _BarberMediaScreenState extends State<BarberMediaScreen> {
                           value: 'delete',
                           child: Row(
                             children: [
-                              Icon(Icons.delete, color: AppColors.error, size: 20),
+                              Icon(
+                                Icons.delete,
+                                color: AppColors.error,
+                                size: 20,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'Eliminar',

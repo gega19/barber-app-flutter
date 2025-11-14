@@ -20,8 +20,11 @@ abstract class AuthRepository {
   /// Cierra sesión
   Future<Either<Failure, void>> logout();
 
-  /// Obtiene el usuario actual
+  /// Obtiene el usuario actual (desde almacenamiento local)
   Future<Either<Failure, UserEntity?>> getCurrentUser();
+
+  /// Obtiene el usuario actualizado desde el servidor
+  Future<Either<Failure, UserEntity>> refreshCurrentUser();
 
   /// Obtiene estadísticas del usuario
   Future<Either<Failure, Map<String, dynamic>>> getUserStats();

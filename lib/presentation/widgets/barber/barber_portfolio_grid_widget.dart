@@ -42,21 +42,21 @@ class BarberPortfolioGridWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.image_outlined,
-              size: 64,
-              color: AppColors.textSecondary.withValues(alpha: 0.5),
-            )
+                  Icons.image_outlined,
+                  size: 64,
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
+                )
                 .animate()
                 .fadeIn(duration: 500.ms)
                 .scale(delay: 200.ms, duration: 300.ms),
             const SizedBox(height: 16),
             Text(
-              'No hay portfolio disponible',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-              ),
-            )
+                  'No hay portfolio disponible',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 16,
+                  ),
+                )
                 .animate()
                 .fadeIn(duration: 500.ms, delay: 300.ms)
                 .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 300.ms),
@@ -80,34 +80,42 @@ class BarberPortfolioGridWidget extends StatelessWidget {
       itemBuilder: (context, index) {
         final media = portfolio[index];
         return RepaintBoundary(
-          key: ValueKey('portfolio_${media.id}'),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) => MediaViewerScreen(
-                    mediaList: portfolio,
-                    initialIndex: index,
+              key: ValueKey('portfolio_${media.id}'),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => MediaViewerScreen(
+                        mediaList: portfolio,
+                        initialIndex: index,
+                      ),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundCardDark,
+                      border: Border.all(color: AppColors.borderGold),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: _buildMediaContent(media),
                   ),
                 ),
-              );
-            },
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCardDark,
-                  border: Border.all(color: AppColors.borderGold),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: _buildMediaContent(media),
               ),
-            ),
-          ),
-        )
+            )
             .animate()
-            .fadeIn(duration: 300.ms, delay: Duration(milliseconds: index * 50))
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: Duration(milliseconds: index * 50));
+            .fadeIn(
+              duration: 300.ms,
+              delay: Duration(milliseconds: index * 50),
+            )
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: Duration(milliseconds: index * 50),
+            );
       },
     );
   }
@@ -123,19 +131,14 @@ class BarberPortfolioGridWidget extends StatelessWidget {
           CachedNetworkImage(
             imageUrl: AppConstants.buildImageUrl(media.url),
             fit: BoxFit.cover,
-            memCacheWidth: 400,
-            memCacheHeight: 400,
+            alignment: Alignment.center,
             maxWidthDiskCache: 800,
             maxHeightDiskCache: 800,
             placeholder: (context, url) => const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primaryGold,
-              ),
+              child: CircularProgressIndicator(color: AppColors.primaryGold),
             ),
-            errorWidget: (context, url, error) => const Icon(
-              Icons.error,
-              color: AppColors.error,
-            ),
+            errorWidget: (context, url, error) =>
+                const Icon(Icons.error, color: AppColors.error),
           ),
           if (media.caption != null && media.caption!.isNotEmpty)
             Positioned(
@@ -156,10 +159,7 @@ class BarberPortfolioGridWidget extends StatelessWidget {
                 ),
                 child: Text(
                   media.caption!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -178,18 +178,14 @@ class BarberPortfolioGridWidget extends StatelessWidget {
                   ? media.thumbnail!
                   : '${AppConstants.baseUrl}${media.thumbnail}',
               fit: BoxFit.cover,
-              memCacheWidth: 400,
-              memCacheHeight: 400,
+              alignment: Alignment.center,
               maxWidthDiskCache: 800,
               maxHeightDiskCache: 800,
-              placeholder: (context, url) => Container(
-                color: AppColors.backgroundCardDark,
-              ),
+              placeholder: (context, url) =>
+                  Container(color: AppColors.backgroundCardDark),
             )
           else
-            Container(
-              color: AppColors.backgroundCardDark,
-            ),
+            Container(color: AppColors.backgroundCardDark),
           Center(
             child: Container(
               padding: const EdgeInsets.all(12),
@@ -223,10 +219,7 @@ class BarberPortfolioGridWidget extends StatelessWidget {
                 ),
                 child: Text(
                   media.caption!,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -238,4 +231,3 @@ class BarberPortfolioGridWidget extends StatelessWidget {
     }
   }
 }
-

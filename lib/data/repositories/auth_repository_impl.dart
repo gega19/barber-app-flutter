@@ -108,6 +108,25 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  /// Obtiene el usuario actualizado desde el servidor
+  Future<Either<Failure, UserEntity>> refreshCurrentUser() async {
+    try {
+      // Obtener usuario del servidor
+      final userModel = await remoteDataSource.getCurrentUser();
+      
+      // Actualizar almacenamiento local con el usuario actualizado
+      await localStorage.saveUserData(userModelToJson(userModel));
+      
+      return Right(userModel);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   @override
   Future<Either<Failure, Map<String, dynamic>>> getUserStats() async {
     try {

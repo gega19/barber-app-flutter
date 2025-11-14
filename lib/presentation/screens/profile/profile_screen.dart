@@ -41,6 +41,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    // Actualizar perfil desde el servidor silenciosamente
+    final authCubit = context.read<AuthCubit>();
+    authCubit.refreshProfile();
+    
     // Load data in parallel
     Future.wait([
       _loadStats(),
@@ -51,9 +55,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Recargar cuando se regrese a esta pantalla (útil después de convertirse en barbero)
+    // Actualizar perfil desde el servidor cuando se regrese a esta pantalla
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
+        final authCubit = context.read<AuthCubit>();
+        authCubit.refreshProfile();
         _loadUserBarberId();
       }
     });

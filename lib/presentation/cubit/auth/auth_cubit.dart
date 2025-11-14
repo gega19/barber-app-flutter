@@ -11,7 +11,11 @@ import '../../../domain/usecases/auth/delete_account_usecase.dart';
 import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/injection/injection.dart';
+import '../../../data/datasources/remote/auth_remote_datasource.dart';
+import '../../../data/datasources/local/local_storage.dart';
 import 'dart:io';
+import 'dart:convert';
 
 part 'auth_state.dart';
 
@@ -41,18 +45,15 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> init() async {
     emit(AuthLoading());
     final result = await getCurrentUserUseCase();
-    result.fold(
-      (failure) => emit(AuthInitial()),
-      (user) async {
-        if (user != null) {
-          emit(AuthAuthenticated(user));
-          // Registrar token FCM si el usuario está autenticado
-          await _registerFcmToken();
-        } else {
-          emit(AuthInitial());
-        }
-      },
-    );
+    result.fold((failure) => emit(AuthInitial()), (user) async {
+      if (user != null) {
+        emit(AuthAuthenticated(user));
+        // Registrar token FCM si el usuario está autenticado
+        await _registerFcmToken();
+      } else {
+        emit(AuthInitial());
+      }
+    });
   }
 
   /// Registra el token FCM en el backend
@@ -61,13 +62,15 @@ class AuthCubit extends Cubit<AuthState> {
       final token = await notificationService.getToken();
       if (token != null) {
         final deviceType = Platform.isAndroid ? 'android' : 'ios';
-        print('📱 Registrando token FCM: ${token.substring(0, 20)}... (deviceType: $deviceType)');
-        
+        print(
+          '📱 Registrando token FCM: ${token.substring(0, 20)}... (deviceType: $deviceType)',
+        );
+
         final result = await fcmTokenRepository.registerToken(
           token: token,
           deviceType: deviceType,
         );
-        
+
         result.fold(
           (failure) {
             print('❌ Error al registrar token FCM: ${failure.message}');
@@ -85,22 +88,16 @@ class AuthCubit extends Cubit<AuthState> {
     }
   }
 
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     emit(AuthLoading());
-    
+
     final result = await loginUseCase(email: email, password: password);
-    
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) async {
-        emit(AuthAuthenticated(user));
-        // Registrar token FCM después de login exitoso
-        await _registerFcmToken();
-      },
-    );
+
+    result.fold((failure) => emit(AuthError(failure.message)), (user) async {
+      emit(AuthAuthenticated(user));
+      // Registrar token FCM después de login exitoso
+      await _registerFcmToken();
+    });
   }
 
   Future<void> register({
@@ -109,26 +106,23 @@ class AuthCubit extends Cubit<AuthState> {
     required String password,
   }) async {
     emit(AuthLoading());
-    
+
     final result = await registerUseCase(
       name: name,
       email: email,
       password: password,
     );
-    
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (user) async {
-        emit(AuthAuthenticated(user));
-        // Registrar token FCM después de registro exitoso
-        await _registerFcmToken();
-      },
-    );
+
+    result.fold((failure) => emit(AuthError(failure.message)), (user) async {
+      emit(AuthAuthenticated(user));
+      // Registrar token FCM después de registro exitoso
+      await _registerFcmToken();
+    });
   }
 
   Future<void> logout() async {
     emit(AuthLoading());
-    
+
     // Eliminar token FCM antes de hacer logout
     try {
       await fcmTokenRepository.deleteUserTokens();
@@ -137,7 +131,7 @@ class AuthCubit extends Cubit<AuthState> {
       // No emitir error, solo loggear
       print('Error deleting FCM token: $e');
     }
-    
+
     final result = await logoutUseCase();
     result.fold(
       (failure) => emit(AuthError(failure.message)),
@@ -156,9 +150,9 @@ class AuthCubit extends Cubit<AuthState> {
   }) async {
     final currentState = state;
     if (currentState is! AuthAuthenticated) return;
-    
+
     final currentUser = currentState.user;
-    
+
     final result = await updateProfileUseCase(
       name: name,
       phone: phone,
@@ -168,15 +162,12 @@ class AuthCubit extends Cubit<AuthState> {
       avatar: avatar,
       avatarSeed: avatarSeed,
     );
-    result.fold(
-      (failure) {
-        emit(AuthProfileUpdateError(failure.message, currentUser));
-      },
-      (user) => emit(AuthAuthenticated(user)),
-    );
+    result.fold((failure) {
+      emit(AuthProfileUpdateError(failure.message, currentUser));
+    }, (user) => emit(AuthAuthenticated(user)));
   }
 
-    Future<void> becomeBarber({
+  Future<void> becomeBarber({
     String? specialtyId,
     required String specialty,
     required int experienceYears,
@@ -184,32 +175,27 @@ class AuthCubit extends Cubit<AuthState> {
     double? latitude,
     double? longitude,
     String? image,
-    }) async {
-      final currentState = state;
-      if (currentState is! AuthAuthenticated) return;
-      
-      final currentUser = currentState.user;
-      
+  }) async {
+    final currentState = state;
+    if (currentState is! AuthAuthenticated) return;
+
+    final currentUser = currentState.user;
+
     final result = await becomeBarberUseCase(
-        specialtyId: specialtyId,
-        specialty: specialty,
-        experienceYears: experienceYears,
-        location: location,
-        latitude: latitude,
-        longitude: longitude,
-        image: image,
-      );
-    result.fold(
-      (failure) {
-        emit(AuthProfileUpdateError(failure.message, currentUser));
-      },
-      (user) => emit(AuthAuthenticated(user)),
+      specialtyId: specialtyId,
+      specialty: specialty,
+      experienceYears: experienceYears,
+      location: location,
+      latitude: latitude,
+      longitude: longitude,
+      image: image,
     );
+    result.fold((failure) {
+      emit(AuthProfileUpdateError(failure.message, currentUser));
+    }, (user) => emit(AuthAuthenticated(user)));
   }
 
-  Future<bool> deleteAccount({
-    required String password,
-  }) async {
+  Future<bool> deleteAccount({required String password}) async {
     final currentState = state;
     UserEntity? currentUser;
 
@@ -243,6 +229,31 @@ class AuthCubit extends Cubit<AuthState> {
 
     return success;
   }
+
+  /// Actualiza el perfil del usuario desde el servidor (silenciosamente)
+  /// Este método obtiene la información más reciente del usuario sin mostrar errores
+  Future<void> refreshProfile() async {
+    final currentState = state;
+    if (currentState is! AuthAuthenticated) return;
+
+    try {
+      // Obtener usuario actualizado del servidor directamente
+      final authRemoteDataSource = sl<AuthRemoteDataSource>();
+      final localStorage = sl<LocalStorage>();
+
+      final userModel = await authRemoteDataSource.getCurrentUser();
+
+      // Actualizar almacenamiento local con el usuario actualizado
+      await localStorage.saveUserData(jsonEncode(userModel.toJson()));
+
+      // Actualizar el estado con el usuario actualizado (UserModel extiende UserEntity)
+      emit(AuthAuthenticated(userModel));
+    } catch (e) {
+      // Silenciosamente fallar - no mostrar errores al usuario
+      // Solo loggear en desarrollo
+      if (const bool.fromEnvironment('dart.vm.product') == false) {
+        print('⚠️ Error al actualizar perfil silenciosamente: $e');
+      }
+    }
+  }
 }
-
-

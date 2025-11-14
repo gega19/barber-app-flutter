@@ -40,6 +40,7 @@ class AppAvatar extends StatelessWidget {
                 key: ValueKey('avatar_image_$imageUrl'), // Force rebuild when image changes
                 imageUrl: AppConstants.buildImageUrl(imageUrl!),
                 fit: BoxFit.cover,
+                alignment: Alignment.center,
                 memCacheWidth: size.toInt(),
                 memCacheHeight: size.toInt(),
                 maxWidthDiskCache: (size * 2).toInt(),
@@ -65,6 +66,7 @@ class AppAvatar extends StatelessWidget {
       cacheKey: 'avatar_$seed', // Unique cache key based on seed
       imageUrl: avatarUrl,
       fit: BoxFit.cover,
+      alignment: Alignment.center,
       memCacheWidth: size.toInt(),
       memCacheHeight: size.toInt(),
       maxWidthDiskCache: (size * 2).toInt(),

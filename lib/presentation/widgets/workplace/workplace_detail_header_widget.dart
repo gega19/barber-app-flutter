@@ -29,6 +29,7 @@ class WorkplaceDetailHeaderWidget extends StatelessWidget {
             child: CachedNetworkImage(
               imageUrl: WorkplaceUtils.getBannerUrl(workplace),
               fit: BoxFit.cover,
+              alignment: Alignment.center,
               placeholder: (context, url) => Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -146,6 +147,7 @@ class WorkplaceDetailHeaderWidget extends StatelessWidget {
                             width: 96,
                             height: 96,
                             fit: BoxFit.cover,
+                            alignment: Alignment.center,
                             memCacheWidth: 200,
                             memCacheHeight: 200,
                             maxWidthDiskCache: 400,
