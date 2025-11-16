@@ -14,11 +14,15 @@ import '../../widgets/barber/barber_location_card_widget.dart';
 import '../../widgets/barber/barber_experience_card_widget.dart';
 import '../../widgets/barber/barber_services_list_widget.dart';
 import '../../widgets/barber/barber_workplace_card_widget.dart';
+import '../../widgets/barber/barber_service_type_card_widget.dart';
 import '../../widgets/barber/barber_promotion_card_widget.dart';
 import '../../widgets/barber/barber_recent_reviews_widget.dart';
 import '../../widgets/barber/barber_portfolio_grid_widget.dart';
 import '../../widgets/barber/barber_info_tab_widget.dart';
+import '../../widgets/barber/barber_courses_list_widget.dart';
 import '../../../data/datasources/remote/service_remote_datasource.dart';
+import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
+import '../../../domain/entities/barber_course_entity.dart';
 import '../../../data/datasources/remote/barber_media_remote_datasource.dart';
 import '../../../data/datasources/remote/workplace_remote_datasource.dart';
 import '../../../data/models/service_model.dart';
@@ -44,6 +48,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
 
   List<ServiceModel> _services = [];
   List<BarberMediaModel> _portfolio = [];
+  List<BarberCourseEntity> _courses = [];
   WorkplaceModel? _workplace;
   String? _serviceType;
   bool _loadingDetails = true;
@@ -137,6 +142,16 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
         widget.barberId,
       );
 
+      // Load courses
+      List<BarberCourseEntity> courses = [];
+      try {
+        final coursesData = await sl<BarberCourseRemoteDataSource>()
+            .getBarberCourses(widget.barberId);
+        courses = coursesData;
+      } catch (e) {
+        // Ignore errors loading courses
+      }
+
       // Load barber details - we'll make a direct call to get workplace info
       // Since BarberModel doesn't include workplace data, we'll fetch it separately
       WorkplaceModel? workplace;
@@ -173,6 +188,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
       setState(() {
         _services = services;
         _portfolio = portfolio;
+        _courses = courses;
         _workplace = workplace;
         _serviceType = serviceType;
         _loadingDetails = false;
@@ -295,13 +311,25 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                               services: _services,
                               loading: _loadingDetails,
                             ),
-                            // Workplace & Service Type
-                            if (_workplace != null || _serviceType != null) ...[
+                            // Service Type
+                            if (_serviceType != null) ...[
                               const SizedBox(height: 24),
-                              BarberWorkplaceCardWidget(
-                                    workplace: _workplace,
+                              BarberServiceTypeCardWidget(
                                     serviceType: _serviceType,
                                   )
+                                  .animate()
+                                  .fadeIn(duration: 300.ms, delay: 200.ms)
+                                  .slideY(
+                                    begin: 0.1,
+                                    end: 0,
+                                    duration: 300.ms,
+                                    delay: 200.ms,
+                                  ),
+                            ],
+                            // Workplace
+                            if (_workplace != null) ...[
+                              const SizedBox(height: 24),
+                              BarberWorkplaceCardWidget(workplace: _workplace)
                                   .animate()
                                   .fadeIn(duration: 300.ms, delay: 200.ms)
                                   .slideY(
@@ -471,6 +499,25 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   duration: 300.ms,
                                   delay: 400.ms,
                                 ),
+                            // Courses Section (below tabs)
+                            if (_courses.isNotEmpty) ...[
+                              const SizedBox(height: 24),
+                              BarberCoursesListWidget(
+                                    courses: _courses,
+                                    loading: _loadingDetails,
+                                    maxItems: 2,
+                                    barberId: widget.barberId,
+                                    barberName: barber.name,
+                                  )
+                                  .animate()
+                                  .fadeIn(duration: 300.ms, delay: 500.ms)
+                                  .slideY(
+                                    begin: 0.1,
+                                    end: 0,
+                                    duration: 300.ms,
+                                    delay: 500.ms,
+                                  ),
+                            ],
                             const SizedBox(height: 24),
                           ],
                         ),

@@ -97,6 +97,19 @@ class ProfileBarberManagementCardWidget extends StatelessWidget {
                       .slideX(begin: -0.05, end: 0, duration: 300.ms, delay: 200.ms),
                   Divider(color: AppColors.borderGold),
                   ProfileSettingsRowWidget(
+                    key: const ValueKey('barber_courses'),
+                    icon: Icons.school,
+                    title: 'Mis Cursos',
+                    subtitle: 'Gestiona tus cursos y certificaciones',
+                    onTap: () {
+                      context.push('/barber-courses');
+                    },
+                  )
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 250.ms)
+                      .slideX(begin: -0.05, end: 0, duration: 300.ms, delay: 250.ms),
+                  Divider(color: AppColors.borderGold),
+                  ProfileSettingsRowWidget(
                     key: const ValueKey('barber_availability'),
                     icon: Icons.access_time,
                     title: 'Mi Horario',
@@ -106,8 +119,8 @@ class ProfileBarberManagementCardWidget extends StatelessWidget {
                     },
                   )
                       .animate()
-                      .fadeIn(duration: 300.ms, delay: 250.ms)
-                      .slideX(begin: -0.05, end: 0, duration: 300.ms, delay: 250.ms),
+                      .fadeIn(duration: 300.ms, delay: 300.ms)
+                      .slideX(begin: -0.05, end: 0, duration: 300.ms, delay: 300.ms),
                 ],
               ),
             ),

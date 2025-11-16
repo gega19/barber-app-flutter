@@ -37,7 +37,7 @@ class _MainScreenState extends State<MainScreen> {
         break;
       case 1: // Discover
         context.read<PromotionCubit>().loadPromotions();
-        context.read<WorkplaceCubit>().loadWorkplaces(limit: 3);
+        context.read<WorkplaceCubit>().loadWorkplaces();
         context.read<BarberCubit>().loadBarbers();
         break;
       case 2: // Citas
@@ -53,18 +53,10 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider<BarberCubit>(
-          create: (_) => sl(),
-        ),
-        BlocProvider<AppointmentCubit>(
-          create: (_) => sl(),
-        ),
-        BlocProvider<PromotionCubit>(
-          create: (_) => sl(),
-        ),
-        BlocProvider<WorkplaceCubit>(
-          create: (_) => sl(),
-        ),
+        BlocProvider<BarberCubit>(create: (_) => sl()),
+        BlocProvider<AppointmentCubit>(create: (_) => sl()),
+        BlocProvider<PromotionCubit>(create: (_) => sl()),
+        BlocProvider<WorkplaceCubit>(create: (_) => sl()),
       ],
       child: Builder(
         builder: (context) {
@@ -75,23 +67,20 @@ class _MainScreenState extends State<MainScreen> {
             }
           });
           return Scaffold(
-            body: IndexedStack(
-              index: _currentIndex,
-              children: _screens,
-            ),
+            body: IndexedStack(index: _currentIndex, children: _screens),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
                 color: AppColors.backgroundCard,
                 border: Border(
-                  top: BorderSide(
-                    color: AppColors.primaryGold,
-                    width: 2,
-                  ),
+                  top: BorderSide(color: AppColors.primaryGold, width: 2),
                 ),
               ),
               child: SafeArea(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -110,7 +99,12 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildNavItem(BuildContext context, IconData icon, String label, int index) {
+  Widget _buildNavItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    int index,
+  ) {
     final isActive = _currentIndex == index;
 
     return InkWell(
@@ -139,7 +133,9 @@ class _MainScreenState extends State<MainScreen> {
               ),
               child: Icon(
                 icon,
-                color: isActive ? AppColors.primaryGold : AppColors.textSecondary,
+                color: isActive
+                    ? AppColors.primaryGold
+                    : AppColors.textSecondary,
                 size: 20,
               ),
             ),
@@ -147,7 +143,9 @@ class _MainScreenState extends State<MainScreen> {
             Text(
               label,
               style: TextStyle(
-                color: isActive ? AppColors.primaryGold : AppColors.textSecondary,
+                color: isActive
+                    ? AppColors.primaryGold
+                    : AppColors.textSecondary,
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
@@ -168,4 +166,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-

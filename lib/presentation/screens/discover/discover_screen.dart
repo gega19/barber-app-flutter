@@ -7,7 +7,6 @@ import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/promotion/promotion_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
 import '../../widgets/common/error_widget.dart';
-import '../../widgets/common/app_button.dart' show AppButton, ButtonType;
 import '../../widgets/discover/trending_workplace_card.dart';
 import '../../widgets/discover/trending_workplace_skeleton.dart';
 import '../../widgets/discover/trending_barber_card.dart';
@@ -28,7 +27,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     super.initState();
     // Cargar todos los datos necesarios al iniciar
     context.read<PromotionCubit>().loadPromotions();
-    context.read<WorkplaceCubit>().loadWorkplaces(limit: 3);
+    context.read<WorkplaceCubit>().loadWorkplaces();
     context.read<BarberCubit>().loadBarbers();
   }
 
@@ -48,7 +47,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
             onRefresh: () async {
               await Future.wait([
                 context.read<PromotionCubit>().loadPromotions(),
-                context.read<WorkplaceCubit>().loadWorkplaces(limit: 3),
+                context.read<WorkplaceCubit>().loadWorkplaces(),
                 context.read<BarberCubit>().loadBarbers(),
               ]);
             },
@@ -103,7 +102,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     }
 
                     final trending = state.workplaces.take(3).toList();
-                    final hasMore = state.workplaces.length >= 5;
+                    final hasMore = state.workplaces.length > 3;
 
                     return SliverMainAxisGroup(
                       slivers: [
@@ -115,21 +114,46 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                               vertical: 8,
                             ),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(
-                                  Icons.store,
-                                  color: AppColors.primaryGold,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Barberías en Tendencia',
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.store,
+                                        color: AppColors.primaryGold,
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'Barberías en Tendencia',
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                if (hasMore)
+                                  IconButton(
+                                    onPressed: () {
+                                      context.push('/workplaces');
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_forward,
+                                      color: AppColors.primaryGold,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    tooltip: 'Ver más barberías',
+                                  ),
                               ],
                             ),
                           ),
@@ -160,23 +184,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             addSemanticIndexes: false,
                           ),
                         ),
-                        // Botón "Ver más" si hay 5+ items
-                        if (hasMore)
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: AppButton(
-                                text: 'Ver todas las barberías',
-                                onPressed: () {
-                                  context.push('/workplaces');
-                                },
-                                type: ButtonType.outline,
-                              ),
-                            ),
-                          ),
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                       ],
                     );
@@ -202,30 +209,58 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     }
 
                     final trending = state.barbers.take(3).toList();
-                    final hasMore = state.barbers.length >= 5;
+                    final hasMore = state.barbers.length > 3;
 
                     return SliverMainAxisGroup(
                       slivers: [
                         // Título de la sección
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
                             child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Icon(
-                                  Icons.trending_up,
-                                  color: AppColors.primaryGold,
-                                  size: 24,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Barberos en Tendencia',
-                                  style: TextStyle(
-                                    color: AppColors.textPrimary,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w600,
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.trending_up,
+                                        color: AppColors.primaryGold,
+                                        size: 24,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          'Barberos en Tendencia',
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                                if (hasMore)
+                                  IconButton(
+                                    onPressed: () {
+                                      context.push('/barbers');
+                                    },
+                                    icon: const Icon(
+                                      Icons.arrow_forward,
+                                      color: AppColors.primaryGold,
+                                      size: 20,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    tooltip: 'Ver más barberos',
+                                  ),
                               ],
                             ),
                           ),
@@ -257,23 +292,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             addSemanticIndexes: false,
                           ),
                         ),
-                        // Botón "Ver más" si hay 5+ items
-                        if (hasMore)
-                          SliverToBoxAdapter(
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: AppButton(
-                                text: 'Ver todos los barberos',
-                                onPressed: () {
-                                  context.push('/barbers');
-                                },
-                                type: ButtonType.outline,
-                              ),
-                            ),
-                          ),
                         const SliverToBoxAdapter(child: SizedBox(height: 24)),
                       ],
                     );
@@ -315,7 +333,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         );
                       }
 
-                      final hasMore = state.promotions.length >= 5;
+                      final trendingPromotions = state.promotions
+                          .take(3)
+                          .toList();
+                      final hasMore = state.promotions.length > 3;
 
                       return SliverMainAxisGroup(
                         slivers: [
@@ -324,23 +345,50 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             child: Padding(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
+                                vertical: 8,
                               ),
                               child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.local_offer,
-                                    color: AppColors.primaryGold,
-                                    size: 24,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Promociones Especiales',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.w600,
+                                  Expanded(
+                                    child: Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.local_offer,
+                                          color: AppColors.primaryGold,
+                                          size: 24,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Flexible(
+                                          child: Text(
+                                            'Promociones Especiales',
+                                            style: const TextStyle(
+                                              color: AppColors.textPrimary,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
+                                  if (hasMore)
+                                    IconButton(
+                                      onPressed: () {
+                                        context.push('/promotions');
+                                      },
+                                      icon: const Icon(
+                                        Icons.arrow_forward,
+                                        color: AppColors.primaryGold,
+                                        size: 20,
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      constraints: const BoxConstraints(),
+                                      tooltip: 'Ver más promociones',
+                                    ),
                                 ],
                               ),
                             ),
@@ -354,13 +402,15 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                   padding: EdgeInsets.only(
                                     left: 16,
                                     right: 16,
-                                    bottom: index < state.promotions.length - 1
+                                    bottom:
+                                        index < trendingPromotions.length - 1
                                         ? 12
                                         : 0,
                                   ),
                                   child:
                                       PromotionCard(
-                                            promotion: state.promotions[index],
+                                            promotion:
+                                                trendingPromotions[index],
                                           )
                                           .animate()
                                           .fadeIn(
@@ -383,29 +433,12 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                                           ),
                                 );
                               },
-                              childCount: state.promotions.length,
+                              childCount: trendingPromotions.length,
                               addAutomaticKeepAlives: false,
                               addRepaintBoundaries: true,
                               addSemanticIndexes: false,
                             ),
                           ),
-                          // Botón "Ver más" si hay 5+ items
-                          if (hasMore)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                child: AppButton(
-                                  text: 'Ver todas las promociones',
-                                  onPressed: () {
-                                    context.push('/promotions');
-                                  },
-                                  type: ButtonType.outline,
-                                ),
-                              ),
-                            ),
                           const SliverToBoxAdapter(child: SizedBox(height: 24)),
                         ],
                       );

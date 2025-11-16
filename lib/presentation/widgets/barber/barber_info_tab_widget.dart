@@ -8,7 +8,10 @@ import 'barber_info_item_widget.dart';
 class BarberInfoTabWidget extends StatelessWidget {
   final BarberEntity barber;
 
-  const BarberInfoTabWidget({super.key, required this.barber});
+  const BarberInfoTabWidget({
+    super.key,
+    required this.barber,
+  });
 
   @override
   Widget build(BuildContext context) {

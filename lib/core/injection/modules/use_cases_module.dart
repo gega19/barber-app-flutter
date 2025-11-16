@@ -23,6 +23,11 @@ import '../../../domain/usecases/payment_method/get_payment_methods_usecase.dart
 import '../../../domain/usecases/barber_availability/get_my_availability_usecase.dart';
 import '../../../domain/usecases/barber_availability/update_my_availability_usecase.dart';
 import '../../../domain/usecases/barber_availability/get_available_slots_usecase.dart';
+import '../../../domain/usecases/barber_course/get_barber_courses_usecase.dart';
+import '../../../domain/usecases/barber_course/get_course_by_id_usecase.dart';
+import '../../../domain/usecases/barber_course/create_course_usecase.dart';
+import '../../../domain/usecases/barber_course/update_course_usecase.dart';
+import '../../../domain/usecases/barber_course/delete_course_usecase.dart';
 
 /// Módulo para registrar todos los UseCases
 class UseCasesModule {
@@ -66,5 +71,12 @@ class UseCasesModule {
     sl.registerLazySingleton(() => GetMyAvailabilityUseCase(sl()));
     sl.registerLazySingleton(() => UpdateMyAvailabilityUseCase(sl()));
     sl.registerLazySingleton(() => GetAvailableSlotsUseCase(sl()));
+
+    // Barber Course UseCases
+    sl.registerLazySingleton(() => GetBarberCoursesUseCase(sl()));
+    sl.registerLazySingleton(() => GetCourseByIdUseCase(sl()));
+    sl.registerLazySingleton(() => CreateCourseUseCase(sl()));
+    sl.registerLazySingleton(() => UpdateCourseUseCase(sl()));
+    sl.registerLazySingleton(() => DeleteCourseUseCase(sl()));
   }
 }

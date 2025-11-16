@@ -5,12 +5,17 @@ import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/main/main_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/barber/barber_detail_screen.dart';
+import '../../presentation/screens/barber/barber_all_courses_screen.dart';
 import '../../presentation/screens/workplace/workplace_detail_screen.dart';
+import '../../presentation/screens/list/barbers_list_screen.dart';
+import '../../presentation/screens/list/workplaces_list_screen.dart';
+import '../../presentation/screens/list/promotions_list_screen.dart';
 import '../../presentation/screens/profile/become_barber_screen.dart';
 import '../../presentation/screens/profile/barber_services_screen.dart';
 import '../../presentation/screens/profile/barber_media_screen.dart';
 import '../../presentation/screens/profile/barber_info_screen.dart';
 import '../../presentation/screens/profile/barber_availability_screen.dart';
+import '../../presentation/screens/profile/barber_courses_screen.dart';
 import '../../presentation/screens/profile/security_settings_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
@@ -23,6 +28,8 @@ import '../../presentation/cubit/review/review_cubit.dart';
 import '../../presentation/cubit/payment_method/payment_method_cubit.dart';
 import '../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
 import '../../presentation/cubit/appointment/appointment_cubit.dart';
+import '../../presentation/cubit/barber_course/barber_course_cubit.dart';
+import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../../core/constants/app_colors.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -292,6 +299,32 @@ GoRouter createAppRouter() {
                   child: const BarberAvailabilityScreen(),
                 ),
               ),
+      GoRoute(
+        path: '/barber-courses',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: authCubit),
+            BlocProvider(
+              create: (_) => sl<BarberCourseCubit>(),
+            ),
+          ],
+          child: const BarberCoursesScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/barber-courses-all',
+        builder: (context, state) {
+          final args = state.extra as Map<String, dynamic>?;
+          final barberId = args?['barberId'] as String? ?? 
+                          state.pathParameters['barberId'] ?? 
+                          state.uri.queryParameters['barberId'] ?? '';
+          final barberName = args?['barberName'] as String?;
+          return BarberAllCoursesScreen(
+            barberId: barberId,
+            barberName: barberName,
+          );
+        },
+      ),
               GoRoute(
                 path: '/security-settings',
                 builder: (context, state) => BlocProvider.value(
@@ -299,6 +332,27 @@ GoRouter createAppRouter() {
                   child: const SecuritySettingsScreen(),
                 ),
               ),
+      GoRoute(
+        path: '/barbers',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<BarberCubit>(),
+          child: const BarbersListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/workplaces',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<WorkplaceCubit>(),
+          child: const WorkplacesListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/promotions',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<PromotionCubit>(),
+          child: const PromotionsListScreen(),
+        ),
+      ),
     ],
   );
 }

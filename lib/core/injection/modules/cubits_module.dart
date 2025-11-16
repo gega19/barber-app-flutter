@@ -9,6 +9,7 @@ import '../../../presentation/cubit/workplace/workplace_cubit.dart';
 import '../../../presentation/cubit/review/review_cubit.dart';
 import '../../../presentation/cubit/payment_method/payment_method_cubit.dart';
 import '../../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
+import '../../../presentation/cubit/barber_course/barber_course_cubit.dart';
 
 /// Módulo para registrar todos los Cubits
 class CubitsModule {
@@ -61,6 +62,15 @@ class CubitsModule {
       () => BarberAvailabilityCubit(
         getMyAvailabilityUseCase: sl(),
         updateMyAvailabilityUseCase: sl(),
+      ),
+    );
+    sl.registerFactory(
+      () => BarberCourseCubit(
+        getBarberCoursesUseCase: sl(),
+        getCourseByIdUseCase: sl(),
+        createCourseUseCase: sl(),
+        updateCourseUseCase: sl(),
+        deleteCourseUseCase: sl(),
       ),
     );
     sl.registerFactory(() => SocketCubit(sl()));

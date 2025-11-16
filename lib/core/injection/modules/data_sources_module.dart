@@ -13,6 +13,7 @@ import '../../../data/datasources/remote/review_remote_datasource.dart';
 import '../../../data/datasources/remote/payment_method_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_availability_remote_datasource.dart';
 import '../../../data/datasources/remote/fcm_token_remote_datasource.dart';
+import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
 
 /// Módulo para registrar todos los DataSources
 class DataSourcesModule {
@@ -58,6 +59,9 @@ class DataSourcesModule {
     );
     sl.registerLazySingleton<FcmTokenRemoteDataSource>(
       () => FcmTokenRemoteDataSourceImpl(sl()),
+    );
+    sl.registerLazySingleton<BarberCourseRemoteDataSource>(
+      () => BarberCourseRemoteDataSourceImpl(sl()),
     );
   }
 }
