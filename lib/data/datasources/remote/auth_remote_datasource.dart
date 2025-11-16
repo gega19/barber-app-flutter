@@ -5,10 +5,7 @@ import '../../../core/utils/logger.dart';
 
 /// Interfaz para el datasource remoto de autenticación
 abstract class AuthRemoteDataSource {
-  Future<AuthResponse> login({
-    required String email,
-    required String password,
-  });
+  Future<AuthResponse> login({required String email, required String password});
 
   Future<AuthResponse> register({
     required String name,
@@ -17,13 +14,13 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<void> logout();
-  
+
   Future<String> refreshToken(String refreshToken);
-  
+
   Future<UserModel> getCurrentUser();
-  
+
   Future<Map<String, dynamic>> getUserStats();
-  
+
   Future<UserModel> updateProfile({
     String? name,
     String? phone,
@@ -33,7 +30,7 @@ abstract class AuthRemoteDataSource {
     String? avatar,
     String? avatarSeed,
   });
-  
+
   Future<Map<String, dynamic>> becomeBarber({
     String? specialtyId,
     required String specialty,
@@ -45,15 +42,10 @@ abstract class AuthRemoteDataSource {
     String? workplaceId,
     String? serviceType,
   });
-  
-  Future<void> updateBarberStep2({
-    String? workplaceId,
-    String? serviceType,
-  });
 
-  Future<void> deleteAccount({
-    required String password,
-  });
+  Future<void> updateBarberStep2({String? workplaceId, String? serviceType});
+
+  Future<void> deleteAccount({required String password});
 }
 
 /// Respuesta de autenticación del backend
@@ -99,10 +91,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await dio.post(
         '${AppConstants.baseUrl}/api/auth/login',
-        data: {
-          'email': email,
-          'password': password,
-        },
+        data: {'email': email, 'password': password},
       );
 
       if (response.statusCode == 200) {
@@ -118,36 +107,32 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } on DioException catch (e) {
       appLogger.e('Login error: ${e.message}', error: e);
-      
+
       // Manejo específico por tipo de error
       if (e.response != null) {
-        String message = 'Error en el servidor';
-        
-        if (e.response!.data is Map) {
-          final data = e.response!.data as Map;
-          if (data['message'] != null) {
-            message = data['message'].toString();
-            
-            // Mensaje más amigable si es error de base de datos
-            if (message.contains('Authentication failed against database') || 
-                message.contains('PrismaClientInitializationError')) {
-              message = 'El servidor no puede conectarse a la base de datos. Por favor, verifica que PostgreSQL esté corriendo correctamente.';
-            }
-          }
+        String message = _extractErrorMessage(e.response!.data);
+
+        // Mensaje más amigable si es error de base de datos
+        if (message.contains('Authentication failed against database') ||
+            message.contains('PrismaClientInitializationError')) {
+          message =
+              'El servidor no puede conectarse a la base de datos. Por favor, verifica que PostgreSQL esté corriendo correctamente.';
         }
-        
+
         throw ServerException(message);
       }
-      
+
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         throw NetworkException('Error de conexión. Verifica tu internet.');
       }
-      
+
       if (e.type == DioExceptionType.connectionError) {
-        throw NetworkException('No se puede conectar al servidor. Verifica la IP del backend.');
+        throw NetworkException(
+          'No se puede conectar al servidor. Verifica la IP del backend.',
+        );
       }
-      
+
       throw ServerException('Error desconocido: ${e.message}');
     } catch (e) {
       appLogger.e('Unexpected error in login', error: e);
@@ -164,11 +149,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await dio.post(
         '${AppConstants.baseUrl}/api/auth/register',
-        data: {
-          'name': name,
-          'email': email,
-          'password': password,
-        },
+        data: {'name': name, 'email': email, 'password': password},
       );
 
       if (response.statusCode == 201) {
@@ -184,24 +165,24 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     } on DioException catch (e) {
       appLogger.e('Register error: ${e.message}', error: e);
-      
+
       // Manejo específico por tipo de error
       if (e.response != null) {
-        final message = e.response!.data is Map && e.response!.data['message'] != null
-            ? e.response!.data['message']
-            : 'Error en el servidor';
+        final message = _extractErrorMessage(e.response!.data);
         throw ServerException(message);
       }
-      
+
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         throw NetworkException('Error de conexión. Verifica tu internet.');
       }
-      
+
       if (e.type == DioExceptionType.connectionError) {
-        throw NetworkException('No se puede conectar al servidor. Verifica la IP del backend.');
+        throw NetworkException(
+          'No se puede conectar al servidor. Verifica la IP del backend.',
+        );
       }
-      
+
       throw ServerException('Error desconocido: ${e.message}');
     } catch (e) {
       appLogger.e('Unexpected error in register', error: e);
@@ -210,15 +191,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<void> deleteAccount({
-    required String password,
-  }) async {
+  Future<void> deleteAccount({required String password}) async {
     try {
       final response = await dio.delete(
         '${AppConstants.baseUrl}/api/auth/delete-account',
-        data: {
-          'password': password,
-        },
+        data: {'password': password},
       );
 
       if (response.statusCode != 200) {
@@ -232,7 +209,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       appLogger.e('DeleteAccount error: ${e.message}', error: e);
 
       if (e.response != null) {
-        final message = e.response!.data is Map && e.response!.data['message'] != null
+        final message =
+            e.response!.data is Map && e.response!.data['message'] != null
             ? e.response!.data['message']
             : 'Error en el servidor';
         throw ServerException(message);
@@ -273,11 +251,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         final data = response.data['data'] as Map<String, dynamic>;
         return data['accessToken'] as String;
       } else {
-        throw ServerException(response.data['message'] ?? 'Error al refrescar token');
+        throw ServerException(
+          response.data['message'] ?? 'Error al refrescar token',
+        );
       }
     } on DioException catch (e) {
       appLogger.e('RefreshToken error: ${e.message}', error: e);
-      throw ServerException(e.response?.data['message'] ?? 'Error al refrescar token');
+      throw ServerException(
+        e.response?.data['message'] ?? 'Error al refrescar token',
+      );
     } catch (e) {
       appLogger.e('Unexpected error in refreshToken: $e', error: e);
       throw ServerException('Error inesperado al refrescar token');
@@ -367,52 +349,53 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
-                  @override
-          Future<Map<String, dynamic>> becomeBarber({
-            String? specialtyId,
-            required String specialty,
-            required int experienceYears,
-            required String location,
-            double? latitude,
-            double? longitude,
-            String? image,
-            String? workplaceId,
-            String? serviceType,
-          }) async {
-            try {
-              final response = await dio.post(
-                '${AppConstants.baseUrl}/api/auth/become-barber',
-                data: {
-                  if (specialtyId != null) 'specialtyId': specialtyId,
-                  'specialty': specialty,
-                  'experienceYears': experienceYears,
-                  'location': location,
-                  if (latitude != null) 'latitude': latitude,
-                  if (longitude != null) 'longitude': longitude,
-                  if (image != null) 'image': image,
-                  if (workplaceId != null) 'workplaceId': workplaceId,
-                  if (serviceType != null) 'serviceType': serviceType,
-                },
-              );
-        
-              if (response.statusCode == 200) {
-                final data = response.data['data'] as Map<String, dynamic>;
-                return {
-                  'user': UserModel.fromJson(data['user'] as Map<String, dynamic>),
-                  'barberId': data['barberId'] as String,
-                };
-              } else {
-                throw DioException(
-                  requestOptions: response.requestOptions,
-                  response: response,
-                  message: response.data['message'] ?? 'Error al convertirse en barbero',
-                );
-              }
-            } on DioException catch (e) {
-              appLogger.e('BecomeBarber error: ${e.message}', error: e);
-              throw ServerException('Error al convertirse en barbero: ${e.message}');
-            }
-          }
+  @override
+  Future<Map<String, dynamic>> becomeBarber({
+    String? specialtyId,
+    required String specialty,
+    required int experienceYears,
+    required String location,
+    double? latitude,
+    double? longitude,
+    String? image,
+    String? workplaceId,
+    String? serviceType,
+  }) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/auth/become-barber',
+        data: {
+          if (specialtyId != null) 'specialtyId': specialtyId,
+          'specialty': specialty,
+          'experienceYears': experienceYears,
+          'location': location,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
+          if (image != null) 'image': image,
+          if (workplaceId != null) 'workplaceId': workplaceId,
+          if (serviceType != null) 'serviceType': serviceType,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return {
+          'user': UserModel.fromJson(data['user'] as Map<String, dynamic>),
+          'barberId': data['barberId'] as String,
+        };
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message:
+              response.data['message'] ?? 'Error al convertirse en barbero',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('BecomeBarber error: ${e.message}', error: e);
+      throw ServerException('Error al convertirse en barbero: ${e.message}');
+    }
+  }
 
   @override
   Future<void> updateBarberStep2({
@@ -432,32 +415,112 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: response.data['message'] ?? 'Error al actualizar perfil de barbero',
+          message:
+              response.data['message'] ??
+              'Error al actualizar perfil de barbero',
         );
       }
     } on DioException catch (e) {
       appLogger.e('UpdateBarberStep2 error: ${e.message}', error: e);
-      throw ServerException('Error al actualizar perfil de barbero: ${e.message}');
+      throw ServerException(
+        'Error al actualizar perfil de barbero: ${e.message}',
+      );
     }
+  }
+
+  /// Extrae el mensaje de error de la respuesta del servidor
+  /// Prioriza el array de errors (validación) sobre el campo message
+  /// Traduce los mensajes comunes del inglés al español
+  String _extractErrorMessage(dynamic responseData) {
+    String message = 'Error en el servidor';
+
+    if (responseData is Map) {
+      final data = responseData;
+
+      // Primero intentar obtener el mensaje de errors array (validación)
+      if (data['errors'] != null && data['errors'] is List) {
+        final errors = data['errors'] as List;
+        if (errors.isNotEmpty && errors[0] is Map) {
+          final firstError = errors[0] as Map;
+          if (firstError['msg'] != null) {
+            message = firstError['msg'].toString();
+            return _translateErrorMessage(message);
+          }
+        }
+      }
+
+      // Si no hay errors array, intentar obtener message
+      if (data['message'] != null) {
+        message = data['message'].toString();
+      }
+    }
+
+    return _translateErrorMessage(message);
+  }
+
+  /// Traduce mensajes de error comunes del inglés al español
+  String _translateErrorMessage(String message) {
+    // Traducciones de mensajes comunes de validación
+    final translations = {
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number':
+          'La contraseña debe contener al menos una letra mayúscula, una letra minúscula y un número',
+      'Password must be at least': 'La contraseña debe tener al menos',
+      'characters long': 'caracteres de longitud',
+      'Email is required': 'El correo electrónico es requerido',
+      'Email must be a valid email': 'El correo electrónico debe ser válido',
+      'Invalid email format': 'Formato de correo electrónico inválido',
+      'Name is required': 'El nombre es requerido',
+      'Password is required': 'La contraseña es requerida',
+      'Password must be at least 8 characters':
+          'La contraseña debe tener al menos 8 caracteres',
+      'User already exists': 'El usuario ya existe',
+      'User not found': 'Usuario no encontrado',
+      'Invalid credentials': 'Credenciales inválidas',
+      'Invalid password': 'Contraseña inválida',
+      'Email already registered': 'El correo electrónico ya está registrado',
+      'Authentication failed': 'Autenticación fallida',
+      'Token expired': 'Token expirado',
+      'Unauthorized': 'No autorizado',
+      'Forbidden': 'Acceso prohibido',
+      'Not found': 'No encontrado',
+      'Internal server error': 'Error interno del servidor',
+      'Bad request': 'Solicitud incorrecta',
+      'Validation failed': 'Validación fallida',
+    };
+
+    // Buscar traducción exacta
+    if (translations.containsKey(message)) {
+      return translations[message]!;
+    }
+
+    // Buscar traducciones parciales (para mensajes que contienen el texto)
+    for (final entry in translations.entries) {
+      if (message.contains(entry.key)) {
+        return message.replaceAll(entry.key, entry.value);
+      }
+    }
+
+    // Si no hay traducción, devolver el mensaje original
+    return message;
   }
 }
 
 /// Excepciones personalizadas
+
 class ServerException implements Exception {
   final String message;
-  
+
   ServerException(this.message);
-  
+
   @override
   String toString() => message;
 }
 
 class NetworkException implements Exception {
   final String message;
-  
+
   NetworkException(this.message);
-  
+
   @override
   String toString() => message;
 }
-

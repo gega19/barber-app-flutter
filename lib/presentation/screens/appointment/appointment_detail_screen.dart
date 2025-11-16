@@ -30,7 +30,12 @@ class AppointmentDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = _getCurrentUser(context);
-    final isBarber = user?.role == 'BARBER';
+    // Determinar si el usuario actual es el barbero de esta cita específica
+    // Comparar barberId del usuario con el id del barbero de la cita
+    final bool isBarber = user != null && 
+        appointment.barber != null && 
+        user.barberId != null && 
+        user.barberId == appointment.barber!.id;
 
     return Scaffold(
       body: Container(

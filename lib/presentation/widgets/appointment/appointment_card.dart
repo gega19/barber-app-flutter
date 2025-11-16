@@ -30,17 +30,26 @@ class AppointmentCard extends StatelessWidget {
     final statusConfig = AppointmentUtils.getStatusConfig(appointment.status);
     final dateFormat = AppointmentUtils.formatAppointmentDate(appointment.date);
 
+    // Determinar si el usuario actual es el barbero de esta cita específica
+    // Comparar barberId del usuario con el id del barbero de la cita
+    final bool isUserBarber = currentUser != null && 
+        appointment.barber != null && 
+        currentUser!.barberId != null && 
+        currentUser!.barberId == appointment.barber!.id;
+
     String? avatarUrl;
     String? avatarSeed;
     String name;
     String? specialtyOrPhone;
 
-    if (isBarber) {
+    if (isUserBarber) {
+      // Si el usuario es el barbero, mostrar información del cliente
       name = appointment.client?.name ?? 'Cliente desconocido';
       avatarUrl = appointment.client?.avatar;
       avatarSeed = appointment.client?.avatarSeed;
       specialtyOrPhone = appointment.client?.phone;
     } else {
+      // Si el usuario es el cliente, mostrar información del barbero
       name = appointment.barber?.name ?? 'Barbero desconocido';
       avatarUrl = appointment.barber?.image;
       avatarSeed = appointment.barber?.avatarSeed;

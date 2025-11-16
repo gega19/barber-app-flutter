@@ -29,8 +29,8 @@ class ProfileStatsCardWidget extends StatelessWidget {
           child: loading
               ? _buildLoadingState()
               : isBarber
-                  ? _buildBarberStats()
-                  : _buildClientStats(),
+              ? _buildBarberStats()
+              : _buildClientStats(),
         ),
       ),
     );
@@ -78,39 +78,46 @@ class ProfileStatsCardWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         ProfileStatItemWidget(
-          key: ValueKey('stat_appointments_${stats?['totalAppointments']}'),
-          value: (stats?['totalAppointments'] ?? 0).toString(),
-          label: 'Citas',
-        )
+              key: ValueKey('stat_appointments_${stats?['totalAppointments']}'),
+              value: (stats?['totalAppointments'] ?? 0).toString(),
+              label: 'Citas',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 50.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 50.ms),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.borderGold,
-        ),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 50.ms,
+            ),
+        Container(width: 1, height: 40, color: AppColors.borderGold),
         ProfileStatItemWidget(
-          key: ValueKey('stat_rating_${stats?['rating']}'),
-          value: ProfileUtils.formatStatValue(stats?['rating'] ?? 0.0),
-          label: 'Puntuación',
-        )
+              key: ValueKey('stat_rating_${stats?['rating']}'),
+              value: ProfileUtils.formatStatValue(stats?['rating'] ?? 0.0),
+              label: 'Puntuación',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 100.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 100.ms),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.borderGold,
-        ),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 100.ms,
+            ),
+        Container(width: 1, height: 40, color: AppColors.borderGold),
         ProfileStatItemWidget(
-          key: ValueKey('stat_clients_${stats?['uniqueClients']}'),
-          value: (stats?['uniqueClients'] ?? 0).toString(),
-          label: 'Clientes',
-        )
+              key: ValueKey('stat_clients_${stats?['uniqueClients']}'),
+              value: (stats?['uniqueClients'] ?? 0).toString(),
+              label: 'Clientes',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 150.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 150.ms),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 150.ms,
+            ),
       ],
     );
   }
@@ -120,41 +127,47 @@ class ProfileStatsCardWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         ProfileStatItemWidget(
-          key: ValueKey('stat_appointments_${stats?['totalAppointments']}'),
-          value: (stats?['totalAppointments'] ?? 0).toString(),
-          label: 'Citas',
-        )
+              key: ValueKey('stat_appointments_${stats?['totalAppointments']}'),
+              value: (stats?['totalAppointments'] ?? 0).toString(),
+              label: 'Citas',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 50.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 50.ms),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.borderGold,
-        ),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 50.ms,
+            ),
+        Container(width: 1, height: 40, color: AppColors.borderGold),
         ProfileStatItemWidget(
-          key: ValueKey('stat_spent_${stats?['totalSpent']}'),
-          value: ProfileUtils.formatCurrency(stats?['totalSpent'] ?? 0.0),
-          label: 'Gastado',
-        )
+              key: ValueKey('stat_spent_${stats?['totalSpent']}'),
+              value: ProfileUtils.formatCurrency(stats?['totalSpent'] ?? 0),
+              label: 'Gastado',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 100.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 100.ms),
-        Container(
-          width: 1,
-          height: 40,
-          color: AppColors.borderGold,
-        ),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 100.ms,
+            ),
+        Container(width: 1, height: 40, color: AppColors.borderGold),
         ProfileStatItemWidget(
-          key: ValueKey('stat_barbers_${stats?['uniqueBarbers']}'),
-          value: (stats?['uniqueBarbers'] ?? 0).toString(),
-          label: 'Barberos',
-        )
+              key: ValueKey('stat_barbers_${stats?['uniqueBarbers']}'),
+              value: (stats?['uniqueBarbers'] ?? 0).toString(),
+              label: 'Barberos',
+            )
             .animate()
             .fadeIn(duration: 300.ms, delay: 150.ms)
-            .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: 150.ms),
+            .scale(
+              begin: const Offset(0.9, 0.9),
+              end: const Offset(1, 1),
+              duration: 300.ms,
+              delay: 150.ms,
+            ),
       ],
     );
   }
 }
-
