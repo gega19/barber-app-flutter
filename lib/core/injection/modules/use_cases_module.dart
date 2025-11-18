@@ -12,6 +12,7 @@ import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
 import '../../../domain/usecases/barber/search_barbers_usecase.dart';
 import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
+import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
 import '../../../domain/usecases/promotion/get_promotions_usecase.dart';
 import '../../../domain/usecases/workplace/get_workplaces_usecase.dart';
 import '../../../domain/usecases/review/get_reviews_by_barber_usecase.dart';
@@ -50,6 +51,7 @@ class UseCasesModule {
     // Appointment UseCases
     sl.registerLazySingleton(() => GetAppointmentsUseCase(sl()));
     sl.registerLazySingleton(() => CreateAppointmentUseCase(sl()));
+    sl.registerLazySingleton(() => CancelAppointmentUseCase(sl()));
 
     // Promotion UseCases
     sl.registerLazySingleton(() => GetPromotionsUseCase(sl()));

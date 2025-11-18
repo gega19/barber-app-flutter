@@ -13,6 +13,8 @@ class AppointmentLoading extends AppointmentState {}
 
 class AppointmentCreating extends AppointmentState {}
 
+class AppointmentCancelling extends AppointmentState {}
+
 class AppointmentLoaded extends AppointmentState {
   final List<AppointmentEntity> appointments;
 

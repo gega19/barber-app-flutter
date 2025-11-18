@@ -2,8 +2,8 @@ class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    // Producción - Render
-    return 'https://barber-app-backend-kj6s.onrender.com';
+    // Producción - Corporación CEG
+    return 'https://barber-api.corporacionceg.com';
 
     // Desarrollo local - Detecta automáticamente la plataforma
     // if (kIsWeb) {

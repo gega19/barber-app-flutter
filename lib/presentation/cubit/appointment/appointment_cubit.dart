@@ -3,16 +3,19 @@ import 'package:equatable/equatable.dart';
 import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
+import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
 
 part 'appointment_state.dart';
 
 class AppointmentCubit extends Cubit<AppointmentState> {
   final GetAppointmentsUseCase getAppointmentsUseCase;
   final CreateAppointmentUseCase createAppointmentUseCase;
+  final CancelAppointmentUseCase cancelAppointmentUseCase;
 
   AppointmentCubit({
     required this.getAppointmentsUseCase,
     required this.createAppointmentUseCase,
+    required this.cancelAppointmentUseCase,
   }) : super(AppointmentInitial());
 
   Future<void> loadAppointments() async {
@@ -64,6 +67,29 @@ class AppointmentCubit extends Cubit<AppointmentState> {
       },
       (appointment) {
         // Recargar citas después de crear una nueva
+        if (!isClosed) {
+          loadAppointments();
+        }
+        return true;
+      },
+    );
+  }
+
+  Future<bool> cancelAppointment(String appointmentId) async {
+    if (isClosed) return false;
+    emit(AppointmentCancelling());
+
+    final result = await cancelAppointmentUseCase(appointmentId);
+
+    if (isClosed) return false;
+
+    return result.fold(
+      (failure) {
+        if (!isClosed) emit(AppointmentError(failure.message));
+        return false;
+      },
+      (_) {
+        // Recargar citas después de cancelar
         if (!isClosed) {
           loadAppointments();
         }

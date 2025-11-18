@@ -64,7 +64,7 @@ class NotificationService {
 
   /// Inicializa las notificaciones locales
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -176,7 +176,7 @@ class NotificationService {
             channelDescription: 'Notificaciones sobre citas y actualizaciones',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_notification',
             playSound: true,
             enableVibration: true,
           ),

@@ -6,6 +6,7 @@ import '../../../core/utils/appointment_utils.dart';
 import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../cubit/auth/auth_cubit.dart';
+import '../../cubit/appointment/appointment_cubit.dart';
 import '../../widgets/appointment/appointment_detail_header_widget.dart';
 import '../../widgets/appointment/appointment_profile_card_widget.dart';
 import '../../widgets/appointment/appointment_detail_row_widget.dart';
@@ -207,26 +208,97 @@ class AppointmentDetailScreen extends StatelessWidget {
                       ],
                       const SizedBox(height: 24),
                       // Actions
-                      if (appointment.status == AppointmentStatus.pending ||
-                          appointment.status == AppointmentStatus.upcoming) ...[
-                        AppButton(
-                          text: 'Cancelar Cita',
-                          onPressed: () {
-                            // TODO: Implementar cancelación
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Funcionalidad de cancelación próximamente',
+                      if (!isBarber &&
+                          (appointment.status == AppointmentStatus.pending ||
+                              appointment.status == AppointmentStatus.upcoming)) ...[
+                        BlocConsumer<AppointmentCubit, AppointmentState>(
+                          listener: (context, state) {
+                            if (state is AppointmentError) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(state.message),
+                                  backgroundColor: AppColors.error,
                                 ),
-                                backgroundColor: AppColors.error,
-                              ),
-                            );
+                              );
+                            }
                           },
-                          type: ButtonType.outline,
-                        )
-                            .animate()
-                            .fadeIn(duration: 300.ms, delay: 500.ms)
-                            .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 500.ms),
+                          builder: (context, state) {
+                            final isCancelling = state is AppointmentCancelling;
+                            
+                            return AppButton(
+                              text: isCancelling ? 'Cancelando...' : 'Cancelar Cita',
+                              onPressed: isCancelling
+                                  ? null
+                                  : () async {
+                                      // Mostrar diálogo de confirmación
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          backgroundColor: AppColors.backgroundCard,
+                                          title: const Text(
+                                            'Cancelar Cita',
+                                            style: TextStyle(
+                                              color: AppColors.textPrimary,
+                                            ),
+                                          ),
+                                          content: const Text(
+                                            '¿Estás seguro de que deseas cancelar esta cita? Esta acción no se puede deshacer.',
+                                            style: TextStyle(
+                                              color: AppColors.textSecondary,
+                                            ),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(false),
+                                              child: const Text(
+                                                'No',
+                                                style: TextStyle(
+                                                  color: AppColors.textSecondary,
+                                                ),
+                                              ),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context).pop(true),
+                                              child: const Text(
+                                                'Sí, Cancelar',
+                                                style: TextStyle(
+                                                  color: AppColors.error,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirmed == true) {
+                                        final success = await context
+                                            .read<AppointmentCubit>()
+                                            .cancelAppointment(appointment.id);
+                                        
+                                        if (success && context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Cita cancelada exitosamente'),
+                                              backgroundColor: AppColors.success,
+                                            ),
+                                          );
+                                          Navigator.of(context).pop();
+                                        }
+                                      }
+                                    },
+                              type: ButtonType.outline,
+                            )
+                                .animate()
+                                .fadeIn(duration: 300.ms, delay: 500.ms)
+                                .slideY(
+                                    begin: 0.1,
+                                    end: 0,
+                                    duration: 300.ms,
+                                    delay: 500.ms);
+                          },
+                        ),
                       ],
                       if (appointment.status == AppointmentStatus.completed &&
                           appointment.rating == null) ...[
