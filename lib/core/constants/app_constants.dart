@@ -2,8 +2,8 @@ class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    // Producción - Corporación CEG
-    return 'https://barber-api.corporacionceg.com';
+    // Producción - Render
+    return 'https://barber-app-backend-kj6s.onrender.com';
 
     // Desarrollo local - Detecta automáticamente la plataforma
     // if (kIsWeb) {
@@ -34,6 +34,9 @@ class AppConstants {
   // App Info
   static const String appName = 'bartop';
   static const String appTagline = 'Encuentra a tu barbero ideal';
+
+  // Landing Page URL
+  static const String landingUrl = 'https://barber-app-landing.onrender.com';
 
   /// Construye una URL completa a partir de una URL relativa o absoluta
   /// Si la URL ya es absoluta (empieza con http), la devuelve tal cual

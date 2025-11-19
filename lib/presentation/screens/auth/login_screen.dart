@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/biometric_auth.dart';
 import '../../../core/services/secure_storage_service.dart';
@@ -188,67 +190,38 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusScope.of(context).requestFocus(nextFocus);
   }
 
-  void _showTermsAndConditions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppColors.backgroundCard,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border.all(color: AppColors.primaryGold, width: 1.5),
-        ),
-        padding: EdgeInsets.only(
-          left: 24,
-          right: 24,
-          top: 24,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Términos y Condiciones',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Al crear una cuenta, aceptas nuestras políticas de uso, incluyendo el tratamiento de datos personales, condiciones de servicio, políticas de cancelación y el uso adecuado de la plataforma. Asegúrate de revisar nuestra política de privacidad para conocer cómo protegemos tu información.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-              SizedBox(height: 24),
-              Text(
-                'Política de Privacidad',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: 12),
-              Text(
-                'Utilizamos tus datos únicamente para ofrecer las funcionalidades de la aplicación, mejorar la experiencia de usuario y conectarte con barberos y barberías. No compartimos tu información con terceros sin tu consentimiento.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 14,
-                  height: 1.4,
-                ),
-              ),
-            ],
+  /// Abre la URL de términos de servicio en el navegador
+  Future<void> _openTermsOfService() async {
+    final url = Uri.parse('${AppConstants.landingUrl}/terms-of-service');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo abrir los términos de servicio'),
+            backgroundColor: AppColors.error,
           ),
-        ),
-      ),
-    );
+        );
+      }
+    }
+  }
+
+  /// Abre la URL de política de privacidad en el navegador
+  Future<void> _openPrivacyPolicy() async {
+    final url = Uri.parse('${AppConstants.landingUrl}/privacy-policy');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo abrir la política de privacidad'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -434,7 +407,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         fontWeight: FontWeight.w600,
                                                       ),
                                                       recognizer: TapGestureRecognizer()
-                                                        ..onTap = _showTermsAndConditions,
+                                                        ..onTap = _openTermsOfService,
                                                     ),
                                                     const TextSpan(text: ' y la '),
                                                     TextSpan(
@@ -444,7 +417,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                         fontWeight: FontWeight.w600,
                                                       ),
                                                       recognizer: TapGestureRecognizer()
-                                                        ..onTap = _showTermsAndConditions,
+                                                        ..onTap = _openPrivacyPolicy,
                                                     ),
                                                     const TextSpan(text: '.'),
                                                   ],
