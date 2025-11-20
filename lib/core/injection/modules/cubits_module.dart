@@ -10,6 +10,7 @@ import '../../../presentation/cubit/review/review_cubit.dart';
 import '../../../presentation/cubit/payment_method/payment_method_cubit.dart';
 import '../../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
 import '../../../presentation/cubit/barber_course/barber_course_cubit.dart';
+import '../../../presentation/cubit/map/map_cubit.dart';
 
 /// Módulo para registrar todos los Cubits
 class CubitsModule {
@@ -75,5 +76,12 @@ class CubitsModule {
       ),
     );
     sl.registerFactory(() => SocketCubit(sl()));
+    sl.registerFactory(
+      () => MapCubit(
+        getWorkplacesUseCase: sl(),
+        getNearbyWorkplacesUseCase: sl(),
+        locationService: sl(),
+      ),
+    );
   }
 }

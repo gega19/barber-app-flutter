@@ -5,6 +5,8 @@ class WorkplaceEntity extends Equatable {
   final String name;
   final String? address;
   final String? city;
+  final double? latitude;
+  final double? longitude;
   final String? description;
   final String? image;
   final String? banner;
@@ -16,6 +18,8 @@ class WorkplaceEntity extends Equatable {
     required this.name,
     this.address,
     this.city,
+    this.latitude,
+    this.longitude,
     this.description,
     this.image,
     this.banner,
@@ -24,5 +28,5 @@ class WorkplaceEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, address, city, description, image, banner, rating, reviews];
+  List<Object?> get props => [id, name, address, city, latitude, longitude, description, image, banner, rating, reviews];
 }

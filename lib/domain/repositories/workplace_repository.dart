@@ -5,4 +5,9 @@ import 'package:dartz/dartz.dart';
 abstract class WorkplaceRepository {
   Future<Either<Failure, List<WorkplaceEntity>>> getWorkplaces({int? limit});
   Future<Either<Failure, WorkplaceEntity>> getWorkplaceById(String id);
+  Future<Either<Failure, List<WorkplaceEntity>>> getNearbyWorkplaces({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 5.0,
+  });
 }

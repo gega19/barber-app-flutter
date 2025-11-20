@@ -50,4 +50,26 @@ class WorkplaceRepositoryImpl implements WorkplaceRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, List<WorkplaceEntity>>> getNearbyWorkplaces({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 5.0,
+  }) async {
+    try {
+      final workplaces = await remoteDataSource.getNearbyWorkplaces(
+        latitude: latitude,
+        longitude: longitude,
+        radiusKm: radiusKm,
+      );
+      return Right(workplaces);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
 }

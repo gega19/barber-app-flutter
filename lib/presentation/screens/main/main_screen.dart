@@ -6,8 +6,10 @@ import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
 import '../../cubit/promotion/promotion_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
+import '../../cubit/map/map_cubit.dart';
 import '../home/home_screen.dart';
 import '../discover/discover_screen.dart';
+import '../map/barbershops_map_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 
@@ -24,6 +26,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const DiscoverScreen(),
+    const BarbershopsMapScreen(),
     const HistoryScreen(),
     const ProfileScreen(),
   ];
@@ -40,10 +43,13 @@ class _MainScreenState extends State<MainScreen> {
         context.read<WorkplaceCubit>().loadWorkplaces();
         context.read<BarberCubit>().loadBarbers();
         break;
-      case 2: // Citas
+      case 2: // Mapa
+        context.read<MapCubit>().getUserLocation();
+        break;
+      case 3: // Citas
         context.read<AppointmentCubit>().loadAppointments();
         break;
-      case 3: // Profile
+      case 4: // Profile
         // Profile doesn't need refresh as it's managed by AuthCubit
         break;
     }
@@ -57,6 +63,7 @@ class _MainScreenState extends State<MainScreen> {
         BlocProvider<AppointmentCubit>(create: (_) => sl()),
         BlocProvider<PromotionCubit>(create: (_) => sl()),
         BlocProvider<WorkplaceCubit>(create: (_) => sl()),
+        BlocProvider<MapCubit>(create: (_) => sl()),
       ],
       child: Builder(
         builder: (context) {
@@ -86,8 +93,9 @@ class _MainScreenState extends State<MainScreen> {
                     children: [
                       _buildNavItem(context, Icons.home, 'Inicio', 0),
                       _buildNavItem(context, Icons.explore, 'Descubrir', 1),
-                      _buildNavItem(context, Icons.calendar_today, 'Citas', 2),
-                      _buildNavItem(context, Icons.person, 'Perfil', 3),
+                      _buildNavItem(context, Icons.map, 'Mapa', 2),
+                      _buildNavItem(context, Icons.calendar_today, 'Citas', 3),
+                      _buildNavItem(context, Icons.person, 'Perfil', 4),
                     ],
                   ),
                 ),

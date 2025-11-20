@@ -51,5 +51,10 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<!-- Permisos de ubicación -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necesitamos tu ubicación para mostrarte barberías cercanas en el mapa</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Necesitamos tu ubicación para mostrarte barberías cercanas en el mapa</string>
 </dict>
 </plist>

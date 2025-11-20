@@ -20,6 +20,11 @@ class NetworkException implements Exception {
 abstract class WorkplaceRemoteDataSource {
   Future<List<WorkplaceModel>> getWorkplaces({int? limit});
   Future<WorkplaceModel> getWorkplaceById(String id);
+  Future<List<WorkplaceModel>> getNearbyWorkplaces({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 5.0,
+  });
 }
 
 class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
@@ -74,6 +79,45 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
         throw NetworkException('Error de conexión. Verifica tu internet');
       }
       throw ServerException('Error al obtener lugar de trabajo: ${e.message}');
+    } catch (e) {
+      throw ServerException('Error inesperado: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<List<WorkplaceModel>> getNearbyWorkplaces({
+    required double latitude,
+    required double longitude,
+    double radiusKm = 5.0,
+  }) async {
+    try {
+      final response = await dio.get(
+        '${AppConstants.baseUrl}/api/workplaces/public/nearby',
+        queryParameters: {
+          'lat': latitude,
+          'lng': longitude,
+          'radius': radiusKm,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as List;
+        return data.map((json) => WorkplaceModel.fromJson(json)).toList();
+      } else {
+        throw ServerException(
+          response.data['message'] ?? 'Error al obtener barberías cercanas',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('GetNearbyWorkplaces error: ${e.message}', error: e);
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.sendTimeout) {
+        throw NetworkException('Error de conexión. Verifica tu internet');
+      }
+      throw ServerException(
+        'Error al obtener barberías cercanas: ${e.message}',
+      );
     } catch (e) {
       throw ServerException('Error inesperado: ${e.toString()}');
     }
