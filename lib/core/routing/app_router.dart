@@ -19,9 +19,11 @@ import '../../presentation/screens/profile/barber_courses_screen.dart';
 import '../../presentation/screens/profile/security_settings_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
+import '../../presentation/screens/force_update/force_update_screen.dart';
 import '../../core/injection/injection.dart';
 import '../../data/datasources/local/local_storage.dart';
 import '../../presentation/cubit/auth/auth_cubit.dart';
+import '../../core/services/version_check_service.dart';
 import '../../presentation/cubit/barber/barber_cubit.dart';
 import '../../presentation/cubit/workplace/workplace_cubit.dart';
 import '../../presentation/cubit/review/review_cubit.dart';
@@ -33,6 +35,7 @@ import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/foundation.dart';
 
 /// Listenable wrapper para el stream del AuthCubit
 class AuthStreamNotifier extends ChangeNotifier {
@@ -80,6 +83,37 @@ class AnalyticsRouteObserver extends NavigatorObserver {
   }
 }
 
+/// Función auxiliar para cargar la información de versión
+Future<Map<String, dynamic>> _loadVersionInfo() async {
+  final versionCheckService = sl<VersionCheckService>();
+  
+  // Asegurarse de que el servicio esté inicializado
+  if (versionCheckService.getCurrentVersionInfo() == null) {
+    await versionCheckService.initialize();
+  }
+  
+  final currentVersionInfo = versionCheckService.getCurrentVersionInfo();
+  final minimumVersionInfo = await versionCheckService.getMinimumVersionInfo();
+  
+  // Si no hay información, intentar obtenerla nuevamente
+  if (currentVersionInfo == null || minimumVersionInfo == null) {
+    debugPrint('⚠️ Version info not available, fetching...');
+    await versionCheckService.checkVersion();
+    final minInfo = await versionCheckService.getMinimumVersionInfo();
+    final currentInfo = versionCheckService.getCurrentVersionInfo();
+    
+    return {
+      'currentVersionInfo': currentInfo,
+      'minimumVersionInfo': minInfo,
+    };
+  }
+  
+  return {
+    'currentVersionInfo': currentVersionInfo,
+    'minimumVersionInfo': minimumVersionInfo,
+  };
+}
+
 GoRouter createAppRouter() {
   final authCubit = sl<AuthCubit>();
   final authNotifier = AuthStreamNotifier(authCubit);
@@ -90,6 +124,31 @@ GoRouter createAppRouter() {
     initialLocation: '/login',
     observers: [AnalyticsRouteObserver(analyticsService)],
     redirect: (context, state) async {
+      final isForceUpdate = state.matchedLocation == '/force-update';
+      
+      // Si está en la pantalla de force-update, no redirigir
+      if (isForceUpdate) {
+        return null;
+      }
+      
+      // Verificar versión antes de cualquier otra redirección
+      try {
+        final versionCheckService = sl<VersionCheckService>();
+        final versionCheckResult = await versionCheckService.checkVersion();
+        final minimumVersionInfo = await versionCheckService.getMinimumVersionInfo();
+        final currentVersionInfo = versionCheckService.getCurrentVersionInfo();
+        
+        if (versionCheckResult == VersionCheckResult.updateRequired && 
+            minimumVersionInfo != null && 
+            currentVersionInfo != null) {
+          // Redirigir a la pantalla de actualización forzada
+          return '/force-update';
+        }
+      } catch (e) {
+        debugPrint('⚠️ Error checking version in redirect: $e');
+        // Continuar con el flujo normal si hay error
+      }
+      
       final authState = authCubit.state;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
@@ -127,6 +186,88 @@ GoRouter createAppRouter() {
     },
     refreshListenable: authNotifier,
     routes: [
+      GoRoute(
+        path: '/force-update',
+        builder: (context, state) {
+          return FutureBuilder<Map<String, dynamic>>(
+            future: _loadVersionInfo(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Scaffold(
+                  backgroundColor: AppColors.backgroundDark,
+                  body: const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryGold,
+                    ),
+                  ),
+                );
+              }
+
+              if (snapshot.hasError || !snapshot.hasData) {
+                return Scaffold(
+                  backgroundColor: AppColors.backgroundDark,
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: AppColors.error,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Error al verificar la versión',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                          ),
+                        ),
+                        if (snapshot.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              '${snapshot.error}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 14,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              final data = snapshot.data!;
+              final currentVersionInfo = data['currentVersionInfo'] as AppVersionInfo?;
+              final minimumVersionInfo = data['minimumVersionInfo'] as MinimumVersionResponse?;
+
+              if (currentVersionInfo == null || minimumVersionInfo == null) {
+                return Scaffold(
+                  backgroundColor: AppColors.backgroundDark,
+                  body: const Center(
+                    child: Text(
+                      'Información de versión no disponible',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              return ForceUpdateScreen(
+                minimumVersionInfo: minimumVersionInfo,
+                currentVersionInfo: currentVersionInfo,
+              );
+            },
+          );
+        },
+      ),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) {

@@ -12,6 +12,8 @@ class WorkplaceEntity extends Equatable {
   final String? banner;
   final double rating;
   final int reviews;
+  final String? instagramUrl;
+  final String? tiktokUrl;
 
   const WorkplaceEntity({
     required this.id,
@@ -25,8 +27,10 @@ class WorkplaceEntity extends Equatable {
     this.banner,
     this.rating = 0.0,
     this.reviews = 0,
+    this.instagramUrl,
+    this.tiktokUrl,
   });
 
   @override
-  List<Object?> get props => [id, name, address, city, latitude, longitude, description, image, banner, rating, reviews];
+  List<Object?> get props => [id, name, address, city, latitude, longitude, description, image, banner, rating, reviews, instagramUrl, tiktokUrl];
 }

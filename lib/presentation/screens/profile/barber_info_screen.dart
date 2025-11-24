@@ -22,19 +22,21 @@ class BarberInfoScreen extends StatefulWidget {
 
 class _BarberInfoScreenState extends State<BarberInfoScreen> {
   final BarberRemoteDataSource _barberDataSource = sl<BarberRemoteDataSource>();
-  final SpecialtyRemoteDataSource _specialtyDataSource = sl<SpecialtyRemoteDataSource>();
-  
+  final SpecialtyRemoteDataSource _specialtyDataSource =
+      sl<SpecialtyRemoteDataSource>();
+
   final _formKey = GlobalKey<FormState>();
   final _experienceController = TextEditingController();
   final _locationController = TextEditingController();
-  
+  final _instagramController = TextEditingController();
+  final _tiktokController = TextEditingController();
+
   SpecialtyModel? _selectedSpecialty;
   List<SpecialtyModel> _specialties = [];
   bool _isLoading = false;
   bool _loadingSpecialties = true;
   bool _isSaving = false;
   String? _barberEmail;
-  Map<String, dynamic>? _currentBarberInfo;
 
   @override
   void initState() {
@@ -46,6 +48,8 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
   void dispose() {
     _experienceController.dispose();
     _locationController.dispose();
+    _instagramController.dispose();
+    _tiktokController.dispose();
     super.dispose();
   }
 
@@ -61,10 +65,7 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
     });
 
     try {
-      await Future.wait([
-        _loadSpecialties(),
-        _loadBarberInfo(),
-      ]);
+      await Future.wait([_loadSpecialties(), _loadBarberInfo()]);
     } finally {
       if (mounted) {
         setState(() {
@@ -105,18 +106,19 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
 
       if (response.statusCode == 200 && mounted) {
         final data = response.data['data'] as List;
-        final matchingBarbers = data.where(
-          (b) => b['email'] == _barberEmail,
-        ).toList();
+        final matchingBarbers = data
+            .where((b) => b['email'] == _barberEmail)
+            .toList();
 
         if (matchingBarbers.isNotEmpty) {
           final barberData = matchingBarbers.first as Map<String, dynamic>;
           setState(() {
-            _currentBarberInfo = barberData;
-            
-            _experienceController.text = (barberData['experienceYears'] ?? 0).toString();
+            _experienceController.text = (barberData['experienceYears'] ?? 0)
+                .toString();
             _locationController.text = barberData['location'] ?? '';
-            
+            _instagramController.text = barberData['instagramUrl'] ?? '';
+            _tiktokController.text = barberData['tiktokUrl'] ?? '';
+
             final specialtyName = barberData['specialty'] as String?;
             if (specialtyName != null && _specialties.isNotEmpty) {
               try {
@@ -168,6 +170,12 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
         specialtyId: _selectedSpecialty!.id,
         experienceYears: int.parse(_experienceController.text.trim()),
         location: _locationController.text.trim(),
+        instagramUrl: _instagramController.text.trim().isEmpty
+            ? null
+            : _instagramController.text.trim(),
+        tiktokUrl: _tiktokController.text.trim().isEmpty
+            ? null
+            : _tiktokController.text.trim(),
       );
 
       if (mounted) {
@@ -223,17 +231,12 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: _isLoading
             ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryGold,
-                ),
+                child: CircularProgressIndicator(color: AppColors.primaryGold),
               )
             : SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -265,15 +268,17 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
                                 : AppDropdown<SpecialtyModel>(
                                     value: _selectedSpecialty,
                                     items: _specialties
-                                        .map((specialty) => DropdownMenuItem(
-                                              value: specialty,
-                                              child: Text(
-                                                specialty.name,
-                                                style: const TextStyle(
-                                                  color: AppColors.textPrimary,
-                                                ),
+                                        .map(
+                                          (specialty) => DropdownMenuItem(
+                                            value: specialty,
+                                            child: Text(
+                                              specialty.name,
+                                              style: const TextStyle(
+                                                color: AppColors.textPrimary,
                                               ),
-                                            ))
+                                            ),
+                                          ),
+                                        )
                                         .toList(),
                                     onChanged: (value) {
                                       setState(() {
@@ -326,6 +331,69 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
                                 }
                                 return null;
                               },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      AppCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Redes Sociales',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            AppTextField(
+                              controller: _instagramController,
+                              label: 'Instagram',
+                              hint: '@usuario o https://instagram.com/usuario',
+                              prefixIcon: Icons.camera_alt,
+                              validator: (value) {
+                                if (value != null && value.trim().isNotEmpty) {
+                                  final trimmed = value.trim();
+                                  // Validar que sea un formato válido (URL o @usuario)
+                                  if (!trimmed.startsWith('@') &&
+                                      !trimmed.startsWith('http') &&
+                                      !trimmed.contains('instagram.com')) {
+                                    return 'Ingresa @usuario o una URL válida';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            AppTextField(
+                              controller: _tiktokController,
+                              label: 'TikTok',
+                              hint: '@usuario o https://tiktok.com/@usuario',
+                              prefixIcon: Icons.music_note,
+                              validator: (value) {
+                                if (value != null && value.trim().isNotEmpty) {
+                                  final trimmed = value.trim();
+                                  // Validar que sea un formato válido (URL o @usuario)
+                                  if (!trimmed.startsWith('@') &&
+                                      !trimmed.startsWith('http') &&
+                                      !trimmed.contains('tiktok.com')) {
+                                    return 'Ingresa @usuario o una URL válida';
+                                  }
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Puedes usar @usuario o la URL completa. El sistema normalizará automáticamente.',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),

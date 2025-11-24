@@ -17,6 +17,8 @@ class BarberModel extends BarberEntity {
     required super.experience,
     required super.distance,
     String? workplaceId,
+    super.instagramUrl,
+    super.tiktokUrl,
   }) : _workplaceId = workplaceId;
 
   factory BarberModel.fromJson(Map<String, dynamic> json) {
@@ -33,13 +35,16 @@ class BarberModel extends BarberEntity {
       experience: (json['experienceYears'] as int?)?.toString() ?? '0',
       distance: json['distance'] as String? ?? '',
       workplaceId: json['workplaceId'] as String?,
+      instagramUrl: json['instagramUrl'] as String?,
+      tiktokUrl: json['tiktokUrl'] as String?,
     );
   }
 
   @override
   String? get workplaceId => _workplaceId;
   String? get serviceType => null; // Will be extracted from JSON if needed
-  Map<String, dynamic>? get workplaceRef => null; // Will be extracted from JSON if needed
+  Map<String, dynamic>? get workplaceRef =>
+      null; // Will be extracted from JSON if needed
 
   Map<String, dynamic> toJson() {
     return {
@@ -71,7 +76,8 @@ class BarberModel extends BarberEntity {
       experience: entity.experience,
       distance: entity.distance,
       workplaceId: entity.workplaceId,
+      instagramUrl: entity.instagramUrl,
+      tiktokUrl: entity.tiktokUrl,
     );
   }
 }
-

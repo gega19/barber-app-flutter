@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../constants/app_constants.dart';
@@ -24,6 +25,28 @@ class AnalyticsService {
   Timer? _batchTimer;
   String? _sessionId;
   bool _isInitialized = false;
+
+  // Flag para habilitar/deshabilitar analytics (útil para testing)
+  static bool _isEnabled = true;
+
+  /// Habilita o deshabilita el tracking de analytics
+  static void setEnabled(bool enabled) {
+    _isEnabled = enabled;
+    appLogger.i('Analytics ${enabled ? "enabled" : "disabled"}');
+  }
+
+  /// Verifica si el analytics está habilitado
+  /// En modo debug, no se envían eventos a menos que se fuerce
+  bool get isEnabled => _isEnabled;
+
+  /// Verifica si se debe enviar el evento (no en dev a menos que se fuerce o esté habilitado)
+  bool _shouldSendEvent({bool forceSend = false}) {
+    if (!_isEnabled) return false;
+    if (kDebugMode && !forceSend && !AppConstants.enableAnalyticsInDev) {
+      return false;
+    }
+    return true;
+  }
 
   AnalyticsService({
     required Dio dio,
@@ -56,12 +79,20 @@ class AnalyticsService {
 
   /// Registra un evento de analytics
   /// Los eventos se acumulan y se envían en batch
+  /// En modo desarrollo, solo se loggean los eventos (no se envían)
   Future<void> trackEvent({
     required String eventName,
     required String eventType,
     Map<String, dynamic>? properties,
     Map<String, dynamic>? metadata,
+    bool forceSend = false, // Para forzar envío incluso en dev
   }) async {
+    // En desarrollo, solo loggear (no enviar) a menos que se fuerce
+    if (!_shouldSendEvent(forceSend: forceSend)) {
+      appLogger.d('📊 Event tracked (not sent in dev): $eventName');
+      return;
+    }
+
     if (!_isInitialized) {
       await initialize();
     }
@@ -125,6 +156,106 @@ class AnalyticsService {
       eventType: 'user_action',
       properties: {'screenName': screenName, ...?properties},
     );
+  }
+
+  /// Trackea un error con información detallada
+  /// Incluye stack trace, contexto, request/response data, y severidad
+  /// En desarrollo, solo se loggean los errores (no se envían)
+  Future<void> trackError({
+    required String errorName,
+    required String
+    errorType, // 'api_error', 'network_error', 'app_error', etc.
+    required Object error,
+    StackTrace? stackTrace,
+    Map<String, dynamic>? context,
+    String severity = 'medium', // 'low', 'medium', 'high', 'critical'
+    Map<String, dynamic>? requestData,
+    Map<String, dynamic>? responseData,
+    bool forceSend = false, // Para forzar envío incluso en dev
+  }) async {
+    // En desarrollo, solo loggear (no enviar) a menos que se fuerce
+    if (!_shouldSendEvent(forceSend: forceSend)) {
+      appLogger.e(
+        '🔴 Error tracked (not sent in dev): $errorName',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (context != null) {
+        appLogger.d('   Context: $context');
+      }
+      if (requestData != null) {
+        appLogger.d('   Request: $requestData');
+      }
+      if (responseData != null) {
+        appLogger.d('   Response: $responseData');
+      }
+      return;
+    }
+
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      // Obtener userId si está disponible
+      String? userId;
+      try {
+        final userDataJson = await _localStorage.getUserData();
+        if (userDataJson != null && userDataJson.isNotEmpty) {
+          final userData = jsonDecode(userDataJson) as Map<String, dynamic>;
+          userId = userData['id'] as String?;
+        }
+      } catch (e) {
+        // Si no hay usuario o hay error, continuar sin userId
+      }
+
+      // Preparar propiedades del error con información detallada
+      final errorProperties = {
+        'errorName': errorName,
+        'errorType': errorType,
+        'errorMessage': error.toString(),
+        'errorClass': error.runtimeType.toString(),
+        'severity': severity,
+        if (stackTrace != null) 'stackTrace': stackTrace.toString(),
+        if (context != null) ...context,
+        if (requestData != null) 'requestData': requestData,
+        if (responseData != null) 'responseData': responseData,
+      };
+
+      // Obtener metadata del dispositivo
+      final deviceMetadata = {
+        'timestamp': DateTime.now().toIso8601String(),
+        'sessionId': _sessionId,
+        'errorClass': error.runtimeType.toString(),
+      };
+
+      final event = {
+        'eventType': 'error',
+        'eventName': errorName,
+        'platform': 'app',
+        'userId': userId,
+        'sessionId': _sessionId,
+        'properties': errorProperties,
+        'metadata': deviceMetadata,
+      };
+
+      // Agregar a la cola en memoria
+      _eventQueue.add(event);
+
+      // Si llegamos al límite, enviar inmediatamente
+      if (_eventQueue.length >= _batchSize) {
+        await _flushEvents();
+      } else {
+        // Si no hay timer, crear uno
+        _batchTimer ??= Timer(_batchTimeout, () => _flushEvents());
+      }
+
+      // Guardar en almacenamiento local para persistencia
+      await _saveEventsToLocal();
+    } catch (e) {
+      appLogger.e('Error tracking error event: $e');
+      // No lanzar error para no interrumpir el flujo principal
+    }
   }
 
   /// Envía todos los eventos pendientes inmediatamente

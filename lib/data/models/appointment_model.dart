@@ -35,7 +35,11 @@ class AppointmentModel extends AppointmentEntity {
     }
 
     AppointmentStatus status = AppointmentStatus.pending;
-    final statusStr = (json['status'] as String? ?? 'PENDING').toUpperCase();
+    final rawStatus = json['status'];
+    final statusStr = rawStatus != null
+        ? (rawStatus.toString().toUpperCase().trim())
+        : 'PENDING';
+
     switch (statusStr) {
       case 'COMPLETED':
         status = AppointmentStatus.completed;
@@ -47,6 +51,14 @@ class AppointmentModel extends AppointmentEntity {
         status = AppointmentStatus.upcoming;
         break;
       case 'PENDING':
+        status = AppointmentStatus.pending;
+        break;
+      default:
+        // Si el status no coincide con ninguno conocido, mantener como pending
+        // pero loguear para debug
+        print(
+          '⚠️ Unknown appointment status: "$statusStr" (raw: $rawStatus), defaulting to pending',
+        );
         status = AppointmentStatus.pending;
         break;
     }

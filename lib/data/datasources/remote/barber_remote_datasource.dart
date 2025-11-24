@@ -16,6 +16,8 @@ abstract class BarberRemoteDataSource {
     String? location,
     double? latitude,
     double? longitude,
+    String? instagramUrl,
+    String? tiktokUrl,
   });
 }
 
@@ -145,6 +147,8 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
     String? location,
     double? latitude,
     double? longitude,
+    String? instagramUrl,
+    String? tiktokUrl,
   }) async {
     try {
       final response = await dio.put(
@@ -156,6 +160,8 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
           if (location != null) 'location': location,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
+          if (instagramUrl != null) 'instagramUrl': instagramUrl.isEmpty ? null : instagramUrl,
+          if (tiktokUrl != null) 'tiktokUrl': tiktokUrl.isEmpty ? null : tiktokUrl,
         },
       );
 

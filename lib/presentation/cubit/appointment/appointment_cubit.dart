@@ -4,6 +4,7 @@ import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
+import '../../../domain/usecases/appointment/mark_as_attended_usecase.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/injection/injection.dart';
 
@@ -13,12 +14,14 @@ class AppointmentCubit extends Cubit<AppointmentState> {
   final GetAppointmentsUseCase getAppointmentsUseCase;
   final CreateAppointmentUseCase createAppointmentUseCase;
   final CancelAppointmentUseCase cancelAppointmentUseCase;
+  final MarkAsAttendedUseCase markAsAttendedUseCase;
   final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   AppointmentCubit({
     required this.getAppointmentsUseCase,
     required this.createAppointmentUseCase,
     required this.cancelAppointmentUseCase,
+    required this.markAsAttendedUseCase,
   }) : super(AppointmentInitial());
 
   Future<void> loadAppointments() async {
@@ -111,6 +114,35 @@ class AppointmentCubit extends Cubit<AppointmentState> {
           properties: {'appointmentId': appointmentId},
         );
         // Recargar citas después de cancelar
+        if (!isClosed) {
+          loadAppointments();
+        }
+        return true;
+      },
+    );
+  }
+
+  Future<bool> markAsAttended(String appointmentId) async {
+    if (isClosed) return false;
+    emit(AppointmentCompleting());
+
+    final result = await markAsAttendedUseCase(appointmentId);
+
+    if (isClosed) return false;
+
+    return result.fold(
+      (failure) {
+        if (!isClosed) emit(AppointmentError(failure.message));
+        return false;
+      },
+      (_) async {
+        // Track analytics
+        await analyticsService.trackEvent(
+          eventName: 'appointment_completed',
+          eventType: 'user_action',
+          properties: {'appointmentId': appointmentId},
+        );
+        // Recargar citas después de completar
         if (!isClosed) {
           loadAppointments();
         }

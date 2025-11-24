@@ -38,6 +38,11 @@ class AppConstants {
   // Landing Page URL
   static const String landingUrl = 'https://bartopve.vercel.app';
 
+  // Analytics Configuration
+  /// Si es true, permite enviar eventos de analytics en modo desarrollo
+  /// Por defecto es false (no se envían eventos en dev)
+  static const bool enableAnalyticsInDev = false;
+
   /// Construye una URL completa a partir de una URL relativa o absoluta
   /// Si la URL ya es absoluta (empieza con http), la devuelve tal cual
   /// Si es relativa, la concatena con baseUrl

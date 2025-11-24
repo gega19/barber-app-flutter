@@ -14,6 +14,8 @@ class BarberEntity extends Equatable {
   final String experience;
   final String distance;
   final String? workplaceId;
+  final String? instagramUrl;
+  final String? tiktokUrl;
 
   const BarberEntity({
     required this.id,
@@ -28,6 +30,8 @@ class BarberEntity extends Equatable {
     required this.experience,
     required this.distance,
     this.workplaceId,
+    this.instagramUrl,
+    this.tiktokUrl,
   });
 
   @override
@@ -44,6 +48,8 @@ class BarberEntity extends Equatable {
         experience,
         distance,
         workplaceId,
+        instagramUrl,
+        tiktokUrl,
       ];
 }
 

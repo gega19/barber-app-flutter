@@ -207,7 +207,217 @@ class AppointmentDetailScreen extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 24),
-                      // Actions
+                      // Actions for Barbers
+                      if (isBarber &&
+                          appointment.status != AppointmentStatus.completed &&
+                          appointment.status != AppointmentStatus.cancelled) ...[
+                        BlocConsumer<AppointmentCubit, AppointmentState>(
+                          listener: (context, state) {
+                            if (state is AppointmentError) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(state.message),
+                                  backgroundColor: AppColors.error,
+                                ),
+                              );
+                            } else if (state is AppointmentLoaded) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Acción realizada exitosamente'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          },
+                          builder: (context, state) {
+                            final isCompleting = state is AppointmentCompleting;
+                            final isCancelling = state is AppointmentCancelling;
+                            
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: isCompleting || isCancelling
+                                        ? null
+                                        : () async {
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                backgroundColor: AppColors.backgroundCard,
+                                                title: const Text(
+                                                  'Completar Cita',
+                                                  style: TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                                content: const Text(
+                                                  '¿Estás seguro de que deseas marcar esta cita como completada?',
+                                                  style: TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(false),
+                                                    child: const Text(
+                                                      'Cancelar',
+                                                      style: TextStyle(
+                                                        color: AppColors.textSecondary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(true),
+                                                    child: const Text(
+                                                      'Completar',
+                                                      style: TextStyle(
+                                                        color: AppColors.success,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirmed == true && context.mounted) {
+                                              await context
+                                                  .read<AppointmentCubit>()
+                                                  .markAsAttended(appointment.id);
+                                            }
+                                          },
+                                    icon: isCompleting
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : const Icon(Icons.check_circle, size: 20),
+                                    label: Text(
+                                      isCompleting ? 'Completando...' : 'Completar',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.success,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  )
+                                      .animate()
+                                      .fadeIn(duration: 300.ms, delay: 500.ms)
+                                      .slideY(
+                                          begin: 0.1,
+                                          end: 0,
+                                          duration: 300.ms,
+                                          delay: 500.ms),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: isCompleting || isCancelling
+                                        ? null
+                                        : () async {
+                                            final confirmed = await showDialog<bool>(
+                                              context: context,
+                                              builder: (context) => AlertDialog(
+                                                backgroundColor: AppColors.backgroundCard,
+                                                title: const Text(
+                                                  'Cancelar Cita',
+                                                  style: TextStyle(
+                                                    color: AppColors.textPrimary,
+                                                  ),
+                                                ),
+                                                content: const Text(
+                                                  '¿Estás seguro de que deseas cancelar esta cita? El cliente será notificado.',
+                                                  style: TextStyle(
+                                                    color: AppColors.textSecondary,
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(false),
+                                                    child: const Text(
+                                                      'No',
+                                                      style: TextStyle(
+                                                        color: AppColors.textSecondary,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  TextButton(
+                                                    onPressed: () =>
+                                                        Navigator.of(context).pop(true),
+                                                    child: const Text(
+                                                      'Sí, Cancelar',
+                                                      style: TextStyle(
+                                                        color: AppColors.error,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+
+                                            if (confirmed == true && context.mounted) {
+                                              final success = await context
+                                                  .read<AppointmentCubit>()
+                                                  .cancelAppointment(appointment.id);
+                                              
+                                              if (success && context.mounted) {
+                                                Navigator.of(context).pop();
+                                              }
+                                            }
+                                          },
+                                    icon: isCancelling
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                            ),
+                                          )
+                                        : const Icon(Icons.cancel, size: 20),
+                                    label: Text(
+                                      isCancelling ? 'Cancelando...' : 'Cancelar',
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.error,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  )
+                                      .animate()
+                                      .fadeIn(duration: 300.ms, delay: 550.ms)
+                                      .slideY(
+                                          begin: 0.1,
+                                          end: 0,
+                                          duration: 300.ms,
+                                          delay: 550.ms),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                      // Actions for Clients
                       if (!isBarber &&
                           (appointment.status == AppointmentStatus.pending ||
                               appointment.status == AppointmentStatus.upcoming)) ...[

@@ -20,6 +20,7 @@ import '../../widgets/barber/barber_recent_reviews_widget.dart';
 import '../../widgets/barber/barber_portfolio_grid_widget.dart';
 import '../../widgets/barber/barber_info_tab_widget.dart';
 import '../../widgets/barber/barber_courses_list_widget.dart';
+import '../../widgets/common/social_media_links_widget.dart';
 import '../../../data/datasources/remote/service_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
 import '../../../domain/entities/barber_course_entity.dart';
@@ -57,6 +58,8 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
   List<PromotionModel> _promotions = [];
   final PromotionRemoteDataSource _promotionDataSource =
       sl<PromotionRemoteDataSource>();
+  String? _instagramUrl;
+  String? _tiktokUrl;
 
   @override
   void initState() {
@@ -175,6 +178,10 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
           final barberJson = response.data['data'] as Map<String, dynamic>;
           serviceType = barberJson['serviceType'] as String?;
 
+          // Get social media URLs
+          final instagramUrl = barberJson['instagramUrl'] as String?;
+          final tiktokUrl = barberJson['tiktokUrl'] as String?;
+
           // Get workplace if workplaceId exists
           if (barberJson['workplaceId'] != null) {
             final workplaceId = barberJson['workplaceId'] as String;
@@ -187,6 +194,11 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                 barberJson['workplaceRef'] as Map<String, dynamic>;
             workplace = WorkplaceModel.fromJson(workplaceJson);
           }
+
+          setState(() {
+            _instagramUrl = instagramUrl;
+            _tiktokUrl = tiktokUrl;
+          });
         }
       } catch (e) {
         // Ignore errors, just continue without workplace
@@ -281,7 +293,11 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                 child: CustomScrollView(
                   slivers: [
                     // App Bar
-                    BarberDetailHeaderWidget(barber: barber),
+                    BarberDetailHeaderWidget(
+                      barber: barber,
+                      instagramUrl: _instagramUrl,
+                      tiktokUrl: _tiktokUrl,
+                    ),
                     // Content
                     SliverToBoxAdapter(
                       child: Padding(
@@ -383,6 +399,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   duration: 300.ms,
                                   delay: 300.ms,
                                 ),
+                            const SizedBox(height: 24),
                             // Tabs
                             RepaintBoundary(
                                   child: AppCard(

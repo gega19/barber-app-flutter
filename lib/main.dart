@@ -9,6 +9,7 @@ import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/socket_service.dart';
 import 'core/services/analytics_service.dart';
+import 'core/services/version_check_service.dart';
 import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
@@ -44,6 +45,29 @@ void main() async {
   } catch (e) {
     print('Error initializing Analytics: $e');
     // Continuar aunque analytics falle
+  }
+
+  // Inicializar servicio de verificación de versión
+  try {
+    final versionCheckService = sl<VersionCheckService>();
+    await versionCheckService.initialize();
+
+    debugPrint('🔍 Checking app version on startup...');
+    final versionCheckResult = await versionCheckService.checkVersion();
+
+    debugPrint('📊 Version check result: $versionCheckResult');
+
+    if (versionCheckResult == VersionCheckResult.updateAvailable) {
+      debugPrint('📢 Update available (not forced)');
+      // Aquí podrías mostrar un diálogo opcional para actualizar
+    } else if (versionCheckResult == VersionCheckResult.upToDate) {
+      debugPrint('✅ App is up to date');
+    } else {
+      debugPrint('⚠️ Error checking version, continuing anyway');
+    }
+  } catch (e) {
+    debugPrint('❌ Error initializing version check: $e');
+    // Continuar aunque la verificación de versión falle
   }
 
   // Inicializar formato de fechas para español

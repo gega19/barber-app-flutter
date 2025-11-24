@@ -146,25 +146,148 @@ class DioConfig {
     );
   }
 
-  /// Track API errors
+  /// Track API errors con información detallada
   static void _trackApiError(DioException error, GetIt sl) {
     try {
       final analyticsService = sl<AnalyticsService>();
-      analyticsService.trackEvent(
-        eventName: 'api_error',
-        eventType: 'error',
-        properties: {
-          'endpoint': error.requestOptions.path,
-          'method': error.requestOptions.method,
-          'statusCode': error.response?.statusCode,
-          'errorType': error.type.toString(),
-          'errorMessage': error.message,
-        },
+
+      // Preparar información detallada del request
+      final requestData = <String, dynamic>{
+        'endpoint': error.requestOptions.path,
+        'method': error.requestOptions.method,
+        'baseUrl': error.requestOptions.baseUrl,
+        'queryParameters': error.requestOptions.queryParameters,
+        if (error.requestOptions.data != null)
+          'requestBody': _sanitizeRequestBody(error.requestOptions.data),
+        'headers': _sanitizeHeaders(error.requestOptions.headers),
+      };
+
+      // Preparar información de la respuesta
+      final responseData = <String, dynamic>{
+        'statusCode': error.response?.statusCode,
+        'statusMessage': error.response?.statusMessage,
+        if (error.response?.data != null)
+          'responseBody': _sanitizeResponseBody(error.response!.data),
+      };
+
+      // Determinar severidad basada en el tipo de error
+      String severity = 'medium';
+      if (error.type == DioExceptionType.connectionTimeout ||
+          error.type == DioExceptionType.receiveTimeout ||
+          error.type == DioExceptionType.sendTimeout) {
+        severity = 'high';
+      } else if (error.response?.statusCode != null) {
+        final statusCode = error.response!.statusCode!;
+        if (statusCode >= 500) {
+          severity = 'high';
+        } else if (statusCode == 404 || statusCode == 400) {
+          severity = 'low';
+        } else if (statusCode == 403 || statusCode == 401) {
+          severity = 'medium';
+        }
+      } else if (error.type == DioExceptionType.connectionError) {
+        severity = 'high';
+      }
+
+      // Contexto adicional
+      final context = <String, dynamic>{
+        'endpoint': error.requestOptions.path,
+        'method': error.requestOptions.method,
+        'errorType': error.type.toString(),
+      };
+
+      analyticsService.trackError(
+        errorName: 'api_error',
+        errorType: 'api_error',
+        error: error,
+        stackTrace: error.stackTrace,
+        context: context,
+        severity: severity,
+        requestData: requestData,
+        responseData: responseData,
       );
     } catch (e) {
       // Silently fail to avoid breaking the error flow
       print('Error tracking API error: $e');
     }
+  }
+
+  /// Sanitiza el request body para no incluir información sensible
+  static dynamic _sanitizeRequestBody(dynamic data) {
+    if (data == null) return null;
+
+    if (data is Map) {
+      final sanitized = <String, dynamic>{};
+      data.forEach((key, value) {
+        final keyStr = key.toString().toLowerCase();
+        // Remover campos sensibles
+        if (keyStr.contains('password') ||
+            keyStr.contains('token') ||
+            keyStr.contains('secret') ||
+            keyStr.contains('key') ||
+            keyStr.contains('auth')) {
+          sanitized[key.toString()] = '[REDACTED]';
+        } else if (value is Map) {
+          sanitized[key.toString()] = _sanitizeRequestBody(value);
+        } else if (value is List) {
+          sanitized[key.toString()] = value.map((item) {
+            if (item is Map) {
+              return _sanitizeRequestBody(item);
+            }
+            return item;
+          }).toList();
+        } else {
+          sanitized[key.toString()] = value;
+        }
+      });
+      return sanitized;
+    }
+
+    if (data is String) {
+      // Limitar tamaño de strings
+      return data.length > 500 ? '${data.substring(0, 500)}...' : data;
+    }
+
+    // Para otros tipos, convertir a string y limitar
+    final dataStr = data.toString();
+    return dataStr.length > 200 ? '${dataStr.substring(0, 200)}...' : dataStr;
+  }
+
+  /// Sanitiza headers para no incluir tokens
+  static Map<String, dynamic> _sanitizeHeaders(Map<String, dynamic> headers) {
+    final sanitized = <String, dynamic>{};
+    headers.forEach((key, value) {
+      final keyLower = key.toLowerCase();
+      if (keyLower == 'authorization' ||
+          keyLower.contains('token') ||
+          keyLower.contains('secret') ||
+          keyLower.contains('key')) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = value;
+      }
+    });
+    return sanitized;
+  }
+
+  /// Sanitiza response body (limitar tamaño y remover datos sensibles)
+  static dynamic _sanitizeResponseBody(dynamic data) {
+    if (data == null) return null;
+
+    if (data is Map) {
+      return _sanitizeRequestBody(data);
+    }
+
+    if (data is String) {
+      return data.length > 500 ? '${data.substring(0, 500)}...' : data;
+    }
+
+    if (data is List) {
+      return data.map((item) => _sanitizeResponseBody(item)).toList();
+    }
+
+    final dataStr = data.toString();
+    return dataStr.length > 200 ? '${dataStr.substring(0, 200)}...' : dataStr;
   }
 
   /// Crea el interceptor de logging para modo debug

@@ -13,6 +13,8 @@ class WorkplaceModel extends WorkplaceEntity {
     super.banner,
     super.rating = 0.0,
     super.reviews = 0,
+    super.instagramUrl,
+    super.tiktokUrl,
   });
 
   factory WorkplaceModel.fromJson(Map<String, dynamic> json) {
@@ -21,13 +23,19 @@ class WorkplaceModel extends WorkplaceEntity {
       name: json['name'] as String,
       address: json['address'] as String?,
       city: json['city'] as String?,
-      latitude: json['latitude'] != null ? (json['latitude'] as num).toDouble() : null,
-      longitude: json['longitude'] != null ? (json['longitude'] as num).toDouble() : null,
+      latitude: json['latitude'] != null
+          ? (json['latitude'] as num).toDouble()
+          : null,
+      longitude: json['longitude'] != null
+          ? (json['longitude'] as num).toDouble()
+          : null,
       description: json['description'] as String?,
       image: json['image'] as String?,
       banner: json['banner'] as String?,
       rating: json['rating'] != null ? (json['rating'] as num).toDouble() : 0.0,
       reviews: json['reviews'] != null ? (json['reviews'] as num).toInt() : 0,
+      instagramUrl: json['instagramUrl'] as String?,
+      tiktokUrl: json['tiktokUrl'] as String?,
     );
   }
 
@@ -60,6 +68,8 @@ class WorkplaceModel extends WorkplaceEntity {
       banner: entity.banner,
       rating: entity.rating,
       reviews: entity.reviews,
+      instagramUrl: entity.instagramUrl,
+      tiktokUrl: entity.tiktokUrl,
     );
   }
 }
