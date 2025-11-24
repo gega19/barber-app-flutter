@@ -31,6 +31,7 @@ import '../../../data/models/workplace_model.dart';
 import '../../../data/models/promotion_model.dart';
 import '../../../data/datasources/remote/promotion_remote_datasource.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/services/analytics_service.dart';
 import 'package:dio/dio.dart';
 
 class BarberDetailScreen extends StatefulWidget {
@@ -66,6 +67,12 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
     _loadPromotions();
     // Cargar reseñas al iniciar
     context.read<ReviewCubit>().loadReviewsByBarber(widget.barberId);
+    // Track barber view
+    sl<AnalyticsService>().trackEvent(
+      eventName: 'barber_viewed',
+      eventType: 'user_action',
+      properties: {'barberId': widget.barberId},
+    );
   }
 
   Future<void> _loadPromotions() async {

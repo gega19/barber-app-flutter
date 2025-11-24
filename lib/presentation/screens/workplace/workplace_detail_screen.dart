@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/reviews/workplace_reviews_tab.dart';
 import '../../../domain/entities/workplace_entity.dart';
@@ -42,6 +43,12 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _loadWorkplaceDetails();
+    // Track workplace view
+    sl<AnalyticsService>().trackEvent(
+      eventName: 'workplace_viewed',
+      eventType: 'user_action',
+      properties: {'workplaceId': widget.workplaceId},
+    );
   }
 
   @override
@@ -62,10 +69,7 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
       _workplace = workplaceModel;
 
       // Load workplace media and barbers in parallel
-      await Future.wait([
-        _loadWorkplaceMedia(),
-        _loadBarbers(),
-      ]);
+      await Future.wait([_loadWorkplaceMedia(), _loadBarbers()]);
     } catch (e) {
       // TODO: Replace with proper error handling
       print('Error loading workplace: $e');
@@ -108,7 +112,9 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
 
     try {
       final barberDataSource = sl<BarberRemoteDataSource>();
-      final barbers = await barberDataSource.getBarbersByWorkplaceId(widget.workplaceId);
+      final barbers = await barberDataSource.getBarbersByWorkplaceId(
+        widget.workplaceId,
+      );
 
       if (mounted) {
         setState(() {
@@ -210,123 +216,157 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
                       WorkplaceInfoCardWidget(address: workplace.address!)
                           .animate()
                           .fadeIn(duration: 300.ms, delay: 0.ms)
-                          .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 0.ms),
+                          .slideY(
+                            begin: 0.1,
+                            end: 0,
+                            duration: 300.ms,
+                            delay: 0.ms,
+                          ),
                     // Description
                     if (workplace.description != null &&
                         workplace.description!.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       WorkplaceDescriptionCardWidget(
-                        description: workplace.description!,
-                      )
+                            description: workplace.description!,
+                          )
                           .animate()
                           .fadeIn(duration: 300.ms, delay: 100.ms)
-                          .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 100.ms),
+                          .slideY(
+                            begin: 0.1,
+                            end: 0,
+                            duration: 300.ms,
+                            delay: 100.ms,
+                          ),
                     ],
                     const SizedBox(height: 24),
                     // Tabs
                     RepaintBoundary(
-                      child: AppCard(
-                        padding: EdgeInsets.zero,
-                        child: Column(
-                          children: [
-                            Container(
-                              decoration: BoxDecoration(
-                                color: AppColors.backgroundCardDark,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(12),
-                                ),
-                              ),
-                              child: TabBar(
-                                controller: _tabController,
-                                indicatorSize: TabBarIndicatorSize.tab,
-                                indicator: BoxDecoration(
-                                  color: AppColors.primaryGold,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                labelColor: AppColors.textDark,
-                                unselectedLabelColor: AppColors.textSecondary,
-                                labelStyle: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                                unselectedLabelStyle: const TextStyle(
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 14,
-                                ),
-                                dividerColor: Colors.transparent,
-                                tabs: const [
-                                  Tab(
-                                    icon: Icon(Icons.image, size: 20),
-                                    text: 'Multimedia',
+                          child: AppCard(
+                            padding: EdgeInsets.zero,
+                            child: Column(
+                              children: [
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: AppColors.backgroundCardDark,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(12),
+                                    ),
                                   ),
-                                  Tab(
-                                    icon: Icon(Icons.people, size: 20),
-                                    text: 'Barberos',
+                                  child: TabBar(
+                                    controller: _tabController,
+                                    indicatorSize: TabBarIndicatorSize.tab,
+                                    indicator: BoxDecoration(
+                                      color: AppColors.primaryGold,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    labelColor: AppColors.textDark,
+                                    unselectedLabelColor:
+                                        AppColors.textSecondary,
+                                    labelStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                    unselectedLabelStyle: const TextStyle(
+                                      fontWeight: FontWeight.normal,
+                                      fontSize: 14,
+                                    ),
+                                    dividerColor: Colors.transparent,
+                                    tabs: const [
+                                      Tab(
+                                        icon: Icon(Icons.image, size: 20),
+                                        text: 'Multimedia',
+                                      ),
+                                      Tab(
+                                        icon: Icon(Icons.people, size: 20),
+                                        text: 'Barberos',
+                                      ),
+                                      Tab(
+                                        icon: Icon(Icons.info, size: 20),
+                                        text: 'Info',
+                                      ),
+                                      Tab(
+                                        icon: Icon(Icons.star, size: 20),
+                                        text: 'Reseñas',
+                                      ),
+                                    ],
                                   ),
-                                  Tab(
-                                    icon: Icon(Icons.info, size: 20),
-                                    text: 'Info',
+                                ),
+                                SizedBox(
+                                  height: 400,
+                                  child: TabBarView(
+                                    controller: _tabController,
+                                    children: [
+                                      // Multimedia Tab
+                                      RepaintBoundary(
+                                            child: WorkplaceMediaGridWidget(
+                                              media: _workplaceMedia,
+                                              loading: _loadingMedia,
+                                            ),
+                                          )
+                                          .animate(
+                                            key: ValueKey('multimedia_tab'),
+                                          )
+                                          .fadeIn(duration: 300.ms)
+                                          .slideX(
+                                            begin: 0.1,
+                                            end: 0,
+                                            duration: 300.ms,
+                                          ),
+                                      // Barbers Tab
+                                      RepaintBoundary(
+                                            child: WorkplaceBarbersListWidget(
+                                              barbers: _barbers,
+                                              loading: _loading,
+                                            ),
+                                          )
+                                          .animate(key: ValueKey('barbers_tab'))
+                                          .fadeIn(duration: 300.ms)
+                                          .slideX(
+                                            begin: 0.1,
+                                            end: 0,
+                                            duration: 300.ms,
+                                          ),
+                                      // Info Tab
+                                      RepaintBoundary(
+                                            child: WorkplaceInfoTabWidget(
+                                              workplace: workplace,
+                                            ),
+                                          )
+                                          .animate(key: ValueKey('info_tab'))
+                                          .fadeIn(duration: 300.ms)
+                                          .slideX(
+                                            begin: 0.1,
+                                            end: 0,
+                                            duration: 300.ms,
+                                          ),
+                                      // Reviews Tab
+                                      RepaintBoundary(
+                                            child: WorkplaceReviewsTab(
+                                              workplace: workplace,
+                                            ),
+                                          )
+                                          .animate(key: ValueKey('reviews_tab'))
+                                          .fadeIn(duration: 300.ms)
+                                          .slideX(
+                                            begin: 0.1,
+                                            end: 0,
+                                            duration: 300.ms,
+                                          ),
+                                    ],
                                   ),
-                                  Tab(
-                                    icon: Icon(Icons.star, size: 20),
-                                    text: 'Reseñas',
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                            SizedBox(
-                              height: 400,
-                              child: TabBarView(
-                                controller: _tabController,
-                                children: [
-                                  // Multimedia Tab
-                                  RepaintBoundary(
-                                    child: WorkplaceMediaGridWidget(
-                                      media: _workplaceMedia,
-                                      loading: _loadingMedia,
-                                    ),
-                                  )
-                                      .animate(key: ValueKey('multimedia_tab'))
-                                      .fadeIn(duration: 300.ms)
-                                      .slideX(begin: 0.1, end: 0, duration: 300.ms),
-                                  // Barbers Tab
-                                  RepaintBoundary(
-                                    child: WorkplaceBarbersListWidget(
-                                      barbers: _barbers,
-                                      loading: _loading,
-                                    ),
-                                  )
-                                      .animate(key: ValueKey('barbers_tab'))
-                                      .fadeIn(duration: 300.ms)
-                                      .slideX(begin: 0.1, end: 0, duration: 300.ms),
-                                  // Info Tab
-                                  RepaintBoundary(
-                                    child: WorkplaceInfoTabWidget(
-                                      workplace: workplace,
-                                    ),
-                                  )
-                                      .animate(key: ValueKey('info_tab'))
-                                      .fadeIn(duration: 300.ms)
-                                      .slideX(begin: 0.1, end: 0, duration: 300.ms),
-                                  // Reviews Tab
-                                  RepaintBoundary(
-                                    child: WorkplaceReviewsTab(
-                                      workplace: workplace,
-                                    ),
-                                  )
-                                      .animate(key: ValueKey('reviews_tab'))
-                                      .fadeIn(duration: 300.ms)
-                                      .slideX(begin: 0.1, end: 0, duration: 300.ms),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
+                          ),
+                        )
                         .animate()
                         .fadeIn(duration: 300.ms, delay: 200.ms)
-                        .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 200.ms),
+                        .slideY(
+                          begin: 0.1,
+                          end: 0,
+                          duration: 300.ms,
+                          delay: 200.ms,
+                        ),
                     const SizedBox(height: 24),
                   ],
                 ),

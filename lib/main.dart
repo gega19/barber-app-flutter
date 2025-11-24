@@ -8,6 +8,7 @@ import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/socket_service.dart';
+import 'core/services/analytics_service.dart';
 import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
@@ -31,6 +32,19 @@ void main() async {
 
   // Inicializar inyección de dependencias
   await init();
+
+  // Inicializar servicio de analytics
+  try {
+    await sl<AnalyticsService>().initialize();
+    // Track app opened
+    await sl<AnalyticsService>().trackEvent(
+      eventName: 'app_opened',
+      eventType: 'system_event',
+    );
+  } catch (e) {
+    print('Error initializing Analytics: $e');
+    // Continuar aunque analytics falle
+  }
 
   // Inicializar formato de fechas para español
   await initializeDateFormatting('es_ES', null);

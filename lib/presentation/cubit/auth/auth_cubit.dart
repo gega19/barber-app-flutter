@@ -11,6 +11,7 @@ import '../../../domain/usecases/auth/delete_account_usecase.dart';
 import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/analytics_service.dart';
 import '../../../core/injection/injection.dart';
 import '../../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../../data/datasources/local/local_storage.dart';
@@ -29,6 +30,7 @@ class AuthCubit extends Cubit<AuthState> {
   final DeleteAccountUseCase deleteAccountUseCase;
   final FcmTokenRepository fcmTokenRepository;
   final NotificationService notificationService;
+  final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   AuthCubit({
     required this.loginUseCase,
@@ -97,6 +99,12 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthAuthenticated(user));
       // Registrar token FCM después de login exitoso
       await _registerFcmToken();
+      // Track analytics
+      await analyticsService.trackEvent(
+        eventName: 'user_logged_in',
+        eventType: 'user_action',
+      );
+      await analyticsService.startNewSession();
     });
   }
 
@@ -117,6 +125,13 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthAuthenticated(user));
       // Registrar token FCM después de registro exitoso
       await _registerFcmToken();
+      // Track analytics
+      await analyticsService.trackEvent(
+        eventName: 'user_registered',
+        eventType: 'user_action',
+        properties: {'email': email},
+      );
+      await analyticsService.startNewSession();
     });
   }
 
@@ -135,7 +150,14 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await logoutUseCase();
     result.fold(
       (failure) => emit(AuthError(failure.message)),
-      (_) => emit(AuthInitial()),
+      (_) async {
+        // Track analytics
+        await analyticsService.trackEvent(
+          eventName: 'user_logged_out',
+          eventType: 'user_action',
+        );
+        emit(AuthInitial());
+      },
     );
   }
 

@@ -31,6 +31,7 @@ import '../../presentation/cubit/appointment/appointment_cubit.dart';
 import '../../presentation/cubit/barber_course/barber_course_cubit.dart';
 import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// Listenable wrapper para el stream del AuthCubit
@@ -51,13 +52,43 @@ class AuthStreamNotifier extends ChangeNotifier {
   }
 }
 
+/// Observer para trackear cambios de ruta
+class AnalyticsRouteObserver extends NavigatorObserver {
+  final AnalyticsService analyticsService;
+
+  AnalyticsRouteObserver(this.analyticsService);
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _trackRoute(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (newRoute != null) {
+      _trackRoute(newRoute);
+    }
+  }
+
+  void _trackRoute(Route<dynamic> route) {
+    final routeName = route.settings.name;
+    if (routeName != null) {
+      analyticsService.trackScreenView(routeName);
+    }
+  }
+}
+
 GoRouter createAppRouter() {
   final authCubit = sl<AuthCubit>();
   final authNotifier = AuthStreamNotifier(authCubit);
   final localStorage = sl<LocalStorage>();
+  final analyticsService = sl<AnalyticsService>();
   
   return GoRouter(
     initialLocation: '/login',
+    observers: [AnalyticsRouteObserver(analyticsService)],
     redirect: (context, state) async {
       final authState = authCubit.state;
       final isOnboarding = state.matchedLocation == '/onboarding';

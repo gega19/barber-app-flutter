@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/analytics_service.dart';
+import '../../../core/injection/injection.dart';
 import '../../../domain/entities/promotion_entity.dart';
 import '../common/app_card.dart';
 import '../common/app_badge.dart';
@@ -33,6 +35,16 @@ class PromotionCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         onTap: promotion.barber != null
             ? () {
+                // Track promotion view
+                sl<AnalyticsService>().trackEvent(
+                  eventName: 'promotion_viewed',
+                  eventType: 'user_action',
+                  properties: {
+                    'promotionId': promotion.id,
+                    'promotionTitle': promotion.title,
+                    'barberId': promotion.barber?.id,
+                  },
+                );
                 context.push('/barber/${promotion.barber!.id}');
               }
             : null,

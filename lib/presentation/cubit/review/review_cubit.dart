@@ -6,6 +6,8 @@ import '../../../domain/usecases/review/get_reviews_by_workplace_usecase.dart';
 import '../../../domain/usecases/review/create_review_usecase.dart';
 import '../../../domain/usecases/review/has_user_reviewed_barber_usecase.dart';
 import '../../../domain/usecases/review/has_user_reviewed_workplace_usecase.dart';
+import '../../../core/services/analytics_service.dart';
+import '../../../core/injection/injection.dart';
 
 part 'review_state.dart';
 
@@ -15,6 +17,7 @@ class ReviewCubit extends Cubit<ReviewState> {
   final CreateReviewUseCase createReviewUseCase;
   final HasUserReviewedBarberUseCase hasUserReviewedBarberUseCase;
   final HasUserReviewedWorkplaceUseCase hasUserReviewedWorkplaceUseCase;
+  final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   ReviewCubit({
     required this.getReviewsByBarberUseCase,
@@ -88,8 +91,21 @@ class ReviewCubit extends Cubit<ReviewState> {
         emit(ReviewError(failure.message));
         return false;
       },
-      (review) {
+      (review) async {
         emit(ReviewCreated(review));
+        
+        // Track review submission
+        await analyticsService.trackEvent(
+          eventName: 'review_submitted',
+          eventType: 'user_action',
+          properties: {
+            'barberId': barberId,
+            'workplaceId': workplaceId,
+            'rating': rating,
+            'hasComment': comment != null && comment.isNotEmpty,
+          },
+        );
+        
         // Recargar reseñas después de crear una nueva
         if (barberId != null) {
           loadReviewsByBarber(barberId);

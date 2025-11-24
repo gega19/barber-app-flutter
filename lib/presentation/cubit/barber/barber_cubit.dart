@@ -4,6 +4,8 @@ import '../../../domain/entities/barber_entity.dart';
 import '../../../domain/usecases/barber/get_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
 import '../../../domain/usecases/barber/search_barbers_usecase.dart';
+import '../../../core/services/analytics_service.dart';
+import '../../../core/injection/injection.dart';
 
 part 'barber_state.dart';
 
@@ -11,6 +13,7 @@ class BarberCubit extends Cubit<BarberState> {
   final GetBarbersUseCase getBarbersUseCase;
   final GetBestBarbersUseCase getBestBarbersUseCase;
   final SearchBarbersUseCase searchBarbersUseCase;
+  final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   BarberCubit({
     required this.getBarbersUseCase,
@@ -48,11 +51,32 @@ class BarberCubit extends Cubit<BarberState> {
 
     emit(BarberLoading());
 
+    // Track search
+    await analyticsService.trackEvent(
+      eventName: 'barber_searched',
+      eventType: 'user_action',
+      properties: {
+        'query': query,
+        'queryLength': query.length,
+      },
+    );
+
     final result = await searchBarbersUseCase(query);
 
     result.fold(
       (failure) => emit(BarberError(failure.message)),
-      (barbers) => emit(BarberLoaded(barbers)),
+      (barbers) {
+        emit(BarberLoaded(barbers));
+        // Track search results
+        analyticsService.trackEvent(
+          eventName: 'barber_search_results',
+          eventType: 'user_action',
+          properties: {
+            'query': query,
+            'resultsCount': barbers.length,
+          },
+        );
+      },
     );
   }
 

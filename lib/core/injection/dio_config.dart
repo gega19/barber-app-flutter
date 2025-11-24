@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import '../constants/app_constants.dart';
 import '../../data/datasources/local/local_storage.dart';
 import '../../data/datasources/remote/auth_remote_datasource.dart';
+import '../services/analytics_service.dart';
 
 /// Configuración y creación del cliente HTTP Dio
 class DioConfig {
@@ -137,10 +138,33 @@ class DioConfig {
             isRefreshing = false;
           }
         } else {
+          // Track API errors (except 401 which is handled above)
+          _trackApiError(error, sl);
           handler.next(error);
         }
       },
     );
+  }
+
+  /// Track API errors
+  static void _trackApiError(DioException error, GetIt sl) {
+    try {
+      final analyticsService = sl<AnalyticsService>();
+      analyticsService.trackEvent(
+        eventName: 'api_error',
+        eventType: 'error',
+        properties: {
+          'endpoint': error.requestOptions.path,
+          'method': error.requestOptions.method,
+          'statusCode': error.response?.statusCode,
+          'errorType': error.type.toString(),
+          'errorMessage': error.message,
+        },
+      );
+    } catch (e) {
+      // Silently fail to avoid breaking the error flow
+      print('Error tracking API error: $e');
+    }
   }
 
   /// Crea el interceptor de logging para modo debug

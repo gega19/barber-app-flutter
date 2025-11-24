@@ -4,6 +4,8 @@ import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
+import '../../../core/services/analytics_service.dart';
+import '../../../core/injection/injection.dart';
 
 part 'appointment_state.dart';
 
@@ -11,6 +13,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
   final GetAppointmentsUseCase getAppointmentsUseCase;
   final CreateAppointmentUseCase createAppointmentUseCase;
   final CancelAppointmentUseCase cancelAppointmentUseCase;
+  final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   AppointmentCubit({
     required this.getAppointmentsUseCase,
@@ -65,7 +68,19 @@ class AppointmentCubit extends Cubit<AppointmentState> {
         if (!isClosed) emit(AppointmentError(failure.message));
         return false;
       },
-      (appointment) {
+      (appointment) async {
+        // Track analytics
+        await analyticsService.trackEvent(
+          eventName: 'appointment_created',
+          eventType: 'user_action',
+          properties: {
+            'barberId': barberId,
+            'serviceId': serviceId,
+            'date': date.toIso8601String(),
+            'time': time,
+            'paymentMethod': paymentMethod,
+          },
+        );
         // Recargar citas después de crear una nueva
         if (!isClosed) {
           loadAppointments();
@@ -88,7 +103,13 @@ class AppointmentCubit extends Cubit<AppointmentState> {
         if (!isClosed) emit(AppointmentError(failure.message));
         return false;
       },
-      (_) {
+      (_) async {
+        // Track analytics
+        await analyticsService.trackEvent(
+          eventName: 'appointment_cancelled',
+          eventType: 'user_action',
+          properties: {'appointmentId': appointmentId},
+        );
         // Recargar citas después de cancelar
         if (!isClosed) {
           loadAppointments();
