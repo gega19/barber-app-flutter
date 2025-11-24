@@ -78,12 +78,6 @@ android/app/debug/
 android/app/profile/
 android/app/release/
 
-# Android Keystore files (NUNCA SUBIR A GIT)
-android/key.properties
-android/*.jks
-android/*.keystore
-android/app-release-key.jks
-
 # Prisma
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
