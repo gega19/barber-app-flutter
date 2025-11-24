@@ -11,6 +11,8 @@ abstract class BarberRepository {
 
   Future<Either<Failure, List<BarberEntity>>> searchBarbers(String query);
 
+  Future<Either<Failure, List<BarberEntity>>> getBarbersByWorkplaceId(String workplaceId);
+
   Future<Either<Failure, List<BarberEntity>>> getBarbersByCategory(
     String category,
   );

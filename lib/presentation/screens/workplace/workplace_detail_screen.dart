@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
-import '../../cubit/barber/barber_cubit.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/reviews/workplace_reviews_tab.dart';
 import '../../../domain/entities/workplace_entity.dart';
 import '../../../domain/entities/barber_entity.dart';
 import '../../../data/datasources/remote/workplace_remote_datasource.dart';
 import '../../../data/datasources/remote/workplace_media_remote_datasource.dart';
+import '../../../data/datasources/remote/barber_remote_datasource.dart';
 import '../../../data/models/workplace_media_model.dart';
 import '../../widgets/workplace/workplace_detail_header_widget.dart';
 import '../../widgets/workplace/workplace_header_skeleton.dart';
@@ -103,19 +102,27 @@ class _WorkplaceDetailScreenState extends State<WorkplaceDetailScreen>
   }
 
   Future<void> _loadBarbers() async {
-    try {
-      final barberCubit = context.read<BarberCubit>();
-      await barberCubit.loadBarbers();
+    setState(() {
+      _loading = true;
+    });
 
-      if (mounted && barberCubit.state is BarberLoaded) {
-        final allBarbers = (barberCubit.state as BarberLoaded).barbers;
-        // Filter barbers that belong to this workplace
-        // Note: This would need workplaceId in BarberEntity, for now we'll show all
+    try {
+      final barberDataSource = sl<BarberRemoteDataSource>();
+      final barbers = await barberDataSource.getBarbersByWorkplaceId(widget.workplaceId);
+
+      if (mounted) {
         setState(() {
-          _barbers = allBarbers;
+          _barbers = barbers;
+          _loading = false;
         });
       }
     } catch (e) {
+      if (mounted) {
+        setState(() {
+          _barbers = [];
+          _loading = false;
+        });
+      }
       // TODO: Replace with proper error handling
       print('Error loading barbers: $e');
     }

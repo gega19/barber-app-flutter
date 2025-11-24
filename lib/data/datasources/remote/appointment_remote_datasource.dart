@@ -97,6 +97,10 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
     try {
       // Formatear fecha como YYYY-MM-DD
       final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      
+      // Obtener hora actual local del dispositivo para enviar al servidor
+      final now = DateTime.now();
+      final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       final response = await dio.post(
         '${AppConstants.baseUrl}/api/appointments',
@@ -106,6 +110,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
           'date': dateStr,
           'time': time,
           'paymentMethod': paymentMethod,
+          'currentTime': currentTime, // Enviar hora local del cliente
           if (paymentProof != null && paymentProof.isNotEmpty) 'paymentProof': paymentProof,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
         },

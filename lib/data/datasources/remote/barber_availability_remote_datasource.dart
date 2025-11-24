@@ -94,9 +94,16 @@ class BarberAvailabilityRemoteDataSourceImpl implements BarberAvailabilityRemote
   @override
   Future<List<String>> getAvailableSlots(String barberId, String date) async {
     try {
+      // Obtener hora actual local del dispositivo para enviar al servidor
+      final now = DateTime.now();
+      final currentTime = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/barber-availability/$barberId/slots',
-        queryParameters: { 'date': date },
+        queryParameters: { 
+          'date': date,
+          'currentTime': currentTime, // Enviar hora local del cliente
+        },
       );
 
       if (response.statusCode == 200) {

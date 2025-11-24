@@ -52,6 +52,16 @@ class BarberRepositoryImpl implements BarberRepository {
   }
 
   @override
+  Future<Either<Failure, List<BarberEntity>>> getBarbersByWorkplaceId(String workplaceId) async {
+    try {
+      final barbers = await remoteDataSource.getBarbersByWorkplaceId(workplaceId);
+      return Right(barbers);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<BarberEntity>>> getBarbersByCategory(
     String category,
   ) async {
