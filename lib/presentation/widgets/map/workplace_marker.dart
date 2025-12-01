@@ -18,9 +18,10 @@ class WorkplaceMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
+    return RepaintBoundary(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
           color: isSelected
@@ -46,6 +47,7 @@ class WorkplaceMarker extends StatelessWidget {
           color: isSelected ? AppColors.textDark : AppColors.primaryGold,
           size: isSelected ? 32 : 28,
         ),
+      ),
       ),
     );
   }

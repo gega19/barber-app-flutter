@@ -20,9 +20,13 @@ class MapCubit extends Cubit<MapState> {
   }) : super(MapInitial());
 
   /// Carga todas las barberías
-  Future<void> loadWorkplaces() async {
+  Future<void> loadWorkplaces({bool showLoading = true}) async {
     if (isClosed) return;
-    emit(MapLoading());
+
+    final currentState = state;
+    if (showLoading && currentState is! MapLoaded) {
+      emit(MapLoading());
+    }
 
     final result = await getWorkplacesUseCase();
 
@@ -30,11 +34,26 @@ class MapCubit extends Cubit<MapState> {
 
     result.fold(
       (failure) {
-        if (!isClosed) emit(MapError(failure.message));
+        if (!isClosed) {
+          // Determinar tipo de error basado en el mensaje
+          final errorMessage = failure.message.toLowerCase();
+          MapErrorType errorType = MapErrorType.unknown;
+          if (errorMessage.contains('network') ||
+              errorMessage.contains('connection')) {
+            errorType = MapErrorType.networkError;
+          }
+          emit(MapError(failure.message, type: errorType));
+        }
       },
       (workplaces) {
         if (!isClosed) {
-          emit(MapLoaded(workplaces: workplaces));
+          final currentState = state;
+          if (currentState is MapLoaded) {
+            // Preservar todos los filtros actuales
+            emit(currentState.copyWith(workplaces: workplaces));
+          } else {
+            emit(MapLoaded(workplaces: workplaces));
+          }
         }
       },
     );
@@ -45,9 +64,14 @@ class MapCubit extends Cubit<MapState> {
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
+    bool showLoading = true,
   }) async {
     if (isClosed) return;
-    emit(MapLoading());
+
+    final currentState = state;
+    if (showLoading && currentState is! MapLoaded) {
+      emit(MapLoading());
+    }
 
     final result = await getNearbyWorkplacesUseCase(
       latitude: latitude,
@@ -59,12 +83,22 @@ class MapCubit extends Cubit<MapState> {
 
     result.fold(
       (failure) {
-        if (!isClosed) emit(MapError(failure.message));
+        if (!isClosed) {
+          // Determinar tipo de error basado en el mensaje
+          final errorMessage = failure.message.toLowerCase();
+          MapErrorType errorType = MapErrorType.unknown;
+          if (errorMessage.contains('network') ||
+              errorMessage.contains('connection')) {
+            errorType = MapErrorType.networkError;
+          }
+          emit(MapError(failure.message, type: errorType));
+        }
       },
       (workplaces) {
         if (!isClosed) {
           final currentState = state;
           if (currentState is MapLoaded) {
+            // Preservar todos los filtros actuales
             emit(currentState.copyWith(workplaces: workplaces));
           } else {
             emit(MapLoaded(workplaces: workplaces));
@@ -80,43 +114,52 @@ class MapCubit extends Cubit<MapState> {
 
     try {
       final position = await locationService.getCurrentLocation();
-      
+
       if (isClosed) return;
 
       if (position != null) {
         final currentState = state;
         if (currentState is MapLoaded) {
           emit(currentState.copyWith(userLocation: position));
-          // Cargar barberías cercanas automáticamente
-          await loadNearbyWorkplaces(
-            latitude: position.latitude,
-            longitude: position.longitude,
-          );
+          // Cargar todas las barberías
+          await loadWorkplaces(showLoading: false);
         } else {
-          emit(MapLoaded(
-            workplaces: [],
-            userLocation: position,
-          ));
-          // Cargar barberías cercanas automáticamente
-          await loadNearbyWorkplaces(
-            latitude: position.latitude,
-            longitude: position.longitude,
-          );
+          emit(MapLoaded(workplaces: [], userLocation: position));
+          // Cargar todas las barberías
+          await loadWorkplaces(showLoading: false);
         }
       } else {
         // Si no se puede obtener ubicación, cargar todas las barberías
-        await loadWorkplaces();
+        await loadWorkplaces(showLoading: true);
       }
     } catch (e) {
       if (isClosed) return;
-      emit(MapError('Error al obtener ubicación: ${e.toString()}'));
+      // Determinar tipo de error
+      final errorMessage = e.toString().toLowerCase();
+      MapErrorType errorType = MapErrorType.unknown;
+      if (errorMessage.contains('permission') ||
+          errorMessage.contains('denied')) {
+        errorType = MapErrorType.permissionDenied;
+      } else if (errorMessage.contains('location') ||
+          errorMessage.contains('unavailable')) {
+        errorType = MapErrorType.locationUnavailable;
+      } else if (errorMessage.contains('network') ||
+          errorMessage.contains('connection')) {
+        errorType = MapErrorType.networkError;
+      }
+      emit(
+        MapError(
+          'Error al obtener ubicación: ${e.toString()}',
+          type: errorType,
+        ),
+      );
     }
   }
 
   /// Selecciona una barbería en el mapa
   void selectWorkplace(String? workplaceId) {
     if (isClosed) return;
-    
+
     final currentState = state;
     if (currentState is MapLoaded) {
       emit(currentState.copyWith(selectedWorkplaceId: workplaceId));
@@ -126,7 +169,7 @@ class MapCubit extends Cubit<MapState> {
   /// Deselecciona la barbería actual
   void deselectWorkplace() {
     if (isClosed) return;
-    
+
     final currentState = state;
     if (currentState is MapLoaded) {
       // Usar copyWith con clearSelectedWorkplace para asegurar que se establezca en null
@@ -140,7 +183,7 @@ class MapCubit extends Cubit<MapState> {
 
     final currentState = state;
     if (currentState is MapLoaded) {
-      emit(currentState.copyWith(searchQuery: query));
+      emit(currentState.copyWith(searchQuery: query, recalculateFilters: true));
     }
   }
 
@@ -150,17 +193,16 @@ class MapCubit extends Cubit<MapState> {
 
     final currentState = state;
     if (currentState is MapLoaded) {
-      emit(currentState.copyWith(minRating: minRating));
-    }
-  }
-
-  /// Filtra por distancia máxima
-  void filterByMaxDistance(double? maxDistanceKm) {
-    if (isClosed) return;
-
-    final currentState = state;
-    if (currentState is MapLoaded) {
-      emit(currentState.copyWith(maxDistanceKm: maxDistanceKm));
+      // Si minRating es null, usar clearMinRating para establecerlo explícitamente
+      if (minRating == null) {
+        emit(
+          currentState.copyWith(clearMinRating: true, recalculateFilters: true),
+        );
+      } else {
+        emit(
+          currentState.copyWith(minRating: minRating, recalculateFilters: true),
+        );
+      }
     }
   }
 
@@ -170,25 +212,7 @@ class MapCubit extends Cubit<MapState> {
 
     final currentState = state;
     if (currentState is MapLoaded) {
-      emit(currentState.copyWith(selectedCity: city));
-    }
-  }
-
-  /// Actualiza el radio de búsqueda y recarga barberías cercanas
-  Future<void> updateSearchRadius(double radiusKm) async {
-    if (isClosed) return;
-
-    final currentState = state;
-    if (currentState is MapLoaded && currentState.userLocation != null) {
-      // Actualizar el radio en el estado
-      emit(currentState.copyWith(searchRadiusKm: radiusKm));
-      
-      // Recargar barberías con el nuevo radio
-      await loadNearbyWorkplaces(
-        latitude: currentState.userLocation!.latitude,
-        longitude: currentState.userLocation!.longitude,
-        radiusKm: radiusKm,
-      );
+      emit(currentState.copyWith(selectedCity: city, recalculateFilters: true));
     }
   }
 
@@ -198,68 +222,27 @@ class MapCubit extends Cubit<MapState> {
 
     final currentState = state;
     if (currentState is MapLoaded) {
-      emit(currentState.copyWith(clearFilters: true));
+      emit(currentState.copyWith(clearFilters: true, recalculateFilters: true));
+      // Recargar todas las barberías
+      loadWorkplaces(showLoading: false);
     }
   }
 
-  /// Obtiene lista de ciudades únicas de las barberías
+  /// Obtiene lista de ciudades únicas de las barberías (memoizada en el estado)
   List<String> getAvailableCities() {
     final currentState = state;
     if (currentState is MapLoaded) {
-      return currentState.workplaces
-          .where((wp) => wp.city != null && wp.city!.isNotEmpty)
-          .map((wp) => wp.city!)
-          .toSet()
-          .toList()
-        ..sort();
+      return currentState.availableCities;
     }
     return [];
   }
 
-  /// Obtiene la lista filtrada de barberías basada en los filtros activos
+  /// Obtiene la lista filtrada de barberías (memoizada en el estado)
   List<WorkplaceEntity> getFilteredWorkplaces() {
     final currentState = state;
-    if (currentState is! MapLoaded) return [];
-
-    var filtered = List<WorkplaceEntity>.from(currentState.workplaces);
-
-    // Filtro de búsqueda por texto
-    if (currentState.searchQuery.isNotEmpty) {
-      final query = currentState.searchQuery.toLowerCase();
-      filtered = filtered.where((wp) {
-        return wp.name.toLowerCase().contains(query) ||
-            (wp.address?.toLowerCase().contains(query) ?? false) ||
-            (wp.city?.toLowerCase().contains(query) ?? false) ||
-            (wp.description?.toLowerCase().contains(query) ?? false);
-      }).toList();
+    if (currentState is MapLoaded) {
+      return currentState.filteredWorkplaces;
     }
-
-    // Filtro por rating mínimo
-    if (currentState.minRating != null && currentState.minRating! > 0) {
-      filtered = filtered.where((wp) => wp.rating >= currentState.minRating!).toList();
-    }
-
-    // Filtro por ciudad
-    if (currentState.selectedCity != null && currentState.selectedCity!.isNotEmpty) {
-      filtered = filtered.where((wp) =>
-          wp.city?.toLowerCase() == currentState.selectedCity!.toLowerCase()).toList();
-    }
-
-    // Filtro por distancia máxima (si hay ubicación del usuario)
-    if (currentState.maxDistanceKm != null && currentState.userLocation != null) {
-      filtered = filtered.where((wp) {
-        if (wp.latitude == null || wp.longitude == null) return false;
-        final distance = locationService.calculateDistance(
-          currentState.userLocation!.latitude,
-          currentState.userLocation!.longitude,
-          wp.latitude!,
-          wp.longitude!,
-        );
-        return distance <= currentState.maxDistanceKm!;
-      }).toList();
-    }
-
-    return filtered;
+    return [];
   }
 }
-

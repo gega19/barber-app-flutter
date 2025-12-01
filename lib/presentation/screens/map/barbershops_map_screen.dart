@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/map_constants.dart';
 import '../../../core/services/location_service.dart';
 import '../../../domain/entities/workplace_entity.dart';
 import '../../cubit/map/map_cubit.dart';
@@ -12,6 +12,9 @@ import '../../widgets/common/error_widget.dart' as error_widget;
 import '../../widgets/common/loading_widget.dart';
 import '../../widgets/map/workplace_marker.dart';
 import '../../widgets/map/map_filters_widget.dart';
+import '../../widgets/map/map_header_widget.dart';
+import '../../widgets/map/map_loading_overlay.dart';
+import '../../widgets/map/user_location_marker.dart';
 import '../../../core/injection/injection.dart' as injection;
 
 class BarbershopsMapScreen extends StatefulWidget {
@@ -25,8 +28,7 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
   final MapController _mapController = MapController();
   final LocationService _locationService = injection.sl<LocationService>();
   final TextEditingController _searchController = TextEditingController();
-  LatLng? _userLocationLatLng;
-  double _currentZoom = 13.0;
+  double _currentZoom = MapConstants.initialZoom;
   bool _showFilters = false;
   Timer? _searchDebounce;
 
@@ -50,21 +52,30 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
 
   void _onSearchChanged() {
     _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+    _searchDebounce = Timer(MapConstants.searchDebounce, () {
       if (mounted) {
         context.read<MapCubit>().updateSearchQuery(_searchController.text);
       }
     });
   }
 
-  void _centerOnUserLocation() async {
-    final position = await _locationService.getCurrentLocation();
-    if (position != null && mounted) {
-      final latLng = LatLng(position.latitude, position.longitude);
-      setState(() {
-        _userLocationLatLng = latLng;
-      });
+  void _centerOnUserLocation() {
+    // Centrar el mapa en la ubicación del usuario usando el estado actual
+    final currentState = context.read<MapCubit>().state;
+    if (currentState is MapLoaded && currentState.userLocation != null) {
+      final latLng = LatLng(
+        currentState.userLocation!.latitude,
+        currentState.userLocation!.longitude,
+      );
       _mapController.move(latLng, _currentZoom);
+    } else {
+      // Si no hay ubicación en el estado, intentar obtenerla y centrar
+      _locationService.getCurrentLocation().then((position) {
+        if (position != null && mounted) {
+          final latLng = LatLng(position.latitude, position.longitude);
+          _mapController.move(latLng, _currentZoom);
+        }
+      });
     }
   }
 
@@ -102,11 +113,25 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
         ),
         child: SafeArea(
           child: BlocBuilder<MapCubit, MapState>(
+            buildWhen: (previous, current) {
+              // Reconstruir cuando cambia el tipo de estado o cuando cambian las barberías/filtros
+              if (previous.runtimeType != current.runtimeType) return true;
+              if (previous is MapLoaded && current is MapLoaded) {
+                // Reconstruir si cambian las barberías, filtros o ubicación
+                return previous.workplaces.length !=
+                        current.workplaces.length ||
+                    previous.searchQuery != current.searchQuery ||
+                    previous.minRating != current.minRating ||
+                    previous.selectedCity != current.selectedCity ||
+                    previous.selectedWorkplaceId !=
+                        current.selectedWorkplaceId ||
+                    previous.userLocation != current.userLocation;
+              }
+              return false;
+            },
             builder: (context, state) {
               if (state is MapLoading) {
-                return const Center(
-                  child: LoadingWidget(),
-                );
+                return const Center(child: LoadingWidget());
               }
 
               if (state is MapError) {
@@ -121,345 +146,186 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
               }
 
               if (state is MapLoaded) {
-                final workplaces = context.read<MapCubit>().getFilteredWorkplaces();
+                final workplaces = state.filteredWorkplaces;
                 final allWorkplaces = state.workplaces;
                 final userLocation = state.userLocation;
 
-                // Convertir Position a LatLng si existe
-                if (userLocation != null && _userLocationLatLng == null) {
-                  _userLocationLatLng = LatLng(
-                    userLocation.latitude,
-                    userLocation.longitude,
+                // Centro del mapa: usar ubicación del usuario si está disponible
+                final center = userLocation != null
+                    ? LatLng(userLocation.latitude, userLocation.longitude)
+                    : const LatLng(
+                        MapConstants.defaultLatitude,
+                        MapConstants.defaultLongitude,
+                      );
+
+                final stackChildren = <Widget>[
+                  // Mapa
+                  FlutterMap(
+                    mapController: _mapController,
+                    options: MapOptions(
+                      initialCenter: center,
+                      initialZoom: _currentZoom,
+                      minZoom: MapConstants.minZoom,
+                      maxZoom: MapConstants.maxZoom,
+                      onMapEvent: _onMapMove,
+                      onTap: (tapPosition, point) {
+                        // Deseleccionar al tocar el mapa
+                        final cubit = context.read<MapCubit>();
+                        cubit.deselectWorkplace();
+                      },
+                      interactionOptions: const InteractionOptions(
+                        flags: InteractiveFlag.all,
+                      ),
+                    ),
+                    children: [
+                      // Tiles de OpenStreetMap
+                      TileLayer(
+                        urlTemplate: MapConstants.tileUrlTemplate,
+                        userAgentPackageName: MapConstants.userAgentPackageName,
+                        maxZoom: MapConstants.tileMaxZoom.toDouble(),
+                      ),
+                      // Marcadores de barberías (solo las filtradas)
+                      MarkerLayer(
+                        markers: workplaces
+                            .where(
+                              (wp) =>
+                                  wp.latitude != null && wp.longitude != null,
+                            )
+                            .map((workplace) {
+                              final isSelected =
+                                  state.selectedWorkplaceId == workplace.id;
+                              return Marker(
+                                point: LatLng(
+                                  workplace.latitude!,
+                                  workplace.longitude!,
+                                ),
+                                width: MapConstants.markerWidth.toDouble(),
+                                height: MapConstants.markerHeight.toDouble(),
+                                child: WorkplaceMarker(
+                                  workplace: workplace,
+                                  isSelected: isSelected,
+                                  onTap: () => _onWorkplaceTap(workplace),
+                                ),
+                              );
+                            })
+                            .toList(),
+                      ),
+                      // Marcador de ubicación del usuario (siempre visible si hay ubicación)
+                      if (userLocation != null)
+                        MarkerLayer(
+                          markers: [
+                            UserLocationMarker.buildMarker(userLocation),
+                          ],
+                        ),
+                    ],
+                  ),
+                  // Header con búsqueda
+                  MapHeaderWidget(
+                    searchQuery: state.searchQuery,
+                    workplacesCount: workplaces.length,
+                    hasActiveFilters:
+                        state.searchQuery.isNotEmpty ||
+                        state.minRating != null ||
+                        state.selectedCity != null,
+                    searchController: _searchController,
+                    onFilterPressed: () {
+                      setState(() {
+                        _showFilters = !_showFilters;
+                      });
+                    },
+                    onLocationPressed: _centerOnUserLocation,
+                    onSearchChanged: (query) {
+                      context.read<MapCubit>().updateSearchQuery(query);
+                    },
+                  ),
+                ];
+
+                // Agregar panel de filtros si está visible
+                if (_showFilters) {
+                  stackChildren.add(
+                    Positioned(
+                      top: 180,
+                      left: 16,
+                      right: 16,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: MapFiltersWidget(
+                          selectedCity: state.selectedCity,
+                          minRating: state.minRating,
+                          availableCities: state.availableCities,
+                          onCityChanged: (city) {
+                            context.read<MapCubit>().filterByCity(city);
+                          },
+                          onMinRatingChanged: (rating) {
+                            context.read<MapCubit>().filterByMinRating(rating);
+                          },
+                          onClearFilters: () {
+                            _searchController.clear();
+                            context.read<MapCubit>().clearFilters();
+                          },
+                          hasActiveFilters:
+                              state.searchQuery.isNotEmpty ||
+                              state.minRating != null ||
+                              state.selectedCity != null,
+                        ),
+                      ),
+                    ),
                   );
                 }
 
-                // Centro por defecto (Caracas, Venezuela) si no hay ubicación
-                final center = _userLocationLatLng ??
-                    const LatLng(10.4806, -66.9036);
-
-                return Stack(
-                  children: [
-                    // Mapa
-                    FlutterMap(
-                      mapController: _mapController,
-                      options: MapOptions(
-                        initialCenter: center,
-                        initialZoom: _currentZoom,
-                        minZoom: 10.0,
-                        maxZoom: 18.0,
-                        onMapEvent: _onMapMove,
-                        onTap: (tapPosition, point) {
-                          // Deseleccionar al tocar el mapa
-                          final cubit = context.read<MapCubit>();
-                          cubit.deselectWorkplace();
-                        },
-                        interactionOptions: const InteractionOptions(
-                          flags: InteractiveFlag.all,
-                        ),
-                      ),
-                      children: [
-                        // Tiles de OpenStreetMap
-                        TileLayer(
-                          urlTemplate:
-                              'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                          userAgentPackageName: 'com.bartop.app',
-                          maxZoom: 19,
-                        ),
-                        // Marcadores de barberías (solo las filtradas)
-                        MarkerLayer(
-                          markers: workplaces
-                              .where((wp) =>
-                                  wp.latitude != null &&
-                                  wp.longitude != null)
-                              .map((workplace) {
-                            final isSelected =
-                                state.selectedWorkplaceId == workplace.id;
-                            return Marker(
-                              point: LatLng(
-                                workplace.latitude!,
-                                workplace.longitude!,
-                              ),
-                              width: 50,
-                              height: 50,
-                              child: WorkplaceMarker(
-                                workplace: workplace,
-                                isSelected: isSelected,
-                                onTap: () => _onWorkplaceTap(workplace),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        // Marcador de ubicación del usuario
-                        if (_userLocationLatLng != null)
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: _userLocationLatLng!,
-                                width: 40,
-                                height: 40,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.info.withValues(alpha: 0.2),
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.info,
-                                      width: 3,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.my_location,
-                                    color: AppColors.info,
-                                    size: 24,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                      ],
-                    ),
-                    // Header con búsqueda
+                // Agregar info card si hay barbería seleccionada
+                if (state.selectedWorkplaceId != null) {
+                  stackChildren.add(
                     Positioned(
-                      top: 0,
+                      bottom: 16,
                       left: 0,
                       right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              AppColors.backgroundDark.withValues(alpha: 0.95),
-                              AppColors.backgroundDark.withValues(alpha: 0.0),
-                            ],
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Mapa de Barberías',
-                                        style: TextStyle(
-                                          color: AppColors.primaryGold,
-                                          fontSize: 24,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '${workplaces.length} barbería${workplaces.length != 1 ? 's' : ''} encontrada${workplaces.length != 1 ? 's' : ''}',
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Botón de filtros
-                                Container(
-                                  margin: const EdgeInsets.only(right: 8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.backgroundCard,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: (state.searchQuery.isNotEmpty ||
-                                              state.minRating != null ||
-                                              state.maxDistanceKm != null ||
-                                              state.selectedCity != null)
-                                          ? AppColors.primaryGold
-                                          : AppColors.primaryGold.withValues(
-                                              alpha: 0.3,
-                                            ),
-                                    ),
-                                  ),
-                                  child: IconButton(
-                                    icon: Icon(
-                                      Icons.filter_list,
-                                      color: (state.searchQuery.isNotEmpty ||
-                                              state.minRating != null ||
-                                              state.maxDistanceKm != null ||
-                                              state.selectedCity != null)
-                                          ? AppColors.primaryGold
-                                          : AppColors.textSecondary,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _showFilters = !_showFilters;
-                                      });
-                                    },
-                                    tooltip: 'Filtros',
-                                  ),
-                                ),
-                                // Botón para centrar en ubicación
-                                Container(
-                                  decoration: BoxDecoration(
-                                    color: AppColors.backgroundCard,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColors.primaryGold.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
-                                  ),
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.my_location,
-                                      color: AppColors.primaryGold,
-                                    ),
-                                    onPressed: _centerOnUserLocation,
-                                    tooltip: 'Centrar en mi ubicación',
-                                  ),
-                                ),
-                              ],
+                      child: Builder(
+                        builder: (context) {
+                          // Buscar la barbería seleccionada en la lista filtrada o en todas
+                          final selected = workplaces.firstWhere(
+                            (wp) => wp.id == state.selectedWorkplaceId,
+                            orElse: () => allWorkplaces.firstWhere(
+                              (wp) => wp.id == state.selectedWorkplaceId,
                             ),
-                            const SizedBox(height: 12),
-                            // Barra de búsqueda
-                            TextField(
-                              controller: _searchController,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'Buscar por nombre, dirección o ciudad...',
-                                hintStyle: const TextStyle(
-                                  color: AppColors.textSecondary,
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.search,
-                                  color: AppColors.textSecondary,
-                                ),
-                                suffixIcon: state.searchQuery.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(
-                                          Icons.clear,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          context.read<MapCubit>().updateSearchQuery('');
-                                        },
-                                      )
-                                    : null,
-                                filled: true,
-                                fillColor: AppColors.backgroundCard,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: AppColors.primaryGold.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: AppColors.primaryGold.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: AppColors.primaryGold,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                          double? distance;
+                          if (userLocation != null &&
+                              selected.latitude != null &&
+                              selected.longitude != null) {
+                            distance = _locationService.calculateDistance(
+                              userLocation.latitude,
+                              userLocation.longitude,
+                              selected.latitude!,
+                              selected.longitude!,
+                            );
+                          }
+                          return WorkplaceInfoCard(
+                            workplace: selected,
+                            distance: distance,
+                            onViewDetails: () =>
+                                _navigateToWorkplaceDetail(selected),
+                            onClose: () {
+                              final cubit = context.read<MapCubit>();
+                              cubit.deselectWorkplace();
+                            },
+                          );
+                        },
                       ),
                     ),
-                    // Panel de filtros
-                    if (_showFilters)
-                      Positioned(
-                        top: 180,
-                        left: 16,
-                        right: 16,
-                        child: Material(
-                          color: Colors.transparent,
-                          child: MapFiltersWidget(
-                            selectedCity: state.selectedCity,
-                            minRating: state.minRating,
-                            maxDistanceKm: state.maxDistanceKm,
-                            searchRadiusKm: state.searchRadiusKm,
-                            availableCities: context.read<MapCubit>().getAvailableCities(),
-                            onCityChanged: (city) {
-                              context.read<MapCubit>().filterByCity(city);
-                            },
-                            onMinRatingChanged: (rating) {
-                              context.read<MapCubit>().filterByMinRating(rating);
-                            },
-                            onMaxDistanceChanged: (distance) {
-                              context.read<MapCubit>().filterByMaxDistance(distance);
-                            },
-                            onRadiusChanged: (radius) {
-                              context.read<MapCubit>().updateSearchRadius(radius);
-                            },
-                            onClearFilters: () {
-                              _searchController.clear();
-                              context.read<MapCubit>().clearFilters();
-                            },
-                            hasActiveFilters: state.searchQuery.isNotEmpty ||
-                                state.minRating != null ||
-                                state.maxDistanceKm != null ||
-                                state.selectedCity != null,
-                          ),
-                        ),
-                      ),
-                    // Info card de barbería seleccionada (si hay)
-                    if (state.selectedWorkplaceId != null)
-                      Positioned(
-                        bottom: 16,
-                        left: 0,
-                        right: 0,
-                        child: Builder(
-                          builder: (context) {
-                            // Buscar la barbería seleccionada en la lista filtrada o en todas
-                            final selected = workplaces.firstWhere(
-                              (wp) => wp.id == state.selectedWorkplaceId,
-                              orElse: () => allWorkplaces.firstWhere(
-                                (wp) => wp.id == state.selectedWorkplaceId,
-                              ),
-                            );
-                            double? distance;
-                            if (userLocation != null &&
-                                selected.latitude != null &&
-                                selected.longitude != null) {
-                              distance = _locationService.calculateDistance(
-                                userLocation.latitude,
-                                userLocation.longitude,
-                                selected.latitude!,
-                                selected.longitude!,
-                              );
-                            }
-                            return WorkplaceInfoCard(
-                              workplace: selected,
-                              distance: distance,
-                              onViewDetails: () => _navigateToWorkplaceDetail(selected),
-                              onClose: () {
-                                final cubit = context.read<MapCubit>();
-                                cubit.deselectWorkplace();
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                  ],
-                );
+                  );
+                }
+
+                // Agregar overlay de carga si es necesario
+                if (allWorkplaces.isEmpty && userLocation != null) {
+                  stackChildren.add(const MapLoadingOverlay());
+                }
+
+                return Stack(children: stackChildren);
               }
 
               // Estado inicial
-              return const Center(
-                child: LoadingWidget(),
-              );
+              return const Center(child: LoadingWidget());
             },
           ),
         ),
@@ -467,4 +333,3 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
     );
   }
 }
-
