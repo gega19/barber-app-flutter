@@ -22,6 +22,8 @@ class MapLoaded extends MapState {
   // Valores calculados (memoizados)
   final List<WorkplaceEntity> filteredWorkplaces;
   final List<String> availableCities;
+  // Flag para indicar si es la carga inicial
+  final bool isInitialLoading;
 
   const MapLoaded({
     required this.workplaces,
@@ -32,6 +34,7 @@ class MapLoaded extends MapState {
     this.selectedCity,
     List<WorkplaceEntity>? filteredWorkplaces,
     List<String>? availableCities,
+    this.isInitialLoading = true,
   }) : filteredWorkplaces = filteredWorkplaces ?? workplaces,
        availableCities = availableCities ?? const [];
 
@@ -45,6 +48,7 @@ class MapLoaded extends MapState {
     selectedCity,
     filteredWorkplaces,
     availableCities,
+    isInitialLoading,
   ];
 
   MapLoaded copyWith({
@@ -60,6 +64,7 @@ class MapLoaded extends MapState {
     List<WorkplaceEntity>? filteredWorkplaces,
     List<String>? availableCities,
     bool recalculateFilters = false,
+    bool? isInitialLoading,
   }) {
     final newWorkplaces = workplaces ?? this.workplaces;
     final newSearchQuery = clearFilters
@@ -103,6 +108,7 @@ class MapLoaded extends MapState {
       selectedCity: newSelectedCity,
       filteredWorkplaces: newFilteredWorkplaces,
       availableCities: newAvailableCities,
+      isInitialLoading: isInitialLoading ?? this.isInitialLoading,
     );
   }
 

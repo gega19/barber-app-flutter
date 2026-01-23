@@ -2,8 +2,8 @@ class AppConstants {
   AppConstants._();
 
   static String get baseUrl {
-    // Producción - Railway
-    return 'https://bartop-p.up.railway.app';
+    // Producción - Corporación CEG
+    return 'https://barber-api.corporacionceg.com';
 
     // Desarrollo local - Detecta automáticamente la plataforma
     // if (kIsWeb) {

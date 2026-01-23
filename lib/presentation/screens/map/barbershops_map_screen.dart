@@ -317,7 +317,7 @@ class _BarbershopsMapScreenState extends State<BarbershopsMapScreen> {
                 }
 
                 // Agregar overlay de carga si es necesario
-                if (allWorkplaces.isEmpty && userLocation != null) {
+                if (state.isInitialLoading) {
                   stackChildren.add(const MapLoadingOverlay());
                 }
 

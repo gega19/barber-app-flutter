@@ -43,7 +43,7 @@ class _BookingModalState extends State<BookingModal> {
     '15:00',
     '16:00',
     '17:00',
-    '18:00'
+    '18:00',
   ];
 
   final List<Map<String, dynamic>> _paymentMethods = [
@@ -94,9 +94,7 @@ class _BookingModalState extends State<BookingModal> {
     return Material(
       color: Colors.transparent,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black54,
-        ),
+        decoration: BoxDecoration(color: Colors.black54),
         child: Center(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -123,7 +121,10 @@ class _BookingModalState extends State<BookingModal> {
                       topRight: Radius.circular(24),
                     ),
                     border: const Border(
-                      bottom: BorderSide(color: AppColors.primaryGold, width: 2),
+                      bottom: BorderSide(
+                        color: AppColors.primaryGold,
+                        width: 2,
+                      ),
                     ),
                   ),
                   child: Row(
@@ -218,7 +219,7 @@ class _BookingModalState extends State<BookingModal> {
                                       ),
                                     ),
                                     Text(
-                                      '\$${widget.barber.price.toStringAsFixed(0)}',
+                                      '\$${widget.barber.price.toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         color: AppColors.textPrimary,
                                         fontSize: 18,
@@ -377,8 +378,7 @@ class _BookingModalState extends State<BookingModal> {
             firstDay: DateTime.now(),
             lastDay: DateTime.now().add(const Duration(days: 365)),
             focusedDay: _selectedDate,
-            selectedDayPredicate: (day) =>
-                isSameDay(_selectedDate, day),
+            selectedDayPredicate: (day) => isSameDay(_selectedDate, day),
             onDaySelected: (selectedDay, focusedDay) {
               setState(() {
                 _selectedDate = selectedDay;
@@ -398,12 +398,8 @@ class _BookingModalState extends State<BookingModal> {
                 color: AppColors.primaryGold,
                 shape: BoxShape.circle,
               ),
-              defaultTextStyle: const TextStyle(
-                color: AppColors.textPrimary,
-              ),
-              weekendTextStyle: const TextStyle(
-                color: AppColors.textSecondary,
-              ),
+              defaultTextStyle: const TextStyle(color: AppColors.textPrimary),
+              weekendTextStyle: const TextStyle(color: AppColors.textSecondary),
               disabledTextStyle: TextStyle(
                 color: AppColors.textSecondary.withValues(alpha: 0.3),
               ),
@@ -585,7 +581,7 @@ class _BookingModalState extends State<BookingModal> {
               const SizedBox(height: 8),
               _buildSummaryRow(
                 'Precio:',
-                '\$${widget.barber.price.toStringAsFixed(0)}',
+                '\$${widget.barber.price.toStringAsFixed(2)}',
               ),
             ],
           ),
@@ -600,10 +596,7 @@ class _BookingModalState extends State<BookingModal> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
         ),
         Text(
           value,
@@ -617,4 +610,3 @@ class _BookingModalState extends State<BookingModal> {
     );
   }
 }
-

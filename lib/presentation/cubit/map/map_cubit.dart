@@ -49,10 +49,15 @@ class MapCubit extends Cubit<MapState> {
         if (!isClosed) {
           final currentState = state;
           if (currentState is MapLoaded) {
-            // Preservar todos los filtros actuales
-            emit(currentState.copyWith(workplaces: workplaces));
+            // Preservar todos los filtros actuales y marcar como cargado
+            emit(
+              currentState.copyWith(
+                workplaces: workplaces,
+                isInitialLoading: false,
+              ),
+            );
           } else {
-            emit(MapLoaded(workplaces: workplaces));
+            emit(MapLoaded(workplaces: workplaces, isInitialLoading: false));
           }
         }
       },
@@ -98,10 +103,15 @@ class MapCubit extends Cubit<MapState> {
         if (!isClosed) {
           final currentState = state;
           if (currentState is MapLoaded) {
-            // Preservar todos los filtros actuales
-            emit(currentState.copyWith(workplaces: workplaces));
+            // Preservar todos los filtros actuales y marcar como cargado
+            emit(
+              currentState.copyWith(
+                workplaces: workplaces,
+                isInitialLoading: false,
+              ),
+            );
           } else {
-            emit(MapLoaded(workplaces: workplaces));
+            emit(MapLoaded(workplaces: workplaces, isInitialLoading: false));
           }
         }
       },
