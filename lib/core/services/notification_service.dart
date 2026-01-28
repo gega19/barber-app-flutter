@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
 
 /// Handler para notificaciones en segundo plano (debe ser una función top-level)
@@ -62,6 +63,42 @@ class NotificationService {
     }
   }
 
+  /// Inicializa sin solicitar permisos (útil para no solicitar al iniciar)
+  Future<void> initializeWithoutPermissionRequest() async {
+    if (_initialized) {
+      _logger.w('NotificationService already initialized');
+      return;
+    }
+
+    try {
+      // Inicializar Firebase si no está inicializado
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+
+      // Configurar notificaciones locales
+      await _initializeLocalNotifications();
+
+      // NO solicitar permisos aquí - se hará cuando sea necesario
+
+      // Configurar handlers
+      await _setupMessageHandlers();
+
+      // Intentar obtener token FCM (puede fallar si no hay permiso, pero no es crítico)
+      try {
+        await _getFCMToken();
+      } catch (e) {
+        _logger.w('⚠️ Could not get FCM token (permission may be needed): $e');
+      }
+
+      _initialized = true;
+      _logger.i('✅ NotificationService initialized (without permission request)');
+    } catch (e) {
+      _logger.e('❌ Error initializing NotificationService: $e');
+      rethrow;
+    }
+  }
+
   /// Inicializa las notificaciones locales
   Future<void> _initializeLocalNotifications() async {
     const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
@@ -98,28 +135,102 @@ class NotificationService {
     }
   }
 
-  /// Solicita permisos para notificaciones
-  Future<void> _requestPermissions() async {
-    if (Platform.isIOS) {
-      final settings = await _firebaseMessaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-
-      _logger.i('iOS notification permission status: ${settings.authorizationStatus}');
-    } else if (Platform.isAndroid) {
-      // Android 13+ requiere permisos explícitos
-      final androidImplementation =
-          _localNotifications.resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>();
-
-      if (androidImplementation != null) {
-        final granted = await androidImplementation.requestNotificationsPermission();
-        _logger.i('Android notification permission granted: $granted');
-      }
+  /// Verifica si el permiso de notificaciones está concedido
+  Future<bool> hasNotificationPermission() async {
+    if (Platform.isAndroid) {
+      // Verificar usando permission_handler (más confiable)
+      final status = await Permission.notification.status;
+      _logger.i('📱 Notification permission status: $status');
+      return status.isGranted;
+    } else if (Platform.isIOS) {
+      final settings = await _firebaseMessaging.getNotificationSettings();
+      return settings.authorizationStatus == AuthorizationStatus.authorized;
     }
+    return false;
+  }
+
+  /// Solicita permisos para notificaciones (versión mejorada)
+  Future<bool> _requestPermissions() async {
+    try {
+      if (Platform.isIOS) {
+        final settings = await _firebaseMessaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+          provisional: false,
+        );
+
+        _logger.i('📱 iOS notification permission status: ${settings.authorizationStatus}');
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+               settings.authorizationStatus == AuthorizationStatus.provisional;
+      } else if (Platform.isAndroid) {
+        // Verificar primero si ya tiene el permiso
+        final hasPermission = await hasNotificationPermission();
+        if (hasPermission) {
+          _logger.i('✅ Notification permission already granted');
+          return true;
+        }
+
+        _logger.i('🔔 Requesting notification permission...');
+
+        // Método 1: Usar permission_handler (más confiable)
+        try {
+          final status = await Permission.notification.request();
+          _logger.i('📱 Permission handler result: $status');
+          
+          if (status.isGranted) {
+            _logger.i('✅ Notification permission granted via permission_handler');
+            return true;
+          } else if (status.isPermanentlyDenied) {
+            _logger.w('⚠️ Notification permission permanently denied');
+            return false;
+          }
+        } catch (e) {
+          _logger.w('⚠️ Error using permission_handler: $e');
+        }
+
+        // Método 2: Usar flutter_local_notifications como alternativa
+        try {
+          final androidImplementation =
+              _localNotifications.resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>();
+
+          if (androidImplementation != null) {
+            // Verificar si las notificaciones están habilitadas
+            final areEnabled = await androidImplementation.areNotificationsEnabled();
+            _logger.i('📱 Are notifications enabled: $areEnabled');
+
+            if (areEnabled == true) {
+              _logger.i('✅ Notifications already enabled');
+              return true;
+            }
+
+            // Solicitar permiso
+            final granted = await androidImplementation.requestNotificationsPermission();
+            _logger.i('📱 Local notifications permission result: $granted');
+            
+            if (granted == true) {
+              _logger.i('✅ Notification permission granted via local notifications');
+              return true;
+            }
+          }
+        } catch (e) {
+          _logger.w('⚠️ Error using flutter_local_notifications: $e');
+        }
+
+        _logger.w('⚠️ Could not request notification permission');
+        return false;
+      }
+    } catch (e) {
+      _logger.e('❌ Error requesting notification permission: $e');
+      return false;
+    }
+    return false;
+  }
+
+  /// Método público para solicitar permisos (útil para solicitar más tarde)
+  Future<bool> requestPermissions() async {
+    return await _requestPermissions();
   }
 
   /// Configura los handlers de mensajes

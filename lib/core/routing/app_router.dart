@@ -20,6 +20,7 @@ import '../../presentation/screens/profile/security_settings_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
 import '../../presentation/screens/force_update/force_update_screen.dart';
+import '../../presentation/screens/splash/splash_screen.dart';
 import '../../core/injection/injection.dart';
 import '../../data/datasources/local/local_storage.dart';
 import '../../presentation/cubit/auth/auth_cubit.dart';
@@ -35,7 +36,6 @@ import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter/foundation.dart';
 
 /// Listenable wrapper para el stream del AuthCubit
 class AuthStreamNotifier extends ChangeNotifier {
@@ -86,28 +86,25 @@ class AnalyticsRouteObserver extends NavigatorObserver {
 /// Función auxiliar para cargar la información de versión
 Future<Map<String, dynamic>> _loadVersionInfo() async {
   final versionCheckService = sl<VersionCheckService>();
-  
+
   // Asegurarse de que el servicio esté inicializado
   if (versionCheckService.getCurrentVersionInfo() == null) {
     await versionCheckService.initialize();
   }
-  
+
   final currentVersionInfo = versionCheckService.getCurrentVersionInfo();
   final minimumVersionInfo = await versionCheckService.getMinimumVersionInfo();
-  
+
   // Si no hay información, intentar obtenerla nuevamente
   if (currentVersionInfo == null || minimumVersionInfo == null) {
     debugPrint('⚠️ Version info not available, fetching...');
     await versionCheckService.checkVersion();
     final minInfo = await versionCheckService.getMinimumVersionInfo();
     final currentInfo = versionCheckService.getCurrentVersionInfo();
-    
-    return {
-      'currentVersionInfo': currentInfo,
-      'minimumVersionInfo': minInfo,
-    };
+
+    return {'currentVersionInfo': currentInfo, 'minimumVersionInfo': minInfo};
   }
-  
+
   return {
     'currentVersionInfo': currentVersionInfo,
     'minimumVersionInfo': minimumVersionInfo,
@@ -119,27 +116,34 @@ GoRouter createAppRouter() {
   final authNotifier = AuthStreamNotifier(authCubit);
   final localStorage = sl<LocalStorage>();
   final analyticsService = sl<AnalyticsService>();
-  
+
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/splash',
     observers: [AnalyticsRouteObserver(analyticsService)],
     redirect: (context, state) async {
+      final isSplash = state.matchedLocation == '/splash';
       final isForceUpdate = state.matchedLocation == '/force-update';
-      
+
+      // Permitir que la pantalla splash se muestre sin redirección
+      if (isSplash) {
+        return null;
+      }
+
       // Si está en la pantalla de force-update, no redirigir
       if (isForceUpdate) {
         return null;
       }
-      
+
       // Verificar versión antes de cualquier otra redirección
       try {
         final versionCheckService = sl<VersionCheckService>();
         final versionCheckResult = await versionCheckService.checkVersion();
-        final minimumVersionInfo = await versionCheckService.getMinimumVersionInfo();
+        final minimumVersionInfo = await versionCheckService
+            .getMinimumVersionInfo();
         final currentVersionInfo = versionCheckService.getCurrentVersionInfo();
-        
-        if (versionCheckResult == VersionCheckResult.updateRequired && 
-            minimumVersionInfo != null && 
+
+        if (versionCheckResult == VersionCheckResult.updateRequired &&
+            minimumVersionInfo != null &&
             currentVersionInfo != null) {
           // Redirigir a la pantalla de actualización forzada
           return '/force-update';
@@ -148,44 +152,52 @@ GoRouter createAppRouter() {
         debugPrint('⚠️ Error checking version in redirect: $e');
         // Continuar con el flujo normal si hay error
       }
-      
+
       final authState = authCubit.state;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
-      
-      final isAuthenticated = authState is AuthAuthenticated || authState is AuthProfileUpdateError;
+
+      final isAuthenticated =
+          authState is AuthAuthenticated || authState is AuthProfileUpdateError;
       final isLoading = authState is AuthLoading;
-      
+
       // Verificar si el onboarding ya se completó
       final onboardingCompleted = await localStorage.isOnboardingCompleted();
-      
+
       // Si viene con parámetro return, permitir ver el onboarding aunque esté completado
       final hasReturnParam = state.uri.queryParameters.containsKey('return');
-      
+
       // Si no ha completado el onboarding y no está en la pantalla de onboarding, redirigir
       if (!onboardingCompleted && !isOnboarding && !isLoading) {
         return '/onboarding';
       }
-      
+
       // Si ya completó el onboarding y está en la pantalla de onboarding (sin return param), redirigir
       // Pero si tiene return param, permitir verlo (viene del perfil)
       if (onboardingCompleted && isOnboarding && !hasReturnParam) {
         // Si está autenticado, ir a home, si no, a login
         return isAuthenticated ? '/home' : '/login';
       }
-      
+
       if (isAuthenticated && isLoggingIn) {
         return '/home';
       }
-      
-      if (!isAuthenticated && !isLoading && !isLoggingIn && onboardingCompleted) {
+
+      if (!isAuthenticated &&
+          !isLoading &&
+          !isLoggingIn &&
+          onboardingCompleted) {
         return '/login';
       }
-      
+
       return null;
     },
     refreshListenable: authNotifier,
     routes: [
+      GoRoute(
+        path: '/splash',
+        builder: (context, state) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/force-update',
         builder: (context, state) {
@@ -242,8 +254,10 @@ GoRouter createAppRouter() {
               }
 
               final data = snapshot.data!;
-              final currentVersionInfo = data['currentVersionInfo'] as AppVersionInfo?;
-              final minimumVersionInfo = data['minimumVersionInfo'] as MinimumVersionResponse?;
+              final currentVersionInfo =
+                  data['currentVersionInfo'] as AppVersionInfo?;
+              final minimumVersionInfo =
+                  data['minimumVersionInfo'] as MinimumVersionResponse?;
 
               if (currentVersionInfo == null || minimumVersionInfo == null) {
                 return Scaffold(
@@ -277,27 +291,18 @@ GoRouter createAppRouter() {
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => BlocProvider.value(
-          value: authCubit,
-          child: const LoginScreen(),
-        ),
+        builder: (context, state) =>
+            BlocProvider.value(value: authCubit, child: const LoginScreen()),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const MainScreen(),
-      ),
+      GoRoute(path: '/home', builder: (context, state) => const MainScreen()),
       GoRoute(
         path: '/barber/:id',
         builder: (context, state) {
           final barberId = state.pathParameters['id']!;
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) => sl<BarberCubit>()..loadBarbers(),
-              ),
-              BlocProvider(
-                create: (_) => sl<ReviewCubit>(),
-              ),
+              BlocProvider(create: (_) => sl<BarberCubit>()..loadBarbers()),
+              BlocProvider(create: (_) => sl<ReviewCubit>()),
             ],
             child: BarberDetailScreen(barberId: barberId),
           );
@@ -309,15 +314,9 @@ GoRouter createAppRouter() {
           final barberId = state.pathParameters['id']!;
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) => sl<BarberCubit>()..loadBarbers(),
-              ),
-              BlocProvider(
-                create: (_) => sl<PaymentMethodCubit>(),
-              ),
-              BlocProvider(
-                create: (_) => sl<AppointmentCubit>(),
-              ),
+              BlocProvider(create: (_) => sl<BarberCubit>()..loadBarbers()),
+              BlocProvider(create: (_) => sl<PaymentMethodCubit>()),
+              BlocProvider(create: (_) => sl<AppointmentCubit>()),
             ],
             child: Builder(
               builder: (context) {
@@ -329,16 +328,12 @@ GoRouter createAppRouter() {
                     return BookingScreen(barber: barber);
                   } catch (e) {
                     return Scaffold(
-                      body: Center(
-                        child: Text('Barbero no encontrado'),
-                      ),
+                      body: Center(child: Text('Barbero no encontrado')),
                     );
                   }
                 }
                 return const Scaffold(
-                  body: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  body: Center(child: CircularProgressIndicator()),
                 );
               },
             ),
@@ -352,17 +347,14 @@ GoRouter createAppRouter() {
           return MultiBlocProvider(
             providers: [
               BlocProvider.value(value: authCubit),
-              BlocProvider(
-                create: (_) => sl<AppointmentCubit>(),
-              ),
+              BlocProvider(create: (_) => sl<AppointmentCubit>()),
             ],
             child: BlocBuilder<AppointmentCubit, AppointmentState>(
               builder: (context, appointmentState) {
                 if (appointmentState is AppointmentLoaded) {
                   try {
-                    final appointment = appointmentState.appointments.firstWhere(
-                      (a) => a.id == appointmentId,
-                    );
+                    final appointment = appointmentState.appointments
+                        .firstWhere((a) => a.id == appointmentId);
                     return AppointmentDetailScreen(appointment: appointment);
                   } catch (e) {
                     // Si no se encuentra la cita, intentar cargarla
@@ -402,9 +394,7 @@ GoRouter createAppRouter() {
                   context.read<AppointmentCubit>().loadAppointments();
                 }
                 return const Scaffold(
-                  body: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  body: Center(child: CircularProgressIndicator()),
                 );
               },
             ),
@@ -417,15 +407,9 @@ GoRouter createAppRouter() {
           final workplaceId = state.pathParameters['id']!;
           return MultiBlocProvider(
             providers: [
-              BlocProvider(
-                create: (_) => sl<WorkplaceCubit>(),
-              ),
-              BlocProvider(
-                create: (_) => sl<BarberCubit>()..loadBarbers(),
-              ),
-              BlocProvider(
-                create: (_) => sl<ReviewCubit>(),
-              ),
+              BlocProvider(create: (_) => sl<WorkplaceCubit>()),
+              BlocProvider(create: (_) => sl<BarberCubit>()..loadBarbers()),
+              BlocProvider(create: (_) => sl<ReviewCubit>()),
             ],
             child: WorkplaceDetailScreen(workplaceId: workplaceId),
           );
@@ -445,40 +429,36 @@ GoRouter createAppRouter() {
           child: const BarberServicesScreen(),
         ),
       ),
-                    GoRoute(
-                path: '/barber-media',
-                builder: (context, state) => BlocProvider.value(
-                  value: authCubit,
-                  child: const BarberMediaScreen(),
-                ),
-              ),
-              GoRoute(
-                path: '/barber-info',
-                builder: (context, state) => BlocProvider.value(
-                  value: authCubit,
-                  child: const BarberInfoScreen(),
-                ),
-              ),
-              GoRoute(
-                path: '/barber-availability',
-                builder: (context, state) => MultiBlocProvider(
-                  providers: [
-                    BlocProvider.value(value: authCubit),
-                    BlocProvider(
-                      create: (_) => sl<BarberAvailabilityCubit>(),
-                    ),
-                  ],
-                  child: const BarberAvailabilityScreen(),
-                ),
-              ),
+      GoRoute(
+        path: '/barber-media',
+        builder: (context, state) => BlocProvider.value(
+          value: authCubit,
+          child: const BarberMediaScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/barber-info',
+        builder: (context, state) => BlocProvider.value(
+          value: authCubit,
+          child: const BarberInfoScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/barber-availability',
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: authCubit),
+            BlocProvider(create: (_) => sl<BarberAvailabilityCubit>()),
+          ],
+          child: const BarberAvailabilityScreen(),
+        ),
+      ),
       GoRoute(
         path: '/barber-courses',
         builder: (context, state) => MultiBlocProvider(
           providers: [
             BlocProvider.value(value: authCubit),
-            BlocProvider(
-              create: (_) => sl<BarberCourseCubit>(),
-            ),
+            BlocProvider(create: (_) => sl<BarberCourseCubit>()),
           ],
           child: const BarberCoursesScreen(),
         ),
@@ -487,9 +467,11 @@ GoRouter createAppRouter() {
         path: '/barber-courses-all',
         builder: (context, state) {
           final args = state.extra as Map<String, dynamic>?;
-          final barberId = args?['barberId'] as String? ?? 
-                          state.pathParameters['barberId'] ?? 
-                          state.uri.queryParameters['barberId'] ?? '';
+          final barberId =
+              args?['barberId'] as String? ??
+              state.pathParameters['barberId'] ??
+              state.uri.queryParameters['barberId'] ??
+              '';
           final barberName = args?['barberName'] as String?;
           return BarberAllCoursesScreen(
             barberId: barberId,
@@ -497,13 +479,13 @@ GoRouter createAppRouter() {
           );
         },
       ),
-              GoRoute(
-                path: '/security-settings',
-                builder: (context, state) => BlocProvider.value(
-                  value: authCubit,
-                  child: const SecuritySettingsScreen(),
-                ),
-              ),
+      GoRoute(
+        path: '/security-settings',
+        builder: (context, state) => BlocProvider.value(
+          value: authCubit,
+          child: const SecuritySettingsScreen(),
+        ),
+      ),
       GoRoute(
         path: '/barbers',
         builder: (context, state) => BlocProvider(

@@ -15,6 +15,7 @@ import '../../../domain/entities/workplace_entity.dart';
 import '../../../domain/entities/barber_entity.dart';
 import '../../../core/constants/home_constants.dart';
 import '../../../core/utils/filter_utils.dart';
+import '../../../core/services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen>
   final _searchController = TextEditingController();
   late TabController _tabController;
   Timer? _searchDebounce;
+  bool _notificationPermissionRequested = false;
 
   // Filtros
   String _sortBy = HomeConstants.defaultSortBy;
@@ -40,6 +42,7 @@ class _HomeScreenState extends State<HomeScreen>
     _tabController = TabController(length: 2, vsync: this);
     context.read<BarberCubit>().loadBestBarbers();
     context.read<WorkplaceCubit>().loadWorkplaces();
+    _requestNotificationPermission();
 
     _tabController.addListener(() {
       setState(() {});
@@ -83,6 +86,21 @@ class _HomeScreenState extends State<HomeScreen>
         });
       }
     });
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    if (_notificationPermissionRequested) return;
+    _notificationPermissionRequested = true;
+
+    try {
+      final hasPermission =
+          await NotificationService().hasNotificationPermission();
+      if (!hasPermission) {
+        await NotificationService().requestPermissions();
+      }
+    } catch (_) {
+      // Ignorar errores de permisos para no bloquear el home
+    }
   }
 
   void _showFilters() {

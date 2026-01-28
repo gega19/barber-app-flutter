@@ -92,6 +92,9 @@ dev_dependencies:
   # Launcher Icons
   flutter_launcher_icons: ^0.13.1
 
+  # Native Splash Screen
+  flutter_native_splash: ^2.4.7
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
@@ -141,3 +144,20 @@ flutter_launcher_icons:
   min_sdk_android: 21 # android min sdk min:16, default 21
   adaptive_icon_background: "#FFFFFF" # Color de fondo para Android adaptive icon
   adaptive_icon_foreground: "assets/logo.png" # Imagen para Android adaptive icon
+
+# Flutter Native Splash Configuration
+flutter_native_splash:
+  color: "#121212" # Color de fondo (negro de tu app)
+  image: assets/logo.png # Tu logo centrado
+  android: true
+  ios: true
+  fullscreen: true
+  color_dark: "#121212" # Color para modo oscuro
+  image_dark: assets/logo.png # Logo para modo oscuro
+  android_12:
+    color: "#121212"
+    color_dark: "#121212"
+    image: assets/logo.png
+    image_dark: assets/logo.png
+    icon_background_color: "#121212"
+    icon_background_color_dark: "#121212"
