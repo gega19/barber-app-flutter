@@ -14,6 +14,7 @@ import '../../widgets/profile/profile_header_widget.dart';
 import '../../widgets/profile/profile_stats_card_widget.dart';
 import '../../widgets/profile/profile_info_card_widget.dart';
 import '../../widgets/profile/profile_barber_management_card_widget.dart';
+import '../../widgets/profile/profile_activity_card_widget.dart';
 import '../../widgets/profile/profile_settings_card_widget.dart';
 import '../../widgets/profile/profile_others_card_widget.dart';
 import '../../widgets/profile/logout_button_widget.dart';
@@ -44,12 +45,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Actualizar perfil desde el servidor silenciosamente
     final authCubit = context.read<AuthCubit>();
     authCubit.refreshProfile();
-    
+
     // Load data in parallel
-    Future.wait([
-      _loadStats(),
-      _loadUserBarberId(),
-    ]);
+    Future.wait([_loadStats(), _loadUserBarberId()]);
   }
 
   @override
@@ -73,8 +71,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (authCubit == null || !mounted) return;
 
     final currentState = authCubit.state;
-    final userEmail =
-        currentState is AuthAuthenticated ? currentState.user.email : null;
+    final userEmail = currentState is AuthAuthenticated
+        ? currentState.user.email
+        : null;
 
     if (currentState is! AuthAuthenticated || userEmail == null) {
       if (mounted) {
@@ -95,8 +94,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as List;
-        final matchingBarbers =
-            data.where((b) => b['email'] == userEmail).toList();
+        final matchingBarbers = data
+            .where((b) => b['email'] == userEmail)
+            .toList();
 
         if (matchingBarbers.isNotEmpty && mounted) {
           setState(() {
@@ -119,8 +119,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           if (searchResponse.statusCode == 200) {
             final searchData = searchResponse.data['data'] as List;
-            final matchingBarbers =
-                searchData.where((b) => b['email'] == userEmail).toList();
+            final matchingBarbers = searchData
+                .where((b) => b['email'] == userEmail)
+                .toList();
 
             if (matchingBarbers.isNotEmpty && mounted) {
               setState(() {
@@ -387,7 +388,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context: context,
       builder: (context) => DeleteAccountDialog(
         onDelete: (password) async {
-          return await context.read<AuthCubit>().deleteAccount(password: password);
+          return await context.read<AuthCubit>().deleteAccount(
+            password: password,
+          );
         },
       ),
     );
@@ -422,17 +425,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF1A1A1A),
-                Color(0xFF0F0F0F),
-              ],
+              colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
             ),
           ),
           child: SafeArea(
             child: BlocBuilder<AuthCubit, AuthState>(
               buildWhen: (previous, current) {
                 // Only rebuild when user data actually changes
-                if (previous is AuthAuthenticated && current is AuthAuthenticated) {
+                if (previous is AuthAuthenticated &&
+                    current is AuthAuthenticated) {
                   final prevUser = previous.user;
                   final currUser = current.user;
                   return prevUser.id != currUser.id ||
@@ -498,6 +499,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     if (_isBarber && _userBarberId != null)
                       const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    // Activity Card
+                    SliverToBoxAdapter(
+                      child: const ProfileActivityCardWidget(),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Settings Card
                     SliverToBoxAdapter(
                       child: ProfileSettingsCardWidget(
@@ -507,14 +513,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Others Card
-                    SliverToBoxAdapter(
-                      child: const ProfileOthersCardWidget(),
-                    ),
+                    SliverToBoxAdapter(child: const ProfileOthersCardWidget()),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Logout Button
-                    SliverToBoxAdapter(
-                      child: const LogoutButtonWidget(),
-                    ),
+                    SliverToBoxAdapter(child: const LogoutButtonWidget()),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                   ],
                 );

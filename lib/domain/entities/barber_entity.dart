@@ -14,6 +14,9 @@ class BarberEntity extends Equatable {
   final String experience;
   final String distance;
   final String? workplaceId;
+  final String? slug;
+  final double? latitude;
+  final double? longitude;
   final String? instagramUrl;
   final String? tiktokUrl;
 
@@ -30,27 +33,31 @@ class BarberEntity extends Equatable {
     required this.experience,
     required this.distance,
     this.workplaceId,
+    this.slug,
+    this.latitude,
+    this.longitude,
     this.instagramUrl,
     this.tiktokUrl,
   });
 
   @override
   List<Object?> get props => [
-        id,
-        name,
-        rating,
-        reviews,
-        price,
-        location,
-        image,
-        avatarSeed,
-        specialty,
-        experience,
-        distance,
-        workplaceId,
-        instagramUrl,
-        tiktokUrl,
-      ];
+    id,
+    name,
+    rating,
+    reviews,
+    price,
+    location,
+    image,
+    avatarSeed,
+    specialty,
+    experience,
+    distance,
+    workplaceId,
+    slug,
+    latitude,
+    longitude,
+    instagramUrl,
+    tiktokUrl,
+  ];
 }
-
-

@@ -3,6 +3,32 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../utils/logger.dart';
 
+/// Resultado detallado al obtener la ubicación actual (para mensajes al usuario)
+enum LocationErrorReason {
+  serviceDisabled,
+  permissionDenied,
+  permissionPermanentlyDenied,
+  timeout,
+  unknown,
+}
+
+/// Resultado de getCurrentLocationWithResult
+class LocationResult {
+  final double? latitude;
+  final double? longitude;
+  final LocationErrorReason? error;
+
+  const LocationResult._({this.latitude, this.longitude, this.error});
+
+  factory LocationResult.success(double lat, double lng) =>
+      LocationResult._(latitude: lat, longitude: lng);
+
+  factory LocationResult.failure(LocationErrorReason reason) =>
+      LocationResult._(error: reason);
+
+  bool get isSuccess => latitude != null && longitude != null;
+}
+
 /// Servicio para manejar la ubicación del usuario
 class LocationService {
   /// Verifica si los permisos de ubicación están concedidos
@@ -35,38 +61,63 @@ class LocationService {
   /// Obtiene la ubicación actual del usuario
   /// Retorna null si no se puede obtener la ubicación
   Future<Position?> getCurrentLocation() async {
+    final result = await getCurrentLocationWithResult();
+    if (result.isSuccess) {
+      return Position(
+        latitude: result.latitude!,
+        longitude: result.longitude!,
+        timestamp: DateTime.now(),
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+    }
+    return null;
+  }
+
+  /// Obtiene la ubicación actual con resultado detallado para mostrar errores al usuario
+  Future<LocationResult> getCurrentLocationWithResult() async {
     try {
-      // Verificar si los servicios de ubicación están habilitados
       final serviceEnabled = await isLocationServiceEnabled();
       if (!serviceEnabled) {
         appLogger.w('Location services are disabled');
-        return null;
+        return LocationResult.failure(LocationErrorReason.serviceDisabled);
       }
 
-      // Verificar permisos
       bool hasPermission = await hasLocationPermission();
       if (!hasPermission) {
-        // Intentar solicitar permisos
-        hasPermission = await requestLocationPermission();
-        if (!hasPermission) {
+        final status = await Permission.location.request();
+        if (status.isGranted) {
+          hasPermission = true;
+        } else if (status.isPermanentlyDenied) {
+          appLogger.w('Location permission permanently denied');
+          return LocationResult.failure(
+            LocationErrorReason.permissionPermanentlyDenied,
+          );
+        } else {
           appLogger.w('Location permission denied');
-          return null;
+          return LocationResult.failure(LocationErrorReason.permissionDenied);
         }
       }
 
-      // Obtener ubicación
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
       );
 
-      return position;
+      return LocationResult.success(position.latitude, position.longitude);
     } on TimeoutException {
       appLogger.w('Location request timed out');
-      return null;
+      return LocationResult.failure(LocationErrorReason.timeout);
     } catch (e) {
       appLogger.e('Error getting current location: $e');
-      return null;
+      return LocationResult.failure(LocationErrorReason.unknown);
     }
   }
 
@@ -93,11 +144,12 @@ class LocationService {
     double endLongitude,
   ) {
     return Geolocator.distanceBetween(
-      startLatitude,
-      startLongitude,
-      endLatitude,
-      endLongitude,
-    ) / 1000; // Convertir de metros a kilómetros
+          startLatitude,
+          startLongitude,
+          endLatitude,
+          endLongitude,
+        ) /
+        1000; // Convertir de metros a kilómetros
   }
 
   /// Formatea la distancia en un string legible
@@ -111,4 +163,3 @@ class LocationService {
     }
   }
 }
-

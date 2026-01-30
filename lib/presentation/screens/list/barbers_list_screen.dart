@@ -26,7 +26,7 @@ class _BarbersListScreenState extends State<BarbersListScreen> {
   @override
   void initState() {
     super.initState();
-    context.read<BarberCubit>().loadBarbers();
+    context.read<BarberCubit>().loadBarbers(reset: true);
     _searchController.addListener(_onSearchChanged);
     _scrollController.addListener(_onScroll);
   }

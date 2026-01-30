@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
@@ -38,8 +39,9 @@ class HomeFiltersRow extends StatelessWidget {
                   builder: (context, state) {
                     if (state is BarberLoaded) {
                       final filtered = applyBarberFilters(state.barbers);
+                      final count = state.totalCount ?? filtered.length;
                       return Text(
-                        '${filtered.length} barberos encontrados',
+                        '$count barberos encontrados',
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -53,8 +55,9 @@ class HomeFiltersRow extends StatelessWidget {
                   builder: (context, state) {
                     if (state is WorkplaceLoaded) {
                       final filtered = applyWorkplaceFilters(state.workplaces);
+                      final count = state.totalCount ?? filtered.length;
                       return Text(
-                        '${filtered.length} barberías encontradas',
+                        '$count barberías encontradas',
                         style: const TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 12,
@@ -64,6 +67,13 @@ class HomeFiltersRow extends StatelessWidget {
                     return const SizedBox.shrink();
                   },
                 ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.favorite_border, color: AppColors.primaryGold),
+          onPressed: () {
+            context.push('/favorites');
+          },
+          tooltip: 'Mis Favoritos',
         ),
         IconButton(
           icon: const Icon(Icons.tune, color: AppColors.primaryGold),

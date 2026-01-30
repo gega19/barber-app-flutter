@@ -25,10 +25,8 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
   @override
   void initState() {
     super.initState();
-    // Cargar todos los datos necesarios al iniciar
-    context.read<PromotionCubit>().loadPromotions();
-    context.read<WorkplaceCubit>().loadWorkplaces();
-    context.read<BarberCubit>().loadBarbers();
+    // Data loading handled by MainScreen based on tab visibility
+    // DON'T load here - prevents duplicate loads with IndexedStack
   }
 
   @override
@@ -48,7 +46,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               await Future.wait([
                 context.read<PromotionCubit>().loadPromotions(),
                 context.read<WorkplaceCubit>().loadWorkplaces(),
-                context.read<BarberCubit>().loadBarbers(),
+                context.read<BarberCubit>().loadBarbers(reset: true),
               ]);
             },
             color: AppColors.primaryGold,

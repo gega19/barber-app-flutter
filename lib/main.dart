@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'config/environment.dart';
 import 'core/injection/injection.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -11,6 +12,19 @@ import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Default to Prod if not already initialized
+  try {
+    Environment.config;
+  } catch (_) {
+    Environment.init(
+      AppConfig(
+        environment: EnvironmentType.prod,
+        apiBaseUrl: 'https://barber-api.corporacionceg.com',
+        enableAnalytics: true,
+      ),
+    );
+  }
 
   // Configurar orientación vertical
   await SystemChrome.setPreferredOrientations([

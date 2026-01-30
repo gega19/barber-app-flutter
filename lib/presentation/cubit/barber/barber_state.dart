@@ -13,11 +13,12 @@ class BarberLoading extends BarberState {}
 
 class BarberLoaded extends BarberState {
   final List<BarberEntity> barbers;
+  final int? totalCount;
 
-  const BarberLoaded(this.barbers);
+  const BarberLoaded(this.barbers, {this.totalCount});
 
   @override
-  List<Object?> get props => [barbers];
+  List<Object?> get props => [barbers, totalCount];
 }
 
 class BarberError extends BarberState {
@@ -28,5 +29,3 @@ class BarberError extends BarberState {
   @override
   List<Object?> get props => [message];
 }
-
-

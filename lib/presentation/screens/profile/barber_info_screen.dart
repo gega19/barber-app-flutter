@@ -4,7 +4,10 @@ import 'package:dio/dio.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/services/location_service.dart';
 import '../../../data/datasources/remote/barber_remote_datasource.dart';
+import '../../utils/location_error_dialog.dart';
+import '../map/location_map_picker_screen.dart';
 import '../../../data/datasources/remote/specialty_remote_datasource.dart';
 import '../../../data/models/specialty_model.dart';
 import '../../widgets/common/app_card.dart';
@@ -24,6 +27,7 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
   final BarberRemoteDataSource _barberDataSource = sl<BarberRemoteDataSource>();
   final SpecialtyRemoteDataSource _specialtyDataSource =
       sl<SpecialtyRemoteDataSource>();
+  final LocationService _locationService = sl<LocationService>();
 
   final _formKey = GlobalKey<FormState>();
   final _experienceController = TextEditingController();
@@ -36,7 +40,10 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
   bool _isLoading = false;
   bool _loadingSpecialties = true;
   bool _isSaving = false;
+  bool _loadingLocation = false;
   String? _barberEmail;
+  double? _latitude;
+  double? _longitude;
 
   @override
   void initState() {
@@ -116,6 +123,12 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
             _experienceController.text = (barberData['experienceYears'] ?? 0)
                 .toString();
             _locationController.text = barberData['location'] ?? '';
+            _latitude = barberData['latitude'] != null
+                ? (barberData['latitude'] as num).toDouble()
+                : null;
+            _longitude = barberData['longitude'] != null
+                ? (barberData['longitude'] as num).toDouble()
+                : null;
             _instagramController.text = barberData['instagramUrl'] ?? '';
             _tiktokController.text = barberData['tiktokUrl'] ?? '';
 
@@ -170,6 +183,8 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
         specialtyId: _selectedSpecialty!.id,
         experienceYears: int.parse(_experienceController.text.trim()),
         location: _locationController.text.trim(),
+        latitude: _latitude,
+        longitude: _longitude,
         instagramUrl: _instagramController.text.trim().isEmpty
             ? null
             : _instagramController.text.trim(),
@@ -202,6 +217,55 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
           _isSaving = false;
         });
       }
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() {
+      _loadingLocation = true;
+    });
+    final result = await _locationService.getCurrentLocationWithResult();
+    if (!mounted) return;
+    setState(() {
+      _loadingLocation = false;
+    });
+    if (result.isSuccess) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+        if (_locationController.text.trim().isEmpty) {
+          _locationController.text = 'Mi ubicación';
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Ubicación actual guardada. Ajusta el texto si lo deseas.',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      showLocationErrorDialog(context, result.error!);
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.of(context).push<LocationPickerResult>(
+      MaterialPageRoute<LocationPickerResult>(
+        builder: (context) => LocationMapPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+          initialAddress: _locationController.text,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+        _locationController.text = result.address;
+      });
     }
   }
 
@@ -332,6 +396,82 @@ class _BarberInfoScreenState extends State<BarberInfoScreen> {
                                 return null;
                               },
                             ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _loadingLocation
+                                        ? null
+                                        : _useCurrentLocation,
+                                    icon: _loadingLocation
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: AppColors.primaryGold,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.my_location,
+                                            size: 18,
+                                            color: AppColors.primaryGold,
+                                          ),
+                                    label: Text(
+                                      _loadingLocation
+                                          ? 'Obteniendo...'
+                                          : 'Mi ubicación',
+                                      style: const TextStyle(
+                                        color: AppColors.primaryGold,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _openMapPicker,
+                                    icon: const Icon(
+                                      Icons.map_outlined,
+                                      size: 18,
+                                      color: AppColors.primaryGold,
+                                    ),
+                                    label: const Text(
+                                      'Elegir en mapa',
+                                      style: TextStyle(
+                                        color: AppColors.primaryGold,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(
+                                        color: AppColors.primaryGold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_latitude != null && _longitude != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Coordenadas: ${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}',
+                                  style: const TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),

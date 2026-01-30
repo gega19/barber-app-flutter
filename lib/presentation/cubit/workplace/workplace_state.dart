@@ -13,11 +13,12 @@ class WorkplaceLoading extends WorkplaceState {}
 
 class WorkplaceLoaded extends WorkplaceState {
   final List<WorkplaceEntity> workplaces;
+  final int? totalCount;
 
-  const WorkplaceLoaded(this.workplaces);
+  const WorkplaceLoaded(this.workplaces, {this.totalCount});
 
   @override
-  List<Object> get props => [workplaces];
+  List<Object> get props => [workplaces, totalCount ?? -1];
 }
 
 class WorkplaceError extends WorkplaceState {

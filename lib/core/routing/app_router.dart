@@ -5,6 +5,7 @@ import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/main/main_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/barber/barber_detail_screen.dart';
+import '../../presentation/screens/barber/barber_detail_by_slug_screen.dart';
 import '../../presentation/screens/barber/barber_all_courses_screen.dart';
 import '../../presentation/screens/workplace/workplace_detail_screen.dart';
 import '../../presentation/screens/list/barbers_list_screen.dart';
@@ -16,6 +17,7 @@ import '../../presentation/screens/profile/barber_media_screen.dart';
 import '../../presentation/screens/profile/barber_info_screen.dart';
 import '../../presentation/screens/profile/barber_availability_screen.dart';
 import '../../presentation/screens/profile/barber_courses_screen.dart';
+import '../../presentation/screens/profile/favorites_screen.dart';
 import '../../presentation/screens/profile/security_settings_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
@@ -33,6 +35,7 @@ import '../../presentation/cubit/barber_availability/barber_availability_cubit.d
 import '../../presentation/cubit/appointment/appointment_cubit.dart';
 import '../../presentation/cubit/barber_course/barber_course_cubit.dart';
 import '../../presentation/cubit/promotion/promotion_cubit.dart';
+import '../../presentation/cubit/barber/favorites/favorites_cubit.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -303,8 +306,24 @@ GoRouter createAppRouter() {
             providers: [
               BlocProvider(create: (_) => sl<BarberCubit>()..loadBarbers()),
               BlocProvider(create: (_) => sl<ReviewCubit>()),
+              BlocProvider.value(value: sl<FavoritesCubit>()..loadFavorites()),
             ],
             child: BarberDetailScreen(barberId: barberId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/barber/slug/:slug',
+        builder: (context, state) {
+          final slug = state.pathParameters['slug']!;
+          return MultiBlocProvider(
+            providers: [
+              // We reuse same providers needed for Detail Screen
+              BlocProvider(create: (_) => sl<BarberCubit>()..loadBarbers()),
+              BlocProvider(create: (_) => sl<ReviewCubit>()),
+              BlocProvider.value(value: sl<FavoritesCubit>()..loadFavorites()),
+            ],
+            child: BarberDetailBySlugScreen(slug: slug),
           );
         },
       ),
@@ -484,6 +503,13 @@ GoRouter createAppRouter() {
         builder: (context, state) => BlocProvider.value(
           value: authCubit,
           child: const SecuritySettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/favorites',
+        builder: (context, state) => BlocProvider.value(
+          value: sl<FavoritesCubit>()..loadFavorites(),
+          child: const FavoritesScreen(),
         ),
       ),
       GoRoute(

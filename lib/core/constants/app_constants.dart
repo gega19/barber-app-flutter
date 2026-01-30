@@ -1,24 +1,9 @@
+import '../../config/environment.dart';
+
 class AppConstants {
   AppConstants._();
 
-  static String get baseUrl {
-    // Producción - Corporación CEG
-    return 'https://barber-api.corporacionceg.com';
-
-    // Desarrollo local - Detecta automáticamente la plataforma
-    // if (kIsWeb) {
-    //   // Web usa localhost
-    //   return 'http://localhost:3000';
-    // } else if (Platform.isAndroid) {
-    //   return 'http://192.168.7.140:3000';
-    // } else if (Platform.isIOS) {
-    //   // iOS Simulator puede usar localhost directamente
-    //   return 'http://localhost:3000';
-    // } else {
-    //   // Otras plataformas (Linux, Windows, macOS)
-    //   return 'http://localhost:3000';
-    // }
-  }
+  static String get baseUrl => Environment.config.apiBaseUrl;
 
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

@@ -5,6 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/services/location_service.dart';
+import '../../utils/location_error_dialog.dart';
+import '../map/location_map_picker_screen.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_text_field.dart';
@@ -41,6 +44,9 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
   SpecialtyModel? _selectedSpecialty;
   final _experienceController = TextEditingController();
   final _locationController = TextEditingController();
+  double? _latitude;
+  double? _longitude;
+  bool _loadingLocation = false;
 
   List<SpecialtyModel> _specialties = [];
   bool _loadingSpecialties = true;
@@ -177,8 +183,8 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
         specialty: _selectedSpecialty!.name,
         experienceYears: experienceYears,
         location: _locationController.text.trim(),
-        latitude: null,
-        longitude: null,
+        latitude: _latitude,
+        longitude: _longitude,
         image: currentState.user.avatar,
       );
 
@@ -204,6 +210,55 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
           backgroundColor: AppColors.error,
         ),
       );
+    }
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() {
+      _loadingLocation = true;
+    });
+    final result = await sl<LocationService>().getCurrentLocationWithResult();
+    if (!mounted) return;
+    setState(() {
+      _loadingLocation = false;
+    });
+    if (result.isSuccess) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+        if (_locationController.text.trim().isEmpty) {
+          _locationController.text = 'Mi ubicación';
+        }
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Ubicación actual guardada. Ajusta el texto si lo deseas.',
+          ),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } else {
+      showLocationErrorDialog(context, result.error!);
+    }
+  }
+
+  Future<void> _openMapPicker() async {
+    final result = await Navigator.of(context).push<LocationPickerResult>(
+      MaterialPageRoute<LocationPickerResult>(
+        builder: (context) => LocationMapPickerScreen(
+          initialLatitude: _latitude,
+          initialLongitude: _longitude,
+          initialAddress: _locationController.text,
+        ),
+      ),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+        _locationController.text = result.address;
+      });
     }
   }
 
@@ -617,6 +672,63 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _loadingLocation ? null : _useCurrentLocation,
+                    icon: _loadingLocation
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primaryGold,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.my_location,
+                            size: 18,
+                            color: AppColors.primaryGold,
+                          ),
+                    label: Text(
+                      _loadingLocation ? 'Obteniendo...' : 'Mi ubicación',
+                      style: const TextStyle(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryGold),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _openMapPicker,
+                    icon: const Icon(
+                      Icons.map_outlined,
+                      size: 18,
+                      color: AppColors.primaryGold,
+                    ),
+                    label: const Text(
+                      'Elegir en mapa',
+                      style: TextStyle(
+                        color: AppColors.primaryGold,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryGold),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

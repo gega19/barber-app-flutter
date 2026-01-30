@@ -11,6 +11,7 @@ import '../../../presentation/cubit/payment_method/payment_method_cubit.dart';
 import '../../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
 import '../../../presentation/cubit/barber_course/barber_course_cubit.dart';
 import '../../../presentation/cubit/map/map_cubit.dart';
+import '../../../presentation/cubit/barber/favorites/favorites_cubit.dart';
 
 /// Módulo para registrar todos los Cubits
 class CubitsModule {
@@ -35,7 +36,14 @@ class CubitsModule {
       () => BarberCubit(
         getBarbersUseCase: sl(),
         getBestBarbersUseCase: sl(),
+        getBestBarbersWithTotalUseCase: sl(),
         searchBarbersUseCase: sl(),
+      ),
+    );
+    sl.registerLazySingleton(
+      () => FavoritesCubit(
+        getFavoritesUseCase: sl(),
+        toggleFavoriteUseCase: sl(),
       ),
     );
     sl.registerFactory(() => BarberQueueCubit(sl()));
@@ -48,7 +56,12 @@ class CubitsModule {
       ),
     );
     sl.registerFactory(() => PromotionCubit(getPromotionsUseCase: sl()));
-    sl.registerFactory(() => WorkplaceCubit(getWorkplacesUseCase: sl()));
+    sl.registerFactory(
+      () => WorkplaceCubit(
+        getBestWorkplacesWithTotalUseCase: sl(),
+        searchWorkplacesUseCase: sl(),
+      ),
+    );
     sl.registerFactory(
       () => ReviewCubit(
         getReviewsByBarberUseCase: sl(),

@@ -13,6 +13,13 @@ import '../map/barbershops_map_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 
+/// MainScreen - Root container with bottom navigation
+///
+/// Responsibilities:
+/// - Provide BlocProviders for all child screens
+/// - Handle bottom navigation bar
+/// - Manage tab switching with IndexedStack
+/// - Load data only for visible tab (prevents duplicate loads)
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -22,6 +29,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  int _previousIndex = -1; // Track previous index to avoid re-loading
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -30,30 +38,6 @@ class _MainScreenState extends State<MainScreen> {
     const HistoryScreen(),
     const ProfileScreen(),
   ];
-
-  void _refreshTabData(BuildContext context, int index) {
-    // Refresh data based on the selected tab
-    switch (index) {
-      case 0: // Home
-        context.read<BarberCubit>().loadBestBarbers();
-        context.read<WorkplaceCubit>().loadWorkplaces();
-        break;
-      case 1: // Discover
-        context.read<PromotionCubit>().loadPromotions();
-        context.read<WorkplaceCubit>().loadWorkplaces();
-        context.read<BarberCubit>().loadBarbers();
-        break;
-      case 2: // Mapa
-        context.read<MapCubit>().getUserLocation();
-        break;
-      case 3: // Citas
-        context.read<AppointmentCubit>().loadAppointments();
-        break;
-      case 4: // Profile
-        // Profile doesn't need refresh as it's managed by AuthCubit
-        break;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,14 +49,16 @@ class _MainScreenState extends State<MainScreen> {
         BlocProvider<WorkplaceCubit>(create: (_) => sl()),
         BlocProvider<MapCubit>(create: (_) => sl()),
       ],
+      // Use Builder to get context WITH provider access
       child: Builder(
-        builder: (context) {
-          // Load initial data after providers are available
+        builder: (builderContext) {
+          // Load initial tab data once
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              _refreshTabData(context, _currentIndex);
+            if (mounted && _previousIndex == -1) {
+              _loadTabData(builderContext, 0);
             }
           });
+
           return Scaffold(
             body: IndexedStack(index: _currentIndex, children: _screens),
             bottomNavigationBar: Container(
@@ -91,11 +77,21 @@ class _MainScreenState extends State<MainScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildNavItem(context, Icons.home, 'Inicio', 0),
-                      _buildNavItem(context, Icons.explore, 'Descubrir', 1),
-                      _buildNavItem(context, Icons.map, 'Mapa', 2),
-                      _buildNavItem(context, Icons.calendar_today, 'Citas', 3),
-                      _buildNavItem(context, Icons.person, 'Perfil', 4),
+                      _buildNavItem(builderContext, Icons.home, 'Inicio', 0),
+                      _buildNavItem(
+                        builderContext,
+                        Icons.explore,
+                        'Descubrir',
+                        1,
+                      ),
+                      _buildNavItem(builderContext, Icons.map, 'Mapa', 2),
+                      _buildNavItem(
+                        builderContext,
+                        Icons.calendar_today,
+                        'Citas',
+                        3,
+                      ),
+                      _buildNavItem(builderContext, Icons.person, 'Perfil', 4),
                     ],
                   ),
                 ),
@@ -105,6 +101,35 @@ class _MainScreenState extends State<MainScreen> {
         },
       ),
     );
+  }
+
+  void _loadTabData(BuildContext context, int index) {
+    // Avoid reloading the same tab
+    if (index == _previousIndex) return;
+
+    // Load data based on the selected tab
+    switch (index) {
+      case 0: // Home
+        context.read<BarberCubit>().loadBarbers(reset: true);
+        context.read<WorkplaceCubit>().loadWorkplaces();
+        break;
+      case 1: // Discover
+        context.read<PromotionCubit>().loadPromotions();
+        context.read<WorkplaceCubit>().loadWorkplaces();
+        context.read<BarberCubit>().loadBarbers(reset: true);
+        break;
+      case 2: // Mapa
+        context.read<MapCubit>().getUserLocation();
+        break;
+      case 3: // Citas
+        context.read<AppointmentCubit>().loadAppointments();
+        break;
+      case 4: // Profile
+        // Profile doesn't need refresh as it's managed by AuthCubit
+        break;
+    }
+
+    _previousIndex = index;
   }
 
   Widget _buildNavItem(
@@ -120,8 +145,8 @@ class _MainScreenState extends State<MainScreen> {
         setState(() {
           _currentIndex = index;
         });
-        // Refresh data when switching tabs
-        _refreshTabData(context, index);
+        // Load data for new tab
+        _loadTabData(context, index);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

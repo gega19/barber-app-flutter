@@ -2,11 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/services/analytics_service.dart';
+
+import '../../../domain/entities/barber_entity.dart';
+import '../../../domain/entities/barber_course_entity.dart';
+import '../../../data/models/service_model.dart';
+import '../../../data/models/barber_media_model.dart';
+import '../../../data/models/workplace_model.dart';
+import '../../../data/models/promotion_model.dart';
+
+import '../../../data/datasources/remote/service_remote_datasource.dart';
+import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
+import '../../../data/datasources/remote/barber_media_remote_datasource.dart';
+import '../../../data/datasources/remote/workplace_remote_datasource.dart';
+import '../../../data/datasources/remote/promotion_remote_datasource.dart';
+
 import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/review/review_cubit.dart';
+
 import '../../widgets/common/app_card.dart';
 import '../../widgets/reviews/reviews_tab.dart';
 import '../../widgets/barber/barber_detail_header_widget.dart';
@@ -20,20 +37,6 @@ import '../../widgets/barber/barber_recent_reviews_widget.dart';
 import '../../widgets/barber/barber_portfolio_grid_widget.dart';
 import '../../widgets/barber/barber_info_tab_widget.dart';
 import '../../widgets/barber/barber_courses_list_widget.dart';
-import '../../widgets/common/social_media_links_widget.dart';
-import '../../../data/datasources/remote/service_remote_datasource.dart';
-import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
-import '../../../domain/entities/barber_course_entity.dart';
-import '../../../data/datasources/remote/barber_media_remote_datasource.dart';
-import '../../../data/datasources/remote/workplace_remote_datasource.dart';
-import '../../../data/models/service_model.dart';
-import '../../../data/models/barber_media_model.dart';
-import '../../../data/models/workplace_model.dart';
-import '../../../data/models/promotion_model.dart';
-import '../../../data/datasources/remote/promotion_remote_datasource.dart';
-import '../../../core/constants/app_constants.dart';
-import '../../../core/services/analytics_service.dart';
-import 'package:dio/dio.dart';
 
 class BarberDetailScreen extends StatefulWidget {
   final String barberId;
@@ -61,6 +64,9 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
   String? _instagramUrl;
   String? _tiktokUrl;
 
+  BarberEntity?
+  _backupBarber; // Store locally fetched barber if not in global state
+
   @override
   void initState() {
     super.initState();
@@ -68,9 +74,18 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
     _loadBarberDetails();
     _loadCurrentUserBarberId();
     _loadPromotions();
-    // Cargar reseñas al iniciar
     context.read<ReviewCubit>().loadReviewsByBarber(widget.barberId);
-    // Track barber view
+
+    // Initial check for barber in state
+    final cubitState = context.read<BarberCubit>().state;
+    if (cubitState is BarberLoaded) {
+      try {
+        cubitState.barbers.firstWhere((b) => b.id == widget.barberId);
+      } catch (e) {
+        // Not in list, handled by _loadBarberDetails
+      }
+    }
+
     sl<AnalyticsService>().trackEvent(
       eventName: 'barber_viewed',
       eventType: 'user_action',
@@ -105,28 +120,10 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
       return;
     }
 
-    final userEmail = authState.user.email;
-
-    try {
-      final dio = sl<Dio>();
-      final response = await dio.get('${AppConstants.baseUrl}/api/barbers');
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        final data = response.data['data'] as List;
-        final matchingBarbers = data
-            .where((b) => b['email'] == userEmail)
-            .toList();
-
-        if (matchingBarbers.isNotEmpty && mounted) {
-          setState(() {
-            _currentUserBarberId = matchingBarbers.first['id'] as String;
-          });
-        }
-      }
-    } catch (e) {
-      // Error loading barber ID, continue without hiding the button
+    if (authState.user.barberId != null) {
+      setState(() {
+        _currentUserBarberId = authState.user.barberId;
+      });
     }
   }
 
@@ -142,6 +139,16 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
     });
 
     try {
+      // 1. Fetch Barber Entity backup via Cubit (Clean Architecture)
+      final barberCubit = context.read<BarberCubit>();
+      final fetchedBarber = await barberCubit.fetchBarberById(widget.barberId);
+
+      if (mounted && fetchedBarber != null) {
+        setState(() {
+          _backupBarber = fetchedBarber;
+        });
+      }
+
       // Load services
       final services = await sl<ServiceRemoteDataSource>().getBarberServices(
         widget.barberId,
@@ -162,60 +169,46 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
         // Ignore errors loading courses
       }
 
-      // Load barber details - we'll make a direct call to get workplace info
-      // Since BarberModel doesn't include workplace data, we'll fetch it separately
+      // Load details & workplace
       WorkplaceModel? workplace;
       String? serviceType;
 
-      try {
-        // Make a direct API call to get barber with workplace
-        // Since we can't access raw JSON from BarberModel, we'll make a direct HTTP call
-        final dio = sl<Dio>();
-        final response = await dio.get(
-          '${AppConstants.baseUrl}/api/barbers/${widget.barberId}',
-        );
-        if (response.statusCode == 200) {
-          final barberJson = response.data['data'] as Map<String, dynamic>;
-          serviceType = barberJson['serviceType'] as String?;
-
-          // Get social media URLs
-          final instagramUrl = barberJson['instagramUrl'] as String?;
-          final tiktokUrl = barberJson['tiktokUrl'] as String?;
-
-          // Get workplace if workplaceId exists
-          if (barberJson['workplaceId'] != null) {
-            final workplaceId = barberJson['workplaceId'] as String;
-            workplace = await sl<WorkplaceRemoteDataSource>().getWorkplaceById(
-              workplaceId,
-            );
-          } else if (barberJson['workplaceRef'] != null) {
-            // If workplace is included in the response
-            final workplaceJson =
-                barberJson['workplaceRef'] as Map<String, dynamic>;
-            workplace = WorkplaceModel.fromJson(workplaceJson);
-          }
-
+      // Update additional fields from fetched barber if available
+      if (fetchedBarber != null) {
+        if (mounted) {
           setState(() {
-            _instagramUrl = instagramUrl;
-            _tiktokUrl = tiktokUrl;
+            _instagramUrl = fetchedBarber.instagramUrl;
+            _tiktokUrl = fetchedBarber.tiktokUrl;
           });
         }
-      } catch (e) {
-        // Ignore errors, just continue without workplace
+
+        if (fetchedBarber.workplaceId != null) {
+          try {
+            workplace = await sl<WorkplaceRemoteDataSource>().getWorkplaceById(
+              fetchedBarber.workplaceId!,
+            );
+          } catch (_) {}
+        }
       }
 
-      setState(() {
-        _services = services;
-        _portfolio = portfolio;
-        _courses = courses;
-        _workplace = workplace;
-        _serviceType = serviceType;
-        _loadingDetails = false;
-      });
+      if (mounted) {
+        setState(() {
+          _services = services;
+          _portfolio = portfolio;
+          _courses = courses;
+          _workplace = workplace;
+          _serviceType =
+              serviceType ??
+              fetchedBarber?.specialty; // Use specialty as fallback
+          _loadingDetails = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _loadingDetails = false;
-      });
+      if (mounted) {
+        setState(() {
+          _loadingDetails = false;
+        });
+      }
     }
   }
 
@@ -223,10 +216,8 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
   Widget build(BuildContext context) {
     return BlocBuilder<BarberCubit, BarberState>(
       buildWhen: (previous, current) {
-        // Solo rebuild cuando cambia el tipo de estado o los barberos
         if (previous.runtimeType != current.runtimeType) return true;
         if (previous is BarberLoaded && current is BarberLoaded) {
-          // Rebuild si el barbero específico cambió o si cambió la lista
           try {
             final prevBarber = previous.barbers.firstWhere(
               (b) => b.id == widget.barberId,
@@ -234,10 +225,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
             final currBarber = current.barbers.firstWhere(
               (b) => b.id == widget.barberId,
             );
-            // Rebuild si cambió rating, reviews, o cualquier campo relevante
-            return prevBarber.rating != currBarber.rating ||
-                prevBarber.reviews != currBarber.reviews ||
-                prevBarber.name != currBarber.name;
+            return prevBarber != currBarber;
           } catch (e) {
             return true;
           }
@@ -245,20 +233,59 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
         return false;
       },
       builder: (context, state) {
-        if (state is! BarberLoaded) {
+        BarberEntity? barber;
+
+        // Try to find barber in state
+        if (state is BarberLoaded) {
+          try {
+            barber = state.barbers.firstWhere((b) => b.id == widget.barberId);
+          } catch (e) {
+            // Barber not found in list
+          }
+        }
+
+        // If not found in state, try local backup
+        barber ??= _backupBarber;
+
+        if (barber == null) {
+          if (_loadingDetails) {
+            return const Scaffold(
+              body: Center(
+                child: CircularProgressIndicator(color: AppColors.primaryGold),
+              ),
+            );
+          }
+
           return Scaffold(
-            body: const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGold),
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.backgroundCard,
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'No se encontró el barbero',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGold,
+                      foregroundColor: AppColors.textDark,
+                    ),
+                    onPressed: () => context.pop(),
+                    child: const Text('Volver'),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
-        final barber = state.barbers.firstWhere(
-          (b) => b.id == widget.barberId,
-          orElse: () => throw Exception('Barbero no encontrado'),
-        );
-
-        // Verificar si el usuario actual está viendo su propio perfil
         final isOwnProfile =
             _currentUserBarberId != null &&
             _currentUserBarberId == widget.barberId;
@@ -269,7 +296,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
               floatingActionButton: isOwnProfile
                   ? null
                   : FloatingActionButton.extended(
-                      onPressed: () => context.push('/booking/${barber.id}'),
+                      onPressed: () => context.push('/booking/${barber!.id}'),
                       backgroundColor: AppColors.primaryGold,
                       label: const Text(
                         'Agendar Cita',
@@ -292,21 +319,22 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                 ),
                 child: CustomScrollView(
                   slivers: [
-                    // App Bar
                     BarberDetailHeaderWidget(
                       barber: barber,
                       instagramUrl: _instagramUrl,
                       tiktokUrl: _tiktokUrl,
                     ),
-                    // Content
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Location
-                            BarberLocationCardWidget(location: barber.location)
+                            BarberLocationCardWidget(
+                                  location: barber.location,
+                                  latitude: barber.latitude,
+                                  longitude: barber.longitude,
+                                )
                                 .animate()
                                 .fadeIn(duration: 300.ms, delay: 0.ms)
                                 .slideY(
@@ -316,7 +344,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   delay: 0.ms,
                                 ),
                             const SizedBox(height: 16),
-                            // Experience
                             BarberExperienceCardWidget(
                                   experience: barber.experience,
                                 )
@@ -329,12 +356,10 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   delay: 100.ms,
                                 ),
                             const SizedBox(height: 24),
-                            // Services
                             BarberServicesListWidget(
                               services: _services,
                               loading: _loadingDetails,
                             ),
-                            // Service Type
                             if (_serviceType != null) ...[
                               const SizedBox(height: 24),
                               BarberServiceTypeCardWidget(
@@ -349,7 +374,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                     delay: 200.ms,
                                   ),
                             ],
-                            // Workplace
                             if (_workplace != null) ...[
                               const SizedBox(height: 24),
                               BarberWorkplaceCardWidget(workplace: _workplace)
@@ -362,7 +386,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                     delay: 200.ms,
                                   ),
                             ],
-                            // Promotions Section
                             if (_promotions.isNotEmpty) ...[
                               const SizedBox(height: 24),
                               const Text(
@@ -386,7 +409,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                               }),
                             ],
                             const SizedBox(height: 24),
-                            // Recent Reviews Section
                             BarberRecentReviewsWidget(
                                   barber: barber,
                                   tabController: _tabController,
@@ -400,7 +422,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   delay: 300.ms,
                                 ),
                             const SizedBox(height: 24),
-                            // Tabs
                             RepaintBoundary(
                                   child: AppCard(
                                     padding: EdgeInsets.zero,
@@ -466,13 +487,12 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                           child: TabBarView(
                                             controller: _tabController,
                                             children: [
-                                              // Portfolio Tab
                                               BarberPortfolioGridWidget(
                                                     portfolio: _portfolio,
                                                     loading: _loadingDetails,
                                                   )
                                                   .animate(
-                                                    key: ValueKey(
+                                                    key: const ValueKey(
                                                       'portfolio_tab',
                                                     ),
                                                   )
@@ -482,12 +502,13 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                                     end: 0,
                                                     duration: 300.ms,
                                                   ),
-                                              // Info Tab
                                               BarberInfoTabWidget(
                                                     barber: barber,
                                                   )
                                                   .animate(
-                                                    key: ValueKey('info_tab'),
+                                                    key: const ValueKey(
+                                                      'info_tab',
+                                                    ),
                                                   )
                                                   .fadeIn(duration: 300.ms)
                                                   .slideX(
@@ -495,10 +516,9 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                                     end: 0,
                                                     duration: 300.ms,
                                                   ),
-                                              // Reviews Tab
                                               ReviewsTab(barber: barber)
                                                   .animate(
-                                                    key: ValueKey(
+                                                    key: const ValueKey(
                                                       'reviews_tab',
                                                     ),
                                                   )
@@ -523,7 +543,6 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                                   duration: 300.ms,
                                   delay: 400.ms,
                                 ),
-                            // Courses Section (below tabs)
                             if (_courses.isNotEmpty) ...[
                               const SizedBox(height: 24),
                               BarberCoursesListWidget(

@@ -27,7 +27,7 @@ class WorkplacesTabContent extends StatelessWidget {
           return AppErrorWidget(
             message: state.message,
             onRetry: () {
-              context.read<WorkplaceCubit>().loadWorkplaces();
+              context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
             },
           );
         }
@@ -38,8 +38,9 @@ class WorkplacesTabContent extends StatelessWidget {
           if (filteredWorkplaces.isEmpty) {
             return EmptyStateWidget(
               message: 'No se encontraron barberías',
+              icon: Icons.store_outlined,
               onRefresh: () {
-                context.read<WorkplaceCubit>().loadWorkplaces();
+                context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
               },
             );
           }
@@ -47,7 +48,10 @@ class WorkplacesTabContent extends StatelessWidget {
           return RefreshableList<WorkplaceEntity>(
             items: filteredWorkplaces,
             onRefresh: () async {
-              context.read<WorkplaceCubit>().loadWorkplaces();
+              context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
+            },
+            onLoadMore: () {
+              context.read<WorkplaceCubit>().loadMoreWorkplaces();
             },
             itemBuilder: (context, workplace, index) {
               return WorkplaceCardWidget(

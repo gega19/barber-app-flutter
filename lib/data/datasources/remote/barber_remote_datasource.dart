@@ -5,7 +5,11 @@ import 'package:dio/dio.dart';
 
 abstract class BarberRemoteDataSource {
   Future<List<BarberModel>> getBarbers();
-  Future<List<BarberModel>> getBestBarbers({int limit = 10});
+  Future<List<BarberModel>> getBestBarbers({int limit = 10, int offset = 0});
+  Future<Map<String, dynamic>> getBestBarbersWithMetadata({
+    int limit = 10,
+    int offset = 0,
+  });
   Future<BarberModel> getBarberById(String id);
   Future<List<BarberModel>> searchBarbers(String query);
   Future<List<BarberModel>> getBarbersByWorkplaceId(String workplaceId);
@@ -19,6 +23,12 @@ abstract class BarberRemoteDataSource {
     String? instagramUrl,
     String? tiktokUrl,
   });
+
+  Future<void> toggleFavorite(String barberId);
+
+  Future<List<BarberModel>> getFavorites();
+
+  Future<BarberModel> getBarberBySlug(String slug);
 }
 
 class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
@@ -48,21 +58,43 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
   }
 
   @override
-  Future<List<BarberModel>> getBestBarbers({int limit = 10}) async {
+  Future<List<BarberModel>> getBestBarbers({
+    int limit = 10,
+    int offset = 0,
+  }) async {
+    final result = await getBestBarbersWithMetadata(
+      limit: limit,
+      offset: offset,
+    );
+    return result['barbers'] as List<BarberModel>;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getBestBarbersWithMetadata({
+    int limit = 10,
+    int offset = 0,
+  }) async {
     try {
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/barbers/best',
-        queryParameters: {'limit': limit},
+        queryParameters: {'limit': limit, 'offset': offset},
       );
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as List;
-        return data.map((json) => BarberModel.fromJson(json)).toList();
+        final pagination = response.data['pagination'] as Map<String, dynamic>?;
+        final barbers = data.map((json) => BarberModel.fromJson(json)).toList();
+
+        return {
+          'barbers': barbers,
+          'total': pagination?['total'] ?? barbers.length,
+        };
       } else {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: response.data['message'] ?? 'Error al obtener mejores barberos',
+          message:
+              response.data['message'] ?? 'Error al obtener mejores barberos',
         );
       }
     } on DioException catch (e) {
@@ -130,7 +162,9 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: response.data['message'] ?? 'Error al obtener barberos de la barbería',
+          message:
+              response.data['message'] ??
+              'Error al obtener barberos de la barbería',
         );
       }
     } on DioException catch (e) {
@@ -160,8 +194,10 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
           if (location != null) 'location': location,
           if (latitude != null) 'latitude': latitude,
           if (longitude != null) 'longitude': longitude,
-          if (instagramUrl != null) 'instagramUrl': instagramUrl.isEmpty ? null : instagramUrl,
-          if (tiktokUrl != null) 'tiktokUrl': tiktokUrl.isEmpty ? null : tiktokUrl,
+          if (instagramUrl != null)
+            'instagramUrl': instagramUrl.isEmpty ? null : instagramUrl,
+          if (tiktokUrl != null)
+            'tiktokUrl': tiktokUrl.isEmpty ? null : tiktokUrl,
         },
       );
 
@@ -172,13 +208,83 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: response.data['message'] ?? 'Error al actualizar información de barbero',
+          message:
+              response.data['message'] ??
+              'Error al actualizar información de barbero',
         );
       }
     } on DioException catch (e) {
       appLogger.e('UpdateBarberInfo error: ${e.message}', error: e);
-      throw Exception('Error al actualizar información de barbero: ${e.message}');
+      throw Exception(
+        'Error al actualizar información de barbero: ${e.message}',
+      );
+    }
+  }
+
+  @override
+  Future<void> toggleFavorite(String barberId) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/barbers/$barberId/favorite',
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error al actualizar favoritos',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('ToggleFavorite error: ${e.message}', error: e);
+      throw Exception('Error al actualizar favoritos: ${e.message}');
+    }
+  }
+
+  @override
+  Future<List<BarberModel>> getFavorites() async {
+    try {
+      final response = await dio.get(
+        '${AppConstants.baseUrl}/api/barbers/favorites',
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as List;
+        return data.map((json) => BarberModel.fromJson(json)).toList();
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error al obtener favoritos',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('GetFavorites error: ${e.message}', error: e);
+      throw Exception('Error al obtener favoritos: ${e.message}');
+    }
+  }
+
+  @override
+  Future<BarberModel> getBarberBySlug(String slug) async {
+    try {
+      final response = await dio.get(
+        '${AppConstants.baseUrl}/api/barbers/slug/$slug',
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return BarberModel.fromJson(data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message:
+              response.data['message'] ?? 'Error al obtener barbero por slug',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('GetBarberBySlug error: ${e.message}', error: e);
+      throw Exception('Error al obtener barbero por slug: ${e.message}');
     }
   }
 }
-

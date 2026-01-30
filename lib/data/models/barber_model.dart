@@ -17,6 +17,9 @@ class BarberModel extends BarberEntity {
     required super.experience,
     required super.distance,
     String? workplaceId,
+    super.slug,
+    super.latitude,
+    super.longitude,
     super.instagramUrl,
     super.tiktokUrl,
   }) : _workplaceId = workplaceId;
@@ -35,6 +38,13 @@ class BarberModel extends BarberEntity {
       experience: (json['experienceYears'] as int?)?.toString() ?? '0',
       distance: json['distance'] as String? ?? '',
       workplaceId: json['workplaceId'] as String?,
+      slug: json['slug'] as String?,
+      latitude: json['latitude'] != null
+          ? (json['latitude'] as num).toDouble()
+          : null,
+      longitude: json['longitude'] != null
+          ? (json['longitude'] as num).toDouble()
+          : null,
       instagramUrl: json['instagramUrl'] as String?,
       tiktokUrl: json['tiktokUrl'] as String?,
     );
@@ -76,6 +86,9 @@ class BarberModel extends BarberEntity {
       experience: entity.experience,
       distance: entity.distance,
       workplaceId: entity.workplaceId,
+      slug: entity.slug,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
       instagramUrl: entity.instagramUrl,
       tiktokUrl: entity.tiktokUrl,
     );

@@ -40,8 +40,9 @@ class _HomeScreenState extends State<HomeScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    context.read<BarberCubit>().loadBestBarbers();
-    context.read<WorkplaceCubit>().loadWorkplaces();
+
+    context.read<BarberCubit>().loadBarbers(reset: true);
+    context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
     _requestNotificationPermission();
 
     _tabController.addListener(() {
@@ -58,32 +59,27 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _onSearchChanged(String query) {
-    // Actualizar el query inmediatamente para mostrar en el UI
     setState(() {
-      _searchQuery = query;
+      _searchQuery = query.trim();
     });
 
-    // Cancelar el debounce anterior si existe
     _searchDebounce?.cancel();
 
-    // Si la búsqueda está vacía, recargar datos inmediatamente
-    if (query.isEmpty) {
+    if (query.trim().isEmpty) {
       if (_tabController.index == 0) {
-        context.read<BarberCubit>().loadBestBarbers();
+        context.read<BarberCubit>().loadBarbers(reset: true);
       } else {
-        context.read<WorkplaceCubit>().loadWorkplaces();
+        context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
       }
       return;
     }
 
-    // Aplicar debounce para búsquedas con texto
     _searchDebounce = Timer(HomeConstants.searchDebounceDuration, () {
-      // El filtrado se hace localmente en _applyBarberFilters/_applyWorkplaceFilters
-      // No necesitamos hacer llamadas al backend aquí ya que filtramos localmente
-      if (mounted) {
-        setState(() {
-          // Forzar rebuild para actualizar los resultados filtrados
-        });
+      if (!mounted) return;
+      if (_tabController.index == 0) {
+        context.read<BarberCubit>().searchBarbers(_searchQuery);
+      } else {
+        context.read<WorkplaceCubit>().searchWorkplaces(_searchQuery);
       }
     });
   }
@@ -93,8 +89,8 @@ class _HomeScreenState extends State<HomeScreen>
     _notificationPermissionRequested = true;
 
     try {
-      final hasPermission =
-          await NotificationService().hasNotificationPermission();
+      final hasPermission = await NotificationService()
+          .hasNotificationPermission();
       if (!hasPermission) {
         await NotificationService().requestPermissions();
       }
@@ -125,6 +121,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   List<BarberEntity> _applyBarberFilters(List<BarberEntity> barbers) {
+    if (_searchQuery.isNotEmpty) {
+      return FilterUtils.sortBarbers(barbers, _sortBy, _sortOrder);
+    }
     return FilterUtils.applyBarberFilters(
       barbers,
       _searchQuery,
@@ -136,9 +135,11 @@ class _HomeScreenState extends State<HomeScreen>
   List<WorkplaceEntity> _applyWorkplaceFilters(
     List<WorkplaceEntity> workplaces,
   ) {
+    // When showing search results, only apply sort (no local filter by text)
+    final queryForFilter = _searchQuery.isNotEmpty ? '' : _searchQuery;
     return FilterUtils.applyWorkplaceFilters(
       workplaces,
-      _searchQuery,
+      queryForFilter,
       _sortBy,
       _sortOrder,
     );

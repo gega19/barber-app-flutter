@@ -14,7 +14,7 @@ class AnalyticsService {
   static const Duration _batchTimeout = Duration(
     minutes: 5,
   ); // O cada 5 minutos
-  static const int _maxQueueSize = 1000; // Máximo de eventos en cola
+  static const int _maxQueueSize = 50; // REDUCED from 1000 to prevent OOM
   static const String _eventsQueueKey = 'analytics_events_queue';
   static const String _sessionIdKey = 'analytics_session_id';
 
@@ -60,18 +60,30 @@ class AnalyticsService {
   Future<void> initialize() async {
     if (_isInitialized) return;
 
-    // Obtener o crear sessionId
-    _sessionId = _prefs.getString(_sessionIdKey);
-    if (_sessionId == null || _sessionId!.isEmpty) {
-      _sessionId = const Uuid().v4();
-      await _prefs.setString(_sessionIdKey, _sessionId!);
+    try {
+      // Obtener o crear sessionId
+      _sessionId = _prefs.getString(_sessionIdKey);
+      if (_sessionId == null || _sessionId!.isEmpty) {
+        _sessionId = const Uuid().v4();
+        await _prefs.setString(_sessionIdKey, _sessionId!);
+      }
+
+      // Cargar eventos pendientes del almacenamiento local
+      await _loadStoredEvents();
+
+      // Intentar sincronizar eventos pendientes
+      if (_eventQueue.isNotEmpty) {
+        // Run in background to not block init
+        unawaited(syncPendingEvents());
+      }
+    } catch (e) {
+      // Safety net: If initialization fails (likely OOM from bad data), clear everything
+      appLogger.e(
+        'Error initializing AnalyticsService (clearing corrupted data): $e',
+      );
+      await clearEvents();
+      _sessionId = const Uuid().v4(); // Reset session
     }
-
-    // Cargar eventos pendientes del almacenamiento local
-    await _loadStoredEvents();
-
-    // Intentar sincronizar eventos pendientes
-    await syncPendingEvents();
 
     _isInitialized = true;
     appLogger.i('✅ AnalyticsService initialized');
@@ -293,26 +305,27 @@ class AnalyticsService {
   Future<void> _saveEventsToLocal([List<Map<String, dynamic>>? events]) async {
     try {
       final eventsToSave = events ?? _eventQueue;
-      if (eventsToSave.isEmpty) return;
 
-      // Obtener eventos existentes
-      final existingEventsJson = _prefs.getString(_eventsQueueKey);
-      final existingEvents = existingEventsJson != null
-          ? List<Map<String, dynamic>>.from(jsonDecode(existingEventsJson))
-          : <Map<String, dynamic>>[];
-
-      // Combinar con nuevos eventos
-      existingEvents.addAll(eventsToSave);
-
-      // Mantener máximo de eventos en cola
-      if (existingEvents.length > _maxQueueSize) {
-        existingEvents.removeRange(0, existingEvents.length - _maxQueueSize);
+      if (eventsToSave.isEmpty) {
+        await _prefs.remove(_eventsQueueKey);
+        return;
       }
 
-      // Guardar
-      await _prefs.setString(_eventsQueueKey, jsonEncode(existingEvents));
+      if (eventsToSave.length > _maxQueueSize) {
+        final trimmedEvents = eventsToSave.sublist(
+          eventsToSave.length - _maxQueueSize,
+        );
+        await _prefs.setString(_eventsQueueKey, jsonEncode(trimmedEvents));
+      } else {
+        await _prefs.setString(_eventsQueueKey, jsonEncode(eventsToSave));
+      }
     } catch (e) {
       appLogger.e('Error saving events to local storage: $e');
+      // If save fails (e.g. OOM), clear to recover
+      if (e.toString().contains('OutOfMemory') ||
+          e.toString().contains('memory')) {
+        await _prefs.remove(_eventsQueueKey);
+      }
     }
   }
 
@@ -321,23 +334,34 @@ class AnalyticsService {
     try {
       final eventsJson = _prefs.getString(_eventsQueueKey);
       if (eventsJson != null && eventsJson.isNotEmpty) {
+        // Add safety check for string length before parsing
+        if (eventsJson.length > 5 * 1024 * 1024) {
+          // > 5MB
+          appLogger.w(
+            'Analytics cache too large (${eventsJson.length} bytes), purging.',
+          );
+          await _prefs.remove(_eventsQueueKey);
+          return;
+        }
+
         final storedEvents = List<Map<String, dynamic>>.from(
           jsonDecode(eventsJson),
         );
+
+        // Replace queue with stored events (don't append if init called multiple times)
+        _eventQueue.clear();
         _eventQueue.addAll(storedEvents);
         appLogger.d('Loaded ${storedEvents.length} stored events');
       }
     } catch (e) {
       appLogger.e('Error loading stored events: $e');
+      // Corrupted JSON or OOM -> Clear it
+      await _prefs.remove(_eventsQueueKey);
     }
   }
 
   /// Sincroniza eventos pendientes (útil cuando se recupera conexión)
   Future<void> syncPendingEvents() async {
-    if (_eventQueue.isEmpty) {
-      await _loadStoredEvents();
-    }
-
     if (_eventQueue.isNotEmpty) {
       await _flushEvents();
     }

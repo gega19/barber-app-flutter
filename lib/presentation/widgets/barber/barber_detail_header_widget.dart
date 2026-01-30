@@ -6,6 +6,8 @@ import '../../../core/utils/barber_utils.dart';
 import '../common/app_avatar.dart';
 import '../common/app_badge.dart';
 import '../common/social_media_links_widget.dart';
+import '../common/favorite_button.dart';
+// import 'package:share_plus/share_plus.dart'; // Compartir deshabilitado temporalmente
 
 /// Widget para el header del detalle del barbero
 class BarberDetailHeaderWidget extends StatelessWidget {
@@ -23,7 +25,7 @@ class BarberDetailHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: tiktokUrl != null || instagramUrl != null ? 240 : 200,
+      expandedHeight: tiktokUrl != null || instagramUrl != null ? 280 : 240,
       pinned: true,
       backgroundColor: AppColors.backgroundCard,
       leading: IconButton(
@@ -41,6 +43,7 @@ class BarberDetailHeaderWidget extends StatelessWidget {
         ),
         onPressed: () => context.pop(),
       ),
+      actions: const [],
       flexibleSpace: FlexibleSpaceBar(
         background: RepaintBoundary(
           child: Container(
@@ -53,7 +56,7 @@ class BarberDetailHeaderWidget extends StatelessWidget {
             ),
             child: SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 40, 24, 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -131,6 +134,12 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                                       fontSize: 14,
                                     ),
                                   ),
+                                  const Spacer(),
+                                  FavoriteButton(
+                                    barberId: barber.id,
+                                    color: AppColors.primaryGold,
+                                    size: 24,
+                                  ),
                                 ],
                               ),
                             ],
@@ -138,16 +147,71 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                         ),
                       ],
                     ),
-                    // Social Media Links below avatar and name
-                    if (instagramUrl != null || tiktokUrl != null) ...[
-                      const SizedBox(height: 16),
-                      SocialMediaLinksWidget(
-                        instagramUrl: instagramUrl,
-                        tiktokUrl: tiktokUrl,
-                        iconSize: 18.0,
-                        spacing: 8.0,
-                      ),
-                    ],
+                    // Social Media Links and Share Button below avatar and name
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        if (instagramUrl != null || tiktokUrl != null) ...[
+                          SocialMediaLinksWidget(
+                            instagramUrl: instagramUrl,
+                            tiktokUrl: tiktokUrl,
+                            iconSize: 18.0,
+                            spacing: 8.0,
+                          ),
+                          const SizedBox(width: 16),
+                        ],
+                        // Opción Compartir deshabilitada temporalmente (deep link / web pendiente)
+                        // Material(
+                        //   color: Colors.transparent,
+                        //   child: InkWell(
+                        //     onTap: () {
+                        //       final shareUrl =
+                        //           barber.slug != null && barber.slug!.isNotEmpty
+                        //               ? 'https://bartop.app/barber/${barber.slug}'
+                        //               : 'https://bartop.app/barber/${barber.id}';
+                        //       Share.share(
+                        //         'Mira el perfil de ${barber.name} en Bartop! $shareUrl',
+                        //         subject: 'Perfil de ${barber.name}',
+                        //       );
+                        //     },
+                        //     borderRadius: BorderRadius.circular(20),
+                        //     child: Container(
+                        //       padding: const EdgeInsets.symmetric(
+                        //         horizontal: 16,
+                        //         vertical: 8,
+                        //       ),
+                        //       decoration: BoxDecoration(
+                        //         border: Border.all(
+                        //           color: AppColors.primaryGold,
+                        //           width: 1.5,
+                        //         ),
+                        //         borderRadius: BorderRadius.circular(20),
+                        //       ),
+                        //       child: Row(
+                        //         mainAxisSize: MainAxisSize.min,
+                        //         children: const [
+                        //           Icon(
+                        //             Icons.share,
+                        //             color: AppColors.primaryGold,
+                        //             size: 18,
+                        //           ),
+                        //           SizedBox(width: 6),
+                        //           Text(
+                        //             'Compartir',
+                        //             style: TextStyle(
+                        //               color: AppColors.primaryGold,
+                        //               fontSize: 14,
+                        //               fontWeight: FontWeight.w600,
+                        //             ),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //     ),
+                        //   ),
+                        // ),
+                      ],
+                    ),
                   ],
                 ),
               ),

@@ -9,13 +9,19 @@ import '../../../domain/usecases/auth/become_barber_usecase.dart';
 import '../../../domain/usecases/auth/delete_account_usecase.dart';
 import '../../../domain/usecases/barber/get_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
+import '../../../domain/usecases/barber/get_best_barbers_with_total_usecase.dart';
 import '../../../domain/usecases/barber/search_barbers_usecase.dart';
+import '../../../domain/usecases/barber/toggle_favorite_usecase.dart';
+import '../../../domain/usecases/barber/get_favorites_usecase.dart';
+import '../../../domain/usecases/barber/get_barber_by_slug_usecase.dart';
 import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/mark_as_attended_usecase.dart';
 import '../../../domain/usecases/promotion/get_promotions_usecase.dart';
 import '../../../domain/usecases/workplace/get_workplaces_usecase.dart';
+import '../../../domain/usecases/workplace/get_best_workplaces_with_total_usecase.dart';
+import '../../../domain/usecases/workplace/search_workplaces_usecase.dart';
 import '../../../domain/usecases/workplace/get_nearby_workplaces_usecase.dart';
 import '../../../domain/usecases/review/get_reviews_by_barber_usecase.dart';
 import '../../../domain/usecases/review/get_reviews_by_workplace_usecase.dart';
@@ -48,7 +54,11 @@ class UseCasesModule {
     // Barber UseCases
     sl.registerLazySingleton(() => GetBarbersUseCase(sl()));
     sl.registerLazySingleton(() => GetBestBarbersUseCase(sl()));
+    sl.registerLazySingleton(() => GetBestBarbersWithTotalUseCase(sl()));
     sl.registerLazySingleton(() => SearchBarbersUseCase(sl()));
+    sl.registerLazySingleton(() => ToggleFavoriteUseCase(sl()));
+    sl.registerLazySingleton(() => GetFavoritesUseCase(sl()));
+    sl.registerLazySingleton(() => GetBarberBySlugUseCase(sl()));
 
     // Appointment UseCases
     sl.registerLazySingleton(() => GetAppointmentsUseCase(sl()));
@@ -61,6 +71,8 @@ class UseCasesModule {
 
     // Workplace UseCases
     sl.registerLazySingleton(() => GetWorkplacesUseCase(sl()));
+    sl.registerLazySingleton(() => GetBestWorkplacesWithTotalUseCase(sl()));
+    sl.registerLazySingleton(() => SearchWorkplacesUseCase(sl()));
     sl.registerLazySingleton(() => GetNearbyWorkplacesUseCase(sl()));
 
     // Review UseCases

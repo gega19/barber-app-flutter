@@ -1,4 +1,5 @@
 import '../../domain/entities/barber_entity.dart';
+import '../../domain/entities/barber_list_result.dart';
 import '../../domain/repositories/barber_repository.dart';
 import '../../core/errors/failures.dart';
 import '../datasources/remote/barber_remote_datasource.dart';
@@ -20,10 +21,34 @@ class BarberRepositoryImpl implements BarberRepository {
   }
 
   @override
-  Future<Either<Failure, List<BarberEntity>>> getBestBarbers({int limit = 10}) async {
+  Future<Either<Failure, List<BarberEntity>>> getBestBarbers({
+    int limit = 10,
+    int offset = 0,
+  }) async {
     try {
-      final barbers = await remoteDataSource.getBestBarbers(limit: limit);
+      final barbers = await remoteDataSource.getBestBarbers(
+        limit: limit,
+        offset: offset,
+      );
       return Right(barbers);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, BarberListResult>> getBestBarbersWithTotal({
+    int limit = 10,
+    int offset = 0,
+  }) async {
+    try {
+      final result = await remoteDataSource.getBestBarbersWithMetadata(
+        limit: limit,
+        offset: offset,
+      );
+      final barbers = result['barbers'] as List<BarberEntity>;
+      final total = result['total'] as int? ?? barbers.length;
+      return Right(BarberListResult(barbers: barbers, total: total));
     } catch (e) {
       return Left(ServerFailure(e.toString()));
     }
@@ -52,9 +77,13 @@ class BarberRepositoryImpl implements BarberRepository {
   }
 
   @override
-  Future<Either<Failure, List<BarberEntity>>> getBarbersByWorkplaceId(String workplaceId) async {
+  Future<Either<Failure, List<BarberEntity>>> getBarbersByWorkplaceId(
+    String workplaceId,
+  ) async {
     try {
-      final barbers = await remoteDataSource.getBarbersByWorkplaceId(workplaceId);
+      final barbers = await remoteDataSource.getBarbersByWorkplaceId(
+        workplaceId,
+      );
       return Right(barbers);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -68,9 +97,10 @@ class BarberRepositoryImpl implements BarberRepository {
     try {
       final allBarbers = await remoteDataSource.getBarbers();
       final filtered = allBarbers
-          .where((barber) => barber.specialty.toLowerCase().contains(
-                category.toLowerCase(),
-              ))
+          .where(
+            (barber) =>
+                barber.specialty.toLowerCase().contains(category.toLowerCase()),
+          )
           .toList();
       return Right(filtered);
     } catch (e) {
@@ -93,5 +123,34 @@ class BarberRepositoryImpl implements BarberRepository {
       return Left(ServerFailure(e.toString()));
     }
   }
-}
 
+  @override
+  Future<Either<Failure, void>> toggleFavorite(String barberId) async {
+    try {
+      await remoteDataSource.toggleFavorite(barberId);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<BarberEntity>>> getFavorites() async {
+    try {
+      final barbers = await remoteDataSource.getFavorites();
+      return Right(barbers);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, BarberEntity>> getBarberBySlug(String slug) async {
+    try {
+      final barber = await remoteDataSource.getBarberBySlug(slug);
+      return Right(barber);
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+}
