@@ -53,6 +53,7 @@ class CubitsModule {
         createAppointmentUseCase: sl(),
         cancelAppointmentUseCase: sl(),
         markAsAttendedUseCase: sl(),
+        getAppointmentByIdUseCase: sl(),
       ),
     );
     sl.registerFactory(() => PromotionCubit(getPromotionsUseCase: sl()));

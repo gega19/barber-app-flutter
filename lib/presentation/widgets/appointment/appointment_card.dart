@@ -30,12 +30,15 @@ class AppointmentCard extends StatelessWidget {
     final statusConfig = AppointmentUtils.getStatusConfig(appointment.status);
     final dateFormat = AppointmentUtils.formatAppointmentDate(appointment.date);
 
-    // Determinar si el usuario actual es el barbero de esta cita específica
-    // Comparar barberId del usuario con el id del barbero de la cita
-    final bool isUserBarber = currentUser != null && 
-        appointment.barber != null && 
-        currentUser!.barberId != null && 
-        currentUser!.barberId == appointment.barber!.id;
+    // Usuario es el barbero de esta cita si tiene barberId y:
+    // - la cita no trae barber (lista de citas del barbero) o
+    // - el barbero de la cita es el usuario
+    final bool isUserBarber =
+        currentUser != null &&
+        currentUser!.barberId != null &&
+        currentUser!.barberId!.isNotEmpty &&
+        (appointment.barber == null ||
+            appointment.barber!.id == currentUser!.barberId);
 
     String? avatarUrl;
     String? avatarSeed;
@@ -76,6 +79,30 @@ class AppointmentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (isUserBarber)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      'Cliente',
+                      style: TextStyle(
+                        color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                if (!isUserBarber)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Text(
+                      'Barbero',
+                      style: TextStyle(
+                        color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

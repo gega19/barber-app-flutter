@@ -18,6 +18,7 @@ import '../../../domain/usecases/appointment/get_appointments_usecase.dart';
 import '../../../domain/usecases/appointment/create_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/mark_as_attended_usecase.dart';
+import '../../../domain/usecases/appointment/get_appointment_by_id_usecase.dart';
 import '../../../domain/usecases/promotion/get_promotions_usecase.dart';
 import '../../../domain/usecases/workplace/get_workplaces_usecase.dart';
 import '../../../domain/usecases/workplace/get_best_workplaces_with_total_usecase.dart';
@@ -65,6 +66,7 @@ class UseCasesModule {
     sl.registerLazySingleton(() => CreateAppointmentUseCase(sl()));
     sl.registerLazySingleton(() => CancelAppointmentUseCase(sl()));
     sl.registerLazySingleton(() => MarkAsAttendedUseCase(sl()));
+    sl.registerLazySingleton(() => GetAppointmentByIdUseCase(sl()));
 
     // Promotion UseCases
     sl.registerLazySingleton(() => GetPromotionsUseCase(sl()));

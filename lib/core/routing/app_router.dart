@@ -39,6 +39,7 @@ import '../../presentation/cubit/barber/favorites/favorites_cubit.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/entities/barber_entity.dart';
 
 /// Listenable wrapper para el stream del AuthCubit
 class AuthStreamNotifier extends ChangeNotifier {
@@ -337,24 +338,11 @@ GoRouter createAppRouter() {
               BlocProvider(create: (_) => sl<PaymentMethodCubit>()),
               BlocProvider(create: (_) => sl<AppointmentCubit>()),
             ],
-            child: Builder(
-              builder: (context) {
-                final barberCubit = context.watch<BarberCubit>();
-                if (barberCubit.state is BarberLoaded) {
-                  final barbers = (barberCubit.state as BarberLoaded).barbers;
-                  try {
-                    final barber = barbers.firstWhere((b) => b.id == barberId);
-                    return BookingScreen(barber: barber);
-                  } catch (e) {
-                    return Scaffold(
-                      body: Center(child: Text('Barbero no encontrado')),
-                    );
-                  }
-                }
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              },
+            child: BookingScreen(
+              barberId: barberId,
+              barber: state.extra is BarberEntity
+                  ? state.extra as BarberEntity
+                  : null,
             ),
           );
         },
@@ -368,55 +356,7 @@ GoRouter createAppRouter() {
               BlocProvider.value(value: authCubit),
               BlocProvider(create: (_) => sl<AppointmentCubit>()),
             ],
-            child: BlocBuilder<AppointmentCubit, AppointmentState>(
-              builder: (context, appointmentState) {
-                if (appointmentState is AppointmentLoaded) {
-                  try {
-                    final appointment = appointmentState.appointments
-                        .firstWhere((a) => a.id == appointmentId);
-                    return AppointmentDetailScreen(appointment: appointment);
-                  } catch (e) {
-                    // Si no se encuentra la cita, intentar cargarla
-                    // Por ahora, mostrar un error
-                    return Scaffold(
-                      body: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: AppColors.error,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Cita no encontrada',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => context.pop(),
-                              child: const Text('Volver'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }
-                }
-                // Si no hay citas cargadas, cargar primero
-                if (appointmentState is AppointmentInitial ||
-                    appointmentState is AppointmentError) {
-                  context.read<AppointmentCubit>().loadAppointments();
-                }
-                return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()),
-                );
-              },
-            ),
+            child: AppointmentDetailScreen(appointmentId: appointmentId),
           );
         },
       ),

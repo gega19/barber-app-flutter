@@ -296,7 +296,8 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
               floatingActionButton: isOwnProfile
                   ? null
                   : FloatingActionButton.extended(
-                      onPressed: () => context.push('/booking/${barber!.id}'),
+                      onPressed: () =>
+                          context.push('/booking/${barber!.id}', extra: barber),
                       backgroundColor: AppColors.primaryGold,
                       label: const Text(
                         'Agendar Cita',

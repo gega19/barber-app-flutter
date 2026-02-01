@@ -34,10 +34,32 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @override
-  Future<Either<Failure, List<AppointmentEntity>>> getBarberQueue(String barberId, {DateTime? date}) async {
+  Future<Either<Failure, List<AppointmentEntity>>> getBarberQueue(
+    String barberId, {
+    DateTime? date,
+  }) async {
     try {
-      final appointments = await remoteDataSource.getBarberQueue(barberId, date: date);
+      final appointments = await remoteDataSource.getBarberQueue(
+        barberId,
+        date: date,
+      );
       return Right(appointments);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<Failure, AppointmentEntity>> getAppointmentById(
+    String id,
+  ) async {
+    try {
+      final appointment = await remoteDataSource.getAppointmentById(id);
+      return Right(appointment);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {

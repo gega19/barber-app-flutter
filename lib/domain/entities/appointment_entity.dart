@@ -3,12 +3,7 @@ import 'barber_entity.dart';
 import 'user_entity.dart';
 
 /// Estados de una cita
-enum AppointmentStatus {
-  upcoming,
-  completed,
-  cancelled,
-  pending,
-}
+enum AppointmentStatus { upcoming, completed, cancelled, pending }
 
 /// Entidad de cita del dominio
 class AppointmentEntity extends Equatable {
@@ -16,6 +11,7 @@ class AppointmentEntity extends Equatable {
   final BarberEntity? barber;
   final UserEntity? client;
   final String? serviceId;
+  final String? serviceName;
   final DateTime date;
   final String time;
   final double? price;
@@ -32,6 +28,7 @@ class AppointmentEntity extends Equatable {
     this.barber,
     this.client,
     this.serviceId,
+    this.serviceName,
     required this.date,
     required this.time,
     this.price,
@@ -45,7 +42,21 @@ class AppointmentEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, barber, client, serviceId, date, time, price, status, paymentMethod, paymentMethodName, paymentStatus, paymentProof, notes, rating];
+  List<Object?> get props => [
+    id,
+    barber,
+    client,
+    serviceId,
+    serviceName,
+    date,
+    time,
+    price,
+    status,
+    paymentMethod,
+    paymentMethodName,
+    paymentStatus,
+    paymentProof,
+    notes,
+    rating,
+  ];
 }
-
-

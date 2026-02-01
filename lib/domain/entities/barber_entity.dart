@@ -19,6 +19,7 @@ class BarberEntity extends Equatable {
   final double? longitude;
   final String? instagramUrl;
   final String? tiktokUrl;
+  final String? phone;
 
   const BarberEntity({
     required this.id,
@@ -38,6 +39,7 @@ class BarberEntity extends Equatable {
     this.longitude,
     this.instagramUrl,
     this.tiktokUrl,
+    this.phone,
   });
 
   @override
@@ -59,5 +61,6 @@ class BarberEntity extends Equatable {
     longitude,
     instagramUrl,
     tiktokUrl,
+    phone,
   ];
 }

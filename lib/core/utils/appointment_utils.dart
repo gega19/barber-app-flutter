@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/appointment_entity.dart';
+import '../../domain/entities/user_entity.dart';
 import '../../presentation/widgets/common/app_badge.dart';
 import '../constants/app_constants.dart';
 
 /// Utilidades compartidas para el manejo de citas
 class AppointmentUtils {
+  /// Indica si el usuario debe ver la lista de citas como barbero
+  /// (citas que le reservaron). Usa role == BARBER o barberId no nulo.
+  static bool isUserViewingAsBarber(UserEntity? user) {
+    if (user == null) return false;
+    return user.role == 'BARBER' ||
+        (user.barberId != null && user.barberId!.isNotEmpty);
+  }
+
   // Formateadores de fecha estáticos para evitar recrearlos
   static final DateFormat _fullDateFormat = DateFormat(
     'EEEE, d MMMM yyyy',

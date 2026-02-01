@@ -22,6 +22,7 @@ class BarberModel extends BarberEntity {
     super.longitude,
     super.instagramUrl,
     super.tiktokUrl,
+    super.phone,
   }) : _workplaceId = workplaceId;
 
   factory BarberModel.fromJson(Map<String, dynamic> json) {
@@ -31,10 +32,10 @@ class BarberModel extends BarberEntity {
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
       reviews: json['reviews'] as int? ?? 0,
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      location: json['location'] as String,
+      location: json['location'] as String? ?? '',
       image: json['avatar'] as String? ?? json['image'] as String?,
       avatarSeed: json['avatarSeed'] as String?,
-      specialty: json['specialty'] as String,
+      specialty: json['specialty'] as String? ?? '',
       experience: (json['experienceYears'] as int?)?.toString() ?? '0',
       distance: json['distance'] as String? ?? '',
       workplaceId: json['workplaceId'] as String?,
@@ -47,6 +48,7 @@ class BarberModel extends BarberEntity {
           : null,
       instagramUrl: json['instagramUrl'] as String?,
       tiktokUrl: json['tiktokUrl'] as String?,
+      phone: json['phone'] as String?,
     );
   }
 
@@ -69,6 +71,7 @@ class BarberModel extends BarberEntity {
       'specialty': specialty,
       'experience': experience,
       'distance': distance,
+      'phone': phone,
     };
   }
 
@@ -91,6 +94,7 @@ class BarberModel extends BarberEntity {
       longitude: entity.longitude,
       instagramUrl: entity.instagramUrl,
       tiktokUrl: entity.tiktokUrl,
+      phone: entity.phone,
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../../domain/usecases/appointment/cancel_appointment_usecase.dart';
 import '../../../domain/usecases/appointment/mark_as_attended_usecase.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/injection/injection.dart';
+import '../../../domain/usecases/appointment/get_appointment_by_id_usecase.dart';
 
 part 'appointment_state.dart';
 
@@ -15,6 +16,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
   final CreateAppointmentUseCase createAppointmentUseCase;
   final CancelAppointmentUseCase cancelAppointmentUseCase;
   final MarkAsAttendedUseCase markAsAttendedUseCase;
+  final GetAppointmentByIdUseCase getAppointmentByIdUseCase;
   final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   AppointmentCubit({
@@ -22,6 +24,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     required this.createAppointmentUseCase,
     required this.cancelAppointmentUseCase,
     required this.markAsAttendedUseCase,
+    required this.getAppointmentByIdUseCase,
   }) : super(AppointmentInitial());
 
   Future<void> loadAppointments() async {
@@ -31,13 +34,31 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     final result = await getAppointmentsUseCase();
 
     if (isClosed) return;
-    
+
     result.fold(
       (failure) {
         if (!isClosed) emit(AppointmentError(failure.message));
       },
       (appointments) {
         if (!isClosed) emit(AppointmentLoaded(appointments));
+      },
+    );
+  }
+
+  Future<void> loadAppointment(String id) async {
+    if (isClosed) return;
+    emit(AppointmentLoading());
+
+    final result = await getAppointmentByIdUseCase(id);
+
+    if (isClosed) return;
+
+    result.fold(
+      (failure) {
+        if (!isClosed) emit(AppointmentError(failure.message));
+      },
+      (appointment) {
+        if (!isClosed) emit(AppointmentLoaded([appointment]));
       },
     );
   }

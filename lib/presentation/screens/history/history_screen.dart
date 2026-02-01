@@ -91,7 +91,7 @@ class _HistoryScreenState extends State<HistoryScreen>
   @override
   Widget build(BuildContext context) {
     final user = _getCurrentUser();
-    final isBarber = user?.role == 'BARBER';
+    final isBarber = AppointmentUtils.isUserViewingAsBarber(user);
 
     return Scaffold(
       body: Container(
@@ -225,18 +225,36 @@ class _HistoryScreenState extends State<HistoryScreen>
   }
 
   String _getEmptyMessage() {
-    if (_tabController.index == 0) return 'No tienes citas registradas';
-    if (_tabController.index == 1) return 'No tienes citas próximas';
-    return 'No tienes citas completadas';
+    final isBarber = AppointmentUtils.isUserViewingAsBarber(_getCurrentUser());
+    if (_tabController.index == 0) {
+      return isBarber
+          ? 'Ningún cliente te ha reservado aún'
+          : 'No tienes citas registradas';
+    }
+    if (_tabController.index == 1) {
+      return isBarber
+          ? 'No tienes citas próximas con clientes'
+          : 'No tienes citas próximas';
+    }
+    return isBarber
+        ? 'No tienes citas completadas aún'
+        : 'No tienes citas completadas';
   }
 
   String _getEmptySubmessage() {
+    final isBarber = AppointmentUtils.isUserViewingAsBarber(_getCurrentUser());
     if (_tabController.index == 0) {
-      return 'Cuando reserves una cita, aparecerá aquí';
+      return isBarber
+          ? 'Las citas que te reserven aparecerán aquí'
+          : 'Cuando reserves una cita con un barbero, aparecerá aquí';
     }
     if (_tabController.index == 1) {
-      return 'Tus próximas citas aparecerán aquí cuando las reserves';
+      return isBarber
+          ? 'Las próximas citas con tus clientes aparecerán aquí'
+          : 'Tus próximas citas aparecerán aquí cuando reserves';
     }
-    return 'Las citas que completes aparecerán aquí';
+    return isBarber
+        ? 'Las citas que atiendas se mostrarán aquí'
+        : 'Las citas que completes aparecerán aquí';
   }
 }

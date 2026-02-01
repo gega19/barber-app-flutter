@@ -14,6 +14,7 @@ import '../../../data/datasources/remote/service_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_availability_remote_datasource.dart';
 import '../../../data/datasources/remote/promotion_remote_datasource.dart';
 import '../../cubit/payment_method/payment_method_cubit.dart';
+import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
 import '../../widgets/booking/booking_header_widget.dart';
 import '../../widgets/booking/booking_footer_widget.dart';
@@ -30,9 +31,10 @@ bool isSameDay(DateTime? a, DateTime? b) {
 }
 
 class BookingScreen extends StatefulWidget {
-  final BarberEntity barber;
+  final String barberId;
+  final BarberEntity? barber;
 
-  const BookingScreen({super.key, required this.barber});
+  const BookingScreen({super.key, required this.barberId, this.barber});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -51,6 +53,10 @@ class _BookingScreenState extends State<BookingScreen> {
   List<String> _availableSlots = [];
   bool _loadingSlots = false;
   List<PromotionModel> _promotions = [];
+  BarberEntity? _selectedBarber;
+  bool _isLoadingBarber = true;
+  String? _errorMessage;
+
   final BarberAvailabilityRemoteDataSource _availabilityDataSource =
       sl<BarberAvailabilityRemoteDataSource>();
   final PaymentMethodRepository _paymentMethodRepository =
@@ -65,16 +71,67 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
+    _initBarber();
+    context.read<PaymentMethodCubit>().loadPaymentMethods();
+  }
+
+  Future<void> _initBarber() async {
+    if (widget.barber != null) {
+      setState(() {
+        _selectedBarber = widget.barber;
+        _isLoadingBarber = false;
+      });
+      _loadDependencies();
+    } else {
+      await _fetchBarber();
+    }
+  }
+
+  Future<void> _fetchBarber() async {
+    try {
+      final barberCubit = context.read<BarberCubit>();
+      // Accessing Cubit to fetch by ID.
+      // Note: Assuming BarberCubit has a method to fetch by ID returning Future<BarberEntity?>
+      // If not, we might need to use the repository directly or add the method.
+      // Based on previous context, `fetchBarberById` exists.
+
+      final barber = await barberCubit.fetchBarberById(widget.barberId);
+
+      if (mounted) {
+        if (barber != null) {
+          setState(() {
+            _selectedBarber = barber;
+            _isLoadingBarber = false;
+          });
+          _loadDependencies();
+        } else {
+          setState(() {
+            _isLoadingBarber = false;
+            _errorMessage = 'Barbero no encontrado';
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingBarber = false;
+          _errorMessage = 'Error al cargar barbero';
+        });
+      }
+    }
+  }
+
+  void _loadDependencies() {
+    if (_selectedBarber == null) return;
     _loadServices();
     _loadPromotions();
-    context.read<PaymentMethodCubit>().loadPaymentMethods();
     _loadAvailableSlots();
   }
 
   Future<void> _loadPromotions() async {
     try {
       final promotions = await _promotionDataSource.getPromotionsByBarber(
-        widget.barber.id,
+        _selectedBarber!.id,
       );
       if (mounted) {
         setState(() {
@@ -101,7 +158,7 @@ class _BookingScreenState extends State<BookingScreen> {
         'T',
       )[0]; // Format: YYYY-MM-DD
       final slots = await _availabilityDataSource.getAvailableSlots(
-        widget.barber.id,
+        _selectedBarber!.id,
         dateStr,
       );
 
@@ -128,7 +185,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
     try {
       final services = await sl<ServiceRemoteDataSource>().getBarberServices(
-        widget.barber.id,
+        _selectedBarber!.id,
       );
       setState(() {
         _services = services;
@@ -231,7 +288,7 @@ class _BookingScreenState extends State<BookingScreen> {
       MaterialPageRoute(
         builder: (context) => PaymentDetailsScreen(
           paymentMethod: method,
-          barberId: widget.barber.id,
+          barberId: _selectedBarber!.id,
           serviceId: _selectedService,
           date: _selectedDate,
           time: _selectedTime!,
@@ -261,7 +318,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final appointmentCubit = context.read<AppointmentCubit>();
 
     final success = await appointmentCubit.createAppointment(
-      barberId: widget.barber.id,
+      barberId: _selectedBarber!.id,
       serviceId: _selectedService,
       date: _selectedDate,
       time: _selectedTime!,
@@ -274,7 +331,7 @@ class _BookingScreenState extends State<BookingScreen> {
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('¡Cita reservada con ${widget.barber.name}!'),
+          content: Text('¡Cita reservada con ${_selectedBarber!.name}!'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -308,7 +365,7 @@ class _BookingScreenState extends State<BookingScreen> {
   Map<String, double> get _priceBreakdown {
     // Crear una clave única para el cache basada en los parámetros relevantes
     final cacheKey =
-        '${_selectedService}_${_activePromotion?.id ?? 'none'}_${widget.barber.price}';
+        '${_selectedService}_${_activePromotion?.id ?? 'none'}_${_selectedBarber!.price}';
 
     // Si la clave cambió, limpiar el cache
     if (_lastCacheKey != cacheKey) {
@@ -324,7 +381,7 @@ class _BookingScreenState extends State<BookingScreen> {
     // Calcular y cachear
     final breakdown = BookingUtils.calculatePriceBreakdown(
       service: _selectedServiceModel,
-      barberPrice: widget.barber.price,
+      barberPrice: _selectedBarber!.price,
       promotion: _activePromotion,
     );
 
@@ -338,6 +395,40 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoadingBarber) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
+    if (_selectedBarber == null) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        ),
+        backgroundColor: AppColors.backgroundDark,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage ?? 'Error desconocido',
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -352,7 +443,7 @@ class _BookingScreenState extends State<BookingScreen> {
             children: [
               // Header
               RepaintBoundary(
-                child: BookingHeaderWidget(barber: widget.barber),
+                child: BookingHeaderWidget(barber: _selectedBarber!),
               ),
               // Step Indicator
               RepaintBoundary(
@@ -375,74 +466,74 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       if (_currentStep == 0)
                         RepaintBoundary(
-                          child: ServiceSelectionStep(
-                            services: _services,
-                            loadingServices: _loadingServices,
-                            selectedServiceId: _selectedService,
-                            activePromotion: _activePromotion,
-                            onServiceSelected: (serviceId) {
-                              setState(() {
-                                _selectedService = serviceId;
-                                // Limpiar cache cuando cambia el servicio
-                                _priceBreakdownCache = null;
-                                _lastCacheKey = null;
-                              });
-                            },
-                          ),
-                        )
+                              child: ServiceSelectionStep(
+                                services: _services,
+                                loadingServices: _loadingServices,
+                                selectedServiceId: _selectedService,
+                                activePromotion: _activePromotion,
+                                onServiceSelected: (serviceId) {
+                                  setState(() {
+                                    _selectedService = serviceId;
+                                    // Limpiar cache cuando cambia el servicio
+                                    _priceBreakdownCache = null;
+                                    _lastCacheKey = null;
+                                  });
+                                },
+                              ),
+                            )
                             .animate(key: ValueKey('step_0'))
                             .fadeIn(duration: 300.ms)
                             .slideX(begin: 0.1, end: 0, duration: 300.ms),
                       if (_currentStep == 1)
                         RepaintBoundary(
-                          child: AvailabilitySelectionStep(
-                            selectedDate: _selectedDate,
-                            selectedTime: _selectedTime,
-                            availableSlots: _availableSlots,
-                            loadingSlots: _loadingSlots,
-                            onDateSelected: (date) {
-                              setState(() {
-                                _selectedDate = date;
-                                _selectedTime = null;
-                                // Limpiar cache de precios cuando cambia la fecha
-                                _priceBreakdownCache = null;
-                                _lastCacheKey = null;
-                              });
-                              _loadAvailableSlots();
-                            },
-                            onTimeSelected: (time) {
-                              setState(() => _selectedTime = time);
-                            },
-                          ),
-                        )
+                              child: AvailabilitySelectionStep(
+                                selectedDate: _selectedDate,
+                                selectedTime: _selectedTime,
+                                availableSlots: _availableSlots,
+                                loadingSlots: _loadingSlots,
+                                onDateSelected: (date) {
+                                  setState(() {
+                                    _selectedDate = date;
+                                    _selectedTime = null;
+                                    // Limpiar cache de precios cuando cambia la fecha
+                                    _priceBreakdownCache = null;
+                                    _lastCacheKey = null;
+                                  });
+                                  _loadAvailableSlots();
+                                },
+                                onTimeSelected: (time) {
+                                  setState(() => _selectedTime = time);
+                                },
+                              ),
+                            )
                             .animate(key: ValueKey('step_1'))
                             .fadeIn(duration: 300.ms)
                             .slideX(begin: 0.1, end: 0, duration: 300.ms),
                       if (_currentStep == 2)
                         RepaintBoundary(
-                          child: PaymentSelectionStep(
-                            selectedPaymentId: _selectedPayment,
-                            onPaymentSelected: (paymentId) {
-                              setState(() => _selectedPayment = paymentId);
-                            },
-                          ),
-                        )
+                              child: PaymentSelectionStep(
+                                selectedPaymentId: _selectedPayment,
+                                onPaymentSelected: (paymentId) {
+                                  setState(() => _selectedPayment = paymentId);
+                                },
+                              ),
+                            )
                             .animate(key: ValueKey('step_2'))
                             .fadeIn(duration: 300.ms)
                             .slideX(begin: 0.1, end: 0, duration: 300.ms),
                       if (_currentStep == 3)
                         RepaintBoundary(
-                          child: SummaryStep(
-                            selectedService: _selectedServiceModel!,
-                            selectedDate: _selectedDate,
-                            selectedTime: _selectedTime!,
-                            selectedPaymentId: _selectedPayment,
-                            activePromotion: _activePromotion,
-                            basePrice: _basePrice,
-                            discountAmount: _discountAmount,
-                            totalPrice: _totalPrice,
-                          ),
-                        )
+                              child: SummaryStep(
+                                selectedService: _selectedServiceModel!,
+                                selectedDate: _selectedDate,
+                                selectedTime: _selectedTime!,
+                                selectedPaymentId: _selectedPayment,
+                                activePromotion: _activePromotion,
+                                basePrice: _basePrice,
+                                discountAmount: _discountAmount,
+                                totalPrice: _totalPrice,
+                              ),
+                            )
                             .animate(key: ValueKey('step_3'))
                             .fadeIn(duration: 300.ms)
                             .slideX(begin: 0.1, end: 0, duration: 300.ms),

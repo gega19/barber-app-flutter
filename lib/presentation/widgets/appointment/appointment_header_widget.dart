@@ -6,10 +6,7 @@ import 'appointment_stats_widget.dart';
 class AppointmentHeaderWidget extends StatelessWidget {
   final bool isBarber;
 
-  const AppointmentHeaderWidget({
-    super.key,
-    required this.isBarber,
-  });
+  const AppointmentHeaderWidget({super.key, required this.isBarber});
 
   @override
   Widget build(BuildContext context) {
@@ -29,8 +26,8 @@ class AppointmentHeaderWidget extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             isBarber
-                ? 'Tus citas programadas y completadas'
-                : 'Tus citas pasadas y futuras',
+                ? 'Citas que tus clientes te han reservado'
+                : 'Citas que reservaste con barberos',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 14,
@@ -43,4 +40,3 @@ class AppointmentHeaderWidget extends StatelessWidget {
     );
   }
 }
-

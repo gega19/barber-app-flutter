@@ -65,5 +65,15 @@
 			<key>NSAllowsArbitraryLoads</key>
 			<true/>
 		</dict>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>geo</string>
+			<string>google.navigation</string>
+			<string>comgooglemaps</string>
+			<string>https</string>
+			<string>http</string>
+			<string>tel</string>
+			<string>mailto</string>
+		</array>
 	</dict>
 </plist>

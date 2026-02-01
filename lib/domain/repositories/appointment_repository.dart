@@ -8,7 +8,13 @@ abstract class AppointmentRepository {
   Future<Either<Failure, List<AppointmentEntity>>> getAppointments();
 
   /// Obtiene la cola del barbero para una fecha específica
-  Future<Either<Failure, List<AppointmentEntity>>> getBarberQueue(String barberId, {DateTime? date});
+  Future<Either<Failure, List<AppointmentEntity>>> getBarberQueue(
+    String barberId, {
+    DateTime? date,
+  });
+
+  /// Obtiene una cita por ID
+  Future<Either<Failure, AppointmentEntity>> getAppointmentById(String id);
 
   /// Crea una nueva cita
   Future<Either<Failure, AppointmentEntity>> createAppointment({
@@ -34,5 +40,3 @@ abstract class AppointmentRepository {
     String? comment,
   });
 }
-
-

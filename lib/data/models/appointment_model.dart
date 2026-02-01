@@ -10,6 +10,7 @@ class AppointmentModel extends AppointmentEntity {
     super.barber,
     super.client,
     super.serviceId,
+    super.serviceName,
     required super.date,
     required super.time,
     super.price,
@@ -63,17 +64,27 @@ class AppointmentModel extends AppointmentEntity {
         break;
     }
 
-    final dateStr = json['date'] as String;
-    final date = DateTime.parse(dateStr);
+    final dateStr = json['date'] as String?;
+    final date = dateStr != null ? DateTime.parse(dateStr) : DateTime.now();
+
+    final timeStr = json['time'] as String?;
+    final time = timeStr ?? '00:00';
 
     return AppointmentModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       barber: barber,
       client: client,
       serviceId: json['serviceId'] as String?,
+      serviceName: json['service'] != null
+          ? json['service']['name'] as String?
+          : null,
       date: date,
-      time: json['time'] as String,
-      price: json['price'] != null ? (json['price'] as num).toDouble() : null,
+      time: time,
+      price: json['price'] != null
+          ? (json['price'] as num).toDouble()
+          : (json['service'] != null && json['service']['price'] != null
+                ? (json['service']['price'] as num).toDouble()
+                : null),
       status: status,
       paymentMethod: json['paymentMethod'] as String?,
       paymentMethodName: json['paymentMethodName'] as String?,
@@ -90,6 +101,7 @@ class AppointmentModel extends AppointmentEntity {
       'barber': barber != null ? (barber as BarberModel).toJson() : null,
       'client': client != null ? (client as UserModel).toJson() : null,
       'serviceId': serviceId,
+      'serviceName': serviceName,
       'date': date.toIso8601String(),
       'time': time,
       'price': price,
@@ -109,6 +121,7 @@ class AppointmentModel extends AppointmentEntity {
       barber: entity.barber,
       client: entity.client,
       serviceId: entity.serviceId,
+      serviceName: entity.serviceName,
       date: entity.date,
       time: entity.time,
       price: entity.price,

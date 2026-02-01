@@ -54,54 +54,57 @@ class AvailabilitySelectionStep extends StatelessWidget {
           child: AppCard(
             padding: const EdgeInsets.all(16),
             child: TableCalendar(
-            firstDay: DateTime.now(),
-            lastDay: DateTime.now().add(const Duration(days: 365)),
-            focusedDay: selectedDate,
-            selectedDayPredicate: (day) => isSameDay(selectedDate, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              onDateSelected(selectedDay);
-            },
-            enabledDayPredicate: (day) {
-              return day.isAfter(
-                DateTime.now().subtract(const Duration(days: 1)),
-              );
-            },
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: AppColors.primaryGold.withValues(alpha: 0.3),
-                shape: BoxShape.circle,
+              firstDay: DateTime.now(),
+              lastDay: DateTime.now().add(const Duration(days: 365)),
+              focusedDay: selectedDate,
+              selectedDayPredicate: (day) => isSameDay(selectedDate, day),
+              onDaySelected: (selectedDay, focusedDay) {
+                onDateSelected(selectedDay);
+              },
+              availableGestures: AvailableGestures.horizontalSwipe,
+              enabledDayPredicate: (day) {
+                return day.isAfter(
+                  DateTime.now().subtract(const Duration(days: 1)),
+                );
+              },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: AppColors.primaryGold.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: const BoxDecoration(
+                  color: AppColors.primaryGold,
+                  shape: BoxShape.circle,
+                ),
+                defaultTextStyle: const TextStyle(color: AppColors.textPrimary),
+                weekendTextStyle: const TextStyle(
+                  color: AppColors.textSecondary,
+                ),
+                disabledTextStyle: TextStyle(
+                  color: AppColors.textSecondary.withValues(alpha: 0.3),
+                ),
               ),
-              selectedDecoration: const BoxDecoration(
-                color: AppColors.primaryGold,
-                shape: BoxShape.circle,
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextStyle: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+                leftChevronIcon: const Icon(
+                  Icons.chevron_left,
+                  color: AppColors.primaryGold,
+                ),
+                rightChevronIcon: const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.primaryGold,
+                ),
               ),
-              defaultTextStyle: const TextStyle(color: AppColors.textPrimary),
-              weekendTextStyle: const TextStyle(color: AppColors.textSecondary),
-              disabledTextStyle: TextStyle(
-                color: AppColors.textSecondary.withValues(alpha: 0.3),
+              daysOfWeekStyle: const DaysOfWeekStyle(
+                weekdayStyle: TextStyle(color: AppColors.textSecondary),
+                weekendStyle: TextStyle(color: AppColors.textSecondary),
               ),
-            ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              leftChevronIcon: const Icon(
-                Icons.chevron_left,
-                color: AppColors.primaryGold,
-              ),
-              rightChevronIcon: const Icon(
-                Icons.chevron_right,
-                color: AppColors.primaryGold,
-              ),
-            ),
-            daysOfWeekStyle: const DaysOfWeekStyle(
-              weekdayStyle: TextStyle(color: AppColors.textSecondary),
-              weekendStyle: TextStyle(color: AppColors.textSecondary),
-            ),
             ),
           ),
         ),
@@ -137,25 +140,30 @@ class AvailabilitySelectionStep extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(
-                    Icons.access_time,
-                    size: 48,
-                    color: AppColors.textSecondary.withValues(alpha: 0.5),
-                  )
+                        Icons.access_time,
+                        size: 48,
+                        color: AppColors.textSecondary.withValues(alpha: 0.5),
+                      )
                       .animate()
                       .fadeIn(duration: 500.ms)
                       .scale(delay: 200.ms, duration: 300.ms),
                   const SizedBox(height: 16),
                   Text(
-                    'No hay horarios disponibles para esta fecha',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  )
+                        'No hay horarios disponibles para esta fecha',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      )
                       .animate()
                       .fadeIn(duration: 500.ms, delay: 300.ms)
-                      .slideY(begin: 0.1, end: 0, duration: 300.ms, delay: 300.ms),
+                      .slideY(
+                        begin: 0.1,
+                        end: 0,
+                        duration: 300.ms,
+                        delay: 300.ms,
+                      ),
                 ],
               ),
             ),
@@ -176,15 +184,23 @@ class AvailabilitySelectionStep extends StatelessWidget {
             itemBuilder: (context, index) {
               final time = availableSlots[index];
               return RepaintBoundary(
-                child: TimeSlotWidget(
-                  time: time,
-                  isSelected: selectedTime == time,
-                  onTap: () => onTimeSelected(time),
-                ),
-              )
+                    child: TimeSlotWidget(
+                      time: time,
+                      isSelected: selectedTime == time,
+                      onTap: () => onTimeSelected(time),
+                    ),
+                  )
                   .animate()
-                  .fadeIn(duration: 300.ms, delay: Duration(milliseconds: index * 30))
-                  .scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1), duration: 300.ms, delay: Duration(milliseconds: index * 30));
+                  .fadeIn(
+                    duration: 300.ms,
+                    delay: Duration(milliseconds: index * 30),
+                  )
+                  .scale(
+                    begin: const Offset(0.9, 0.9),
+                    end: const Offset(1, 1),
+                    duration: 300.ms,
+                    delay: Duration(milliseconds: index * 30),
+                  );
             },
           ),
       ],

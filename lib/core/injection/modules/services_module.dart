@@ -4,6 +4,7 @@ import '../../../core/services/socket_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/analytics_service.dart';
 import '../../../core/services/version_check_service.dart';
+import '../../../core/services/phone_auth_service.dart';
 
 /// Módulo para registrar todos los Services
 class ServicesModule {
@@ -15,5 +16,6 @@ class ServicesModule {
       () => AnalyticsService(dio: sl(), prefs: sl(), localStorage: sl()),
     );
     sl.registerLazySingleton(() => VersionCheckService(sl()));
+    sl.registerLazySingleton(() => PhoneAuthService());
   }
 }

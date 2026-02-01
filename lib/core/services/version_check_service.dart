@@ -204,6 +204,15 @@ class VersionCheckService {
         debugPrint('   DioException Type: ${e.type}');
         debugPrint('   Status Code: ${e.response?.statusCode}');
         debugPrint('   Response Data: ${e.response?.data}');
+
+        // Si el backend responde 404, significa que no hay versión configurada,
+        // por lo tanto asumimos que la app está actualizada.
+        if (e.response?.statusCode == 404) {
+          debugPrint(
+            '✅ 404 detected (No active version policy). Treating as up to date.',
+          );
+          return VersionCheckResult.upToDate;
+        }
       }
       return VersionCheckResult.error;
     }
@@ -232,6 +241,12 @@ class VersionCheckService {
       }
     } catch (e) {
       debugPrint('❌ Error fetching minimum version info: $e');
+      if (e is DioException && e.response?.statusCode == 404) {
+        debugPrint(
+          '✅ 404 detected (No active version policy). Returning null.',
+        );
+        return null;
+      }
       return null;
     }
   }

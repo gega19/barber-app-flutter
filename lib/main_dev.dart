@@ -13,7 +13,7 @@ void main() {
   // 10.0.2.2 = localhost del host en emulador Android. En dispositivo físico usa DEV_API_HOST.
   const devHost = String.fromEnvironment(
     'DEV_API_HOST',
-    defaultValue: '192.168.1.100', //'10.0.2.2',
+    defaultValue: '10.0.2.2', //'192.168.1.100''10.0.2.2',
   );
   const devPort = String.fromEnvironment('DEV_API_PORT', defaultValue: '3000');
   final apiBaseUrl = 'http://$devHost:$devPort';
