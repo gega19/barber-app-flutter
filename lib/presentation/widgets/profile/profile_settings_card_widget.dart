@@ -62,38 +62,43 @@ class ProfileSettingsCardWidget extends StatelessWidget {
                             delay: 50.ms,
                           ),
                     if (!isBarber) Divider(color: AppColors.borderGold),
-                    ProfileSettingsRowWidget(
-                          key: const ValueKey('preferences'),
-                          icon: Icons.settings,
-                          title: 'Preferencias',
-                          subtitle: 'Configura tus preferencias',
-                          onTap: () {},
-                        )
-                        .animate()
-                        .fadeIn(duration: 300.ms, delay: 100.ms)
-                        .slideX(
-                          begin: -0.05,
-                          end: 0,
-                          duration: 300.ms,
-                          delay: 100.ms,
-                        ),
-                    Divider(color: AppColors.borderGold),
-                    ProfileSettingsRowWidget(
-                          key: const ValueKey('notifications'),
-                          icon: Icons.notifications,
-                          title: 'Notificaciones',
-                          subtitle: 'Gestiona tus notificaciones',
-                          onTap: () {},
-                        )
-                        .animate()
-                        .fadeIn(duration: 300.ms, delay: 150.ms)
-                        .slideX(
-                          begin: -0.05,
-                          end: 0,
-                          duration: 300.ms,
-                          delay: 150.ms,
-                        ),
-                    Divider(color: AppColors.borderGold),
+                    // TODO: Descomentar cuando estén listas las pantallas de preferencias y notificaciones
+                    // ProfileSettingsRowWidget(
+                    //       key: const ValueKey('preferences'),
+                    //       icon: Icons.settings,
+                    //       title: 'Preferencias',
+                    //       subtitle: 'Configura tus preferencias',
+                    //       onTap: () {
+                    //         context.push('/preferences');
+                    //       },
+                    //     )
+                    //     .animate()
+                    //     .fadeIn(duration: 300.ms, delay: 100.ms)
+                    //     .slideX(
+                    //       begin: -0.05,
+                    //       end: 0,
+                    //       duration: 300.ms,
+                    //       delay: 100.ms,
+                    //     ),
+                    // Divider(color: AppColors.borderGold),
+                    // ProfileSettingsRowWidget(
+                    //       key: const ValueKey('notifications'),
+                    //       icon: Icons.notifications,
+                    //       title: 'Notificaciones',
+                    //       subtitle: 'Gestiona tus notificaciones',
+                    //       onTap: () {
+                    //         context.push('/notifications-settings');
+                    //       },
+                    //     )
+                    //     .animate()
+                    //     .fadeIn(duration: 300.ms, delay: 150.ms)
+                    //     .slideX(
+                    //       begin: -0.05,
+                    //       end: 0,
+                    //       duration: 300.ms,
+                    //       delay: 150.ms,
+                    //     ),
+                    // Divider(color: AppColors.borderGold),
                     ProfileSettingsRowWidget(
                           key: const ValueKey('security'),
                           icon: Icons.lock,

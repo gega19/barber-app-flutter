@@ -40,6 +40,12 @@ import '../../../domain/usecases/barber_course/get_course_by_id_usecase.dart';
 import '../../../domain/usecases/barber_course/create_course_usecase.dart';
 import '../../../domain/usecases/barber_course/update_course_usecase.dart';
 import '../../../domain/usecases/barber_course/delete_course_usecase.dart';
+import '../../../domain/usecases/competition/get_current_period_usecase.dart';
+import '../../../domain/usecases/competition/get_periods_usecase.dart';
+import '../../../domain/usecases/competition/get_leaderboard_usecase.dart';
+import '../../../domain/usecases/competition/get_my_competition_result_usecase.dart';
+import '../../../domain/usecases/competition/get_barber_top_positions_usecase.dart';
+import '../../../domain/usecases/competition/get_help_rules_usecase.dart';
 
 /// Módulo para registrar todos los UseCases
 class UseCasesModule {
@@ -102,5 +108,13 @@ class UseCasesModule {
     sl.registerLazySingleton(() => CreateCourseUseCase(sl()));
     sl.registerLazySingleton(() => UpdateCourseUseCase(sl()));
     sl.registerLazySingleton(() => DeleteCourseUseCase(sl()));
+
+    // Competition UseCases
+    sl.registerLazySingleton(() => GetCurrentPeriodUseCase(sl()));
+    sl.registerLazySingleton(() => GetPeriodsUseCase(sl()));
+    sl.registerLazySingleton(() => GetLeaderboardUseCase(sl()));
+    sl.registerLazySingleton(() => GetMyCompetitionResultUseCase(sl()));
+    sl.registerLazySingleton(() => GetBarberTopPositionsUseCase(sl()));
+    sl.registerLazySingleton(() => GetHelpRulesUseCase(sl()));
   }
 }

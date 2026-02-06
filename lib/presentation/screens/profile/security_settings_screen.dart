@@ -31,21 +31,33 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       _isLoading = true;
     });
 
-    final isAvailable = await BiometricAuth.isAvailable();
-    final isEnabled = await SecureStorageService.isBiometricEnabled();
+    try {
+      final isAvailable = await BiometricAuth.isAvailable();
+      final isEnabled = await SecureStorageService.isBiometricEnabled();
 
-    setState(() {
-      _biometricAvailable = isAvailable;
-      _biometricEnabled = isEnabled;
-      _isLoading = false;
-    });
+      setState(() {
+        _biometricAvailable = isAvailable;
+        _biometricEnabled = isEnabled;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _biometricAvailable = false;
+          _biometricEnabled = false;
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _toggleBiometricAuth(bool value) async {
     if (!_biometricAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('La autenticación biométrica no está disponible en este dispositivo'),
+          content: Text(
+            'La autenticación biométrica no está disponible en este dispositivo',
+          ),
           backgroundColor: AppColors.error,
         ),
       );
@@ -97,7 +109,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     // For now, we'll use the current authenticated session and trust the password
     // Show biometric confirmation modal
     final authenticated = await _showBiometricConfirmation();
-    
+
     if (!authenticated) {
       return; // User cancelled or failed biometric
     }
@@ -107,6 +119,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       await SecureStorageService.saveCredentials(
         email: user.email,
         password: password,
+        userId: user.id,
       );
 
       if (mounted) {
@@ -167,7 +180,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
     if (confirmed == true) {
       await SecureStorageService.clearCredentials();
-      
+
       if (mounted) {
         setState(() {
           _biometricEnabled = false;
@@ -184,14 +197,31 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   }
 
   Future<bool> _showBiometricConfirmation() async {
-    return await BiometricAuth.authenticate(
-      reason: 'Confirma tu identidad para activar la autenticación biométrica',
-    );
+    try {
+      return await BiometricAuth.authenticate(
+        reason:
+            'Confirma tu identidad para activar la autenticación biométrica',
+        biometricOnly:
+            false, // Permitir fallback a PIN/patrón si está disponible
+        persistAcrossBackgrounding:
+            true, // Reintentar si la app pasa a segundo plano
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al autenticar: ${e.toString()}'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+      return false;
+    }
   }
 
   Future<String?> _requestPassword() async {
     final passwordController = TextEditingController();
-    
+
     return await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -208,7 +238,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             labelText: 'Contraseña',
             labelStyle: const TextStyle(color: AppColors.textSecondary),
             enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+              borderSide: BorderSide(
+                color: AppColors.primaryGold.withValues(alpha: 0.3),
+              ),
             ),
             focusedBorder: const UnderlineInputBorder(
               borderSide: BorderSide(color: AppColors.primaryGold),
@@ -252,10 +284,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF1A1A1A),
-              Color(0xFF0F0F0F),
-            ],
+            colors: [Color(0xFF1A1A1A), Color(0xFF0F0F0F)],
           ),
         ),
         child: SafeArea(
@@ -281,7 +310,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                                   width: 48,
                                   height: 48,
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryGold.withValues(alpha: 0.2),
+                                    color: AppColors.primaryGold.withValues(
+                                      alpha: 0.2,
+                                    ),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -293,7 +324,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Text(
                                         'Autenticación Biométrica',
@@ -304,14 +336,23 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        _biometricAvailable
-                                            ? 'Inicia sesión usando tu huella o Face ID'
-                                            : 'No disponible en este dispositivo',
-                                        style: const TextStyle(
-                                          color: AppColors.textSecondary,
-                                          fontSize: 14,
-                                        ),
+                                      FutureBuilder<String>(
+                                        future: _biometricAvailable
+                                            ? BiometricAuth.getBiometricTypeName()
+                                            : Future.value('No disponible'),
+                                        builder: (context, snapshot) {
+                                          final biometricName =
+                                              snapshot.data ?? 'Biometría';
+                                          return Text(
+                                            _biometricAvailable
+                                                ? 'Inicia sesión usando $biometricName'
+                                                : 'No disponible en este dispositivo',
+                                            style: const TextStyle(
+                                              color: AppColors.textSecondary,
+                                              fontSize: 14,
+                                            ),
+                                          );
+                                        },
                                       ),
                                     ],
                                   ),
@@ -389,4 +430,3 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     );
   }
 }
-

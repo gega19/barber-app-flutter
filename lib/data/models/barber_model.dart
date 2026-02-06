@@ -23,7 +23,12 @@ class BarberModel extends BarberEntity {
     super.instagramUrl,
     super.tiktokUrl,
     super.phone,
-  }) : _workplaceId = workplaceId;
+    super.isLastWinner = false,
+    int top1Count = 0,
+    int top2Count = 0,
+    int top3Count = 0,
+  }) : _workplaceId = workplaceId,
+       super(top1Count: top1Count, top2Count: top2Count, top3Count: top3Count);
 
   factory BarberModel.fromJson(Map<String, dynamic> json) {
     return BarberModel(
@@ -49,6 +54,10 @@ class BarberModel extends BarberEntity {
       instagramUrl: json['instagramUrl'] as String?,
       tiktokUrl: json['tiktokUrl'] as String?,
       phone: json['phone'] as String?,
+      isLastWinner: json['isLastWinner'] as bool? ?? false,
+      top1Count: (json['top1Count'] as num?)?.toInt() ?? 0,
+      top2Count: (json['top2Count'] as num?)?.toInt() ?? 0,
+      top3Count: (json['top3Count'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -95,6 +104,10 @@ class BarberModel extends BarberEntity {
       instagramUrl: entity.instagramUrl,
       tiktokUrl: entity.tiktokUrl,
       phone: entity.phone,
+      isLastWinner: entity.isLastWinner,
+      top1Count: entity.top1Count,
+      top2Count: entity.top2Count,
+      top3Count: entity.top3Count,
     );
   }
 }

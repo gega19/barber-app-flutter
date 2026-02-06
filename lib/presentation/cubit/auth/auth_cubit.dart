@@ -103,6 +103,21 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await loginUseCase(email: email, password: password);
 
     result.fold((failure) => emit(AuthError(failure.message)), (user) async {
+      // Validar que las credenciales biométricas guardadas pertenezcan a este usuario
+      try {
+        final isValid = await SecureStorageService.validateCredentialsForUser(
+          user.id,
+        );
+
+        if (!isValid) {
+          // Las credenciales guardadas pertenecen a otro usuario, limpiarlas
+          await SecureStorageService.clearCredentials();
+        }
+      } catch (e) {
+        // No emitir error, solo loggear
+        print('Error validating biometric credentials: $e');
+      }
+
       emit(AuthAuthenticated(user));
       // Registrar token FCM después de login exitoso
       await _registerFcmToken();
@@ -152,6 +167,14 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       // No emitir error, solo loggear
       print('Error deleting FCM token: $e');
+    }
+
+    // Limpiar credenciales biométricas al hacer logout
+    try {
+      await SecureStorageService.clearCredentials();
+    } catch (e) {
+      // No emitir error, solo loggear
+      print('Error clearing biometric credentials: $e');
     }
 
     final result = await logoutUseCase();

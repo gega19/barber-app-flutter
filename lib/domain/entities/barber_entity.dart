@@ -20,6 +20,10 @@ class BarberEntity extends Equatable {
   final String? instagramUrl;
   final String? tiktokUrl;
   final String? phone;
+  final bool isLastWinner;
+  final int top1Count;
+  final int top2Count;
+  final int top3Count;
 
   const BarberEntity({
     required this.id,
@@ -40,6 +44,10 @@ class BarberEntity extends Equatable {
     this.instagramUrl,
     this.tiktokUrl,
     this.phone,
+    this.isLastWinner = false,
+    this.top1Count = 0,
+    this.top2Count = 0,
+    this.top3Count = 0,
   });
 
   @override
@@ -62,5 +70,9 @@ class BarberEntity extends Equatable {
     instagramUrl,
     tiktokUrl,
     phone,
+    isLastWinner,
+    top1Count,
+    top2Count,
+    top3Count,
   ];
 }

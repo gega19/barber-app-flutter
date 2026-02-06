@@ -4,9 +4,7 @@ import 'dart:convert';
 /// Service to securely store credentials for biometric authentication
 class SecureStorageService {
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
@@ -14,20 +12,24 @@ class SecureStorageService {
 
   static const String _emailKey = 'biometric_email';
   static const String _passwordKey = 'biometric_password';
+  static const String _userIdKey = 'biometric_user_id';
   static const String _biometricEnabledKey = 'biometric_enabled';
 
   /// Saves credentials for biometric authentication
   static Future<void> saveCredentials({
     required String email,
     required String password,
+    required String userId,
   }) async {
     try {
       // Simple encryption (XOR with a key) - in production, use proper encryption
       final encodedEmail = _encode(email);
       final encodedPassword = _encode(password);
-      
+      final encodedUserId = _encode(userId);
+
       await _storage.write(key: _emailKey, value: encodedEmail);
       await _storage.write(key: _passwordKey, value: encodedPassword);
+      await _storage.write(key: _userIdKey, value: encodedUserId);
       await _storage.write(key: _biometricEnabledKey, value: 'true');
     } catch (e) {
       throw Exception('Error saving credentials: $e');
@@ -56,22 +58,51 @@ class SecureStorageService {
     }
   }
 
+  /// Gets saved user ID
+  static Future<String?> getUserId() async {
+    try {
+      final encodedUserId = await _storage.read(key: _userIdKey);
+      if (encodedUserId == null) return null;
+      return _decode(encodedUserId);
+    } catch (e) {
+      return null;
+    }
+  }
+
   /// Gets saved credentials
   static Future<Map<String, String>?> getCredentials() async {
     try {
       final email = await getEmail();
       final password = await getPassword();
-      
-      if (email == null || password == null) {
+      final userId = await getUserId();
+
+      if (email == null || password == null || userId == null) {
         return null;
       }
-      
-      return {
-        'email': email,
-        'password': password,
-      };
+
+      return {'email': email, 'password': password, 'userId': userId};
     } catch (e) {
       return null;
+    }
+  }
+
+  /// Validates that saved credentials belong to a specific user
+  static Future<bool> validateCredentialsForUser(String userId) async {
+    try {
+      final savedUserId = await getUserId();
+      return savedUserId == userId;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Validates that saved credentials belong to a specific email
+  static Future<bool> validateCredentialsForEmail(String email) async {
+    try {
+      final savedEmail = await getEmail();
+      return savedEmail?.toLowerCase().trim() == email.toLowerCase().trim();
+    } catch (e) {
+      return false;
     }
   }
 
@@ -90,6 +121,7 @@ class SecureStorageService {
     try {
       await _storage.delete(key: _emailKey);
       await _storage.delete(key: _passwordKey);
+      await _storage.delete(key: _userIdKey);
       await _storage.delete(key: _biometricEnabledKey);
     } catch (e) {
       // Ignore errors on clear
@@ -124,4 +156,3 @@ class SecureStorageService {
     return keyString.hashCode & 0xFF;
   }
 }
-

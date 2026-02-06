@@ -76,6 +76,13 @@ class HomeFiltersRow extends StatelessWidget {
           tooltip: 'Mis Favoritos',
         ),
         IconButton(
+          icon: const Icon(Icons.emoji_events, color: AppColors.primaryGold),
+          onPressed: () {
+            context.push('/competition');
+          },
+          tooltip: 'Ranking',
+        ),
+        IconButton(
           icon: const Icon(Icons.tune, color: AppColors.primaryGold),
           onPressed: onFiltersPressed,
           tooltip: 'Filtros',

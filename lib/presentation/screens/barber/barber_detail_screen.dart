@@ -19,7 +19,6 @@ import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_media_remote_datasource.dart';
 import '../../../data/datasources/remote/workplace_remote_datasource.dart';
 import '../../../data/datasources/remote/promotion_remote_datasource.dart';
-
 import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/review/review_cubit.dart';
@@ -37,6 +36,7 @@ import '../../widgets/barber/barber_recent_reviews_widget.dart';
 import '../../widgets/barber/barber_portfolio_grid_widget.dart';
 import '../../widgets/barber/barber_info_tab_widget.dart';
 import '../../widgets/barber/barber_courses_list_widget.dart';
+import '../../../domain/usecases/competition/get_barber_top_positions_usecase.dart';
 
 class BarberDetailScreen extends StatefulWidget {
   final String barberId;
@@ -63,6 +63,10 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
       sl<PromotionRemoteDataSource>();
   String? _instagramUrl;
   String? _tiktokUrl;
+  bool _isLastCompetitionWinner = false;
+  int _top1Count = 0;
+  int _top2Count = 0;
+  int _top3Count = 0;
 
   BarberEntity?
   _backupBarber; // Store locally fetched barber if not in global state
@@ -74,6 +78,7 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
     _loadBarberDetails();
     _loadCurrentUserBarberId();
     _loadPromotions();
+    _loadTopPositions();
     context.read<ReviewCubit>().loadReviewsByBarber(widget.barberId);
 
     // Initial check for barber in state
@@ -125,6 +130,25 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
         _currentUserBarberId = authState.user.barberId;
       });
     }
+  }
+
+  Future<void> _loadTopPositions() async {
+    try {
+      final result = await sl<GetBarberTopPositionsUseCase>().call(
+        widget.barberId,
+      );
+      if (!mounted) return;
+      result.fold((_) {}, (data) {
+        if (data != null) {
+          setState(() {
+            _top1Count = (data['top1'] as num?)?.toInt() ?? 0;
+            _top2Count = (data['top2'] as num?)?.toInt() ?? 0;
+            _top3Count = (data['top3'] as num?)?.toInt() ?? 0;
+            _isLastCompetitionWinner = (data['isLastWinner'] as bool?) ?? false;
+          });
+        }
+      });
+    } catch (_) {}
   }
 
   @override
@@ -324,6 +348,10 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
                       barber: barber,
                       instagramUrl: _instagramUrl,
                       tiktokUrl: _tiktokUrl,
+                      isLastCompetitionWinner: _isLastCompetitionWinner,
+                      top1Count: _top1Count,
+                      top2Count: _top2Count,
+                      top3Count: _top3Count,
                     ),
                     SliverToBoxAdapter(
                       child: Padding(

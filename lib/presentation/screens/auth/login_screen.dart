@@ -41,6 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _biometricEnabled = false;
   bool _biometricAvailable = false;
   bool _acceptTerms = false;
+  String _biometricTypeName = 'Biometría';
 
   @override
   void initState() {
@@ -77,10 +78,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _checkBiometricStatus() async {
     final isAvailable = await BiometricAuth.isAvailable();
     final isEnabled = await SecureStorageService.isBiometricEnabled();
+    final biometricTypeName = await BiometricAuth.getBiometricTypeName();
 
     setState(() {
       _biometricAvailable = isAvailable;
       _biometricEnabled = isEnabled;
+      _biometricTypeName = biometricTypeName;
     });
   }
 
@@ -134,10 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     if (_isLogin) {
-      authCubit.login(
-        email: email,
-        password: password,
-      );
+      authCubit.login(email: email, password: password);
     } else {
       authCubit.register(
         name: _nameController.text.trim(),
@@ -164,7 +164,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Get saved credentials
     final credentials = await SecureStorageService.getCredentials();
-    
+
     if (credentials == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -173,6 +173,37 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: AppColors.error,
           ),
         );
+        // Limpiar el flag de biometría habilitada si no hay credenciales
+        setState(() {
+          _biometricEnabled = false;
+        });
+      }
+      return;
+    }
+
+    // Validar que el email guardado coincida con el email ingresado (si hay uno)
+    final emailEntered = _emailController.text.trim().toLowerCase();
+    final emailSaved = credentials['email']?.toLowerCase().trim();
+
+    if (emailEntered.isNotEmpty &&
+        emailSaved != null &&
+        emailEntered != emailSaved) {
+      // Las credenciales guardadas pertenecen a otro usuario
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Las credenciales guardadas pertenecen a otro usuario. Por favor, inicia sesión manualmente.',
+            ),
+            backgroundColor: AppColors.error,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        // Limpiar credenciales de otro usuario
+        await SecureStorageService.clearCredentials();
+        setState(() {
+          _biometricEnabled = false;
+        });
       }
       return;
     }
@@ -246,11 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F0F),
-                Color(0xFF1A1A1A),
-                Color(0xFF000000),
-              ],
+              colors: [Color(0xFF0F0F0F), Color(0xFF1A1A1A), Color(0xFF000000)],
             ),
           ),
           child: SafeArea(
@@ -268,22 +295,96 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const AuthHeader(),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 24),
+                      // Biometric quick access button (only shown when enabled and available)
+                      if (_isLogin &&
+                          _biometricEnabled &&
+                          _biometricAvailable) ...[
+                        Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primaryGold.withValues(alpha: 0.2),
+                                AppColors.primaryGold.withValues(alpha: 0.1),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primaryGold.withValues(
+                                alpha: 0.3,
+                              ),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _handleBiometricAuth(),
+                              borderRadius: BorderRadius.circular(12),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 16,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.fingerprint,
+                                      color: AppColors.primaryGold,
+                                      size: 28,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Acceso rápido con $_biometricTypeName',
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Toca para iniciar sesión',
+                                          style: TextStyle(
+                                            color: AppColors.textSecondary
+                                                .withValues(alpha: 0.8),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
                       AuthFormCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             AnimatedSwitcher(
                               duration: const Duration(milliseconds: 200),
-                              transitionBuilder: (Widget child, Animation<double> animation) {
-                                return FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                );
-                              },
+                              transitionBuilder:
+                                  (Widget child, Animation<double> animation) {
+                                    return FadeTransition(
+                                      opacity: animation,
+                                      child: child,
+                                    );
+                                  },
                               child: Text(
                                 _isLogin ? 'Iniciar Sesión' : 'Crear Cuenta',
-                                key: ValueKey<String>(_isLogin ? 'login' : 'register'),
+                                key: ValueKey<String>(
+                                  _isLogin ? 'login' : 'register',
+                                ),
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontSize: 24,
@@ -308,14 +409,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                           prefixIcon: Icons.person,
                                           focusNode: _nameFocusNode,
                                           textInputAction: TextInputAction.next,
-                                          onFieldSubmitted: (_) => _moveToNextField(_emailFocusNode),
+                                          onFieldSubmitted: (_) =>
+                                              _moveToNextField(_emailFocusNode),
                                           autofillHints: AutofillHints.name,
                                           validator: Validators.validateName,
                                         ),
                                         const SizedBox(height: 16),
                                       ],
                                     )
-                                  : const SizedBox.shrink(key: ValueKey('name_empty')),
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('name_empty'),
+                                    ),
                             ),
                             // Email field
                             AppTextField(
@@ -327,7 +431,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               focusNode: _emailFocusNode,
                               textInputAction: TextInputAction.next,
                               onFieldSubmitted: (_) => _moveToNextField(
-                                _isLogin ? _passwordFocusNode : _passwordFocusNode,
+                                _isLogin
+                                    ? _passwordFocusNode
+                                    : _passwordFocusNode,
                               ),
                               autofillHints: AutofillHints.email,
                               validator: Validators.validateEmail,
@@ -367,10 +473,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     )
                                   : Column(
                                       key: const ValueKey('terms_block'),
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             SizedBox(
                                               height: 24,
@@ -379,10 +487,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                                 value: _acceptTerms,
                                                 onChanged: (value) {
                                                   setState(() {
-                                                    _acceptTerms = value ?? false;
+                                                    _acceptTerms =
+                                                        value ?? false;
                                                   });
                                                 },
-                                                activeColor: AppColors.primaryGold,
+                                                activeColor:
+                                                    AppColors.primaryGold,
                                                 checkColor: AppColors.textDark,
                                                 side: BorderSide(
                                                   color: AppColors.borderGold,
@@ -395,29 +505,44 @@ class _LoginScreenState extends State<LoginScreen> {
                                               child: RichText(
                                                 text: TextSpan(
                                                   style: const TextStyle(
-                                                    color: AppColors.textSecondary,
+                                                    color:
+                                                        AppColors.textSecondary,
                                                     fontSize: 12,
                                                   ),
                                                   children: [
-                                                    const TextSpan(text: 'Acepto los '),
-                                                    TextSpan(
-                                                      text: 'Términos y Condiciones',
-                                                      style: const TextStyle(
-                                                        color: AppColors.primaryGold,
-                                                        fontWeight: FontWeight.w600,
-                                                      ),
-                                                      recognizer: TapGestureRecognizer()
-                                                        ..onTap = _openTermsOfService,
+                                                    const TextSpan(
+                                                      text: 'Acepto los ',
                                                     ),
-                                                    const TextSpan(text: ' y la '),
                                                     TextSpan(
-                                                      text: 'Política de Privacidad',
+                                                      text:
+                                                          'Términos y Condiciones',
                                                       style: const TextStyle(
-                                                        color: AppColors.primaryGold,
-                                                        fontWeight: FontWeight.w600,
+                                                        color: AppColors
+                                                            .primaryGold,
+                                                        fontWeight:
+                                                            FontWeight.w600,
                                                       ),
-                                                      recognizer: TapGestureRecognizer()
-                                                        ..onTap = _openPrivacyPolicy,
+                                                      recognizer:
+                                                          TapGestureRecognizer()
+                                                            ..onTap =
+                                                                _openTermsOfService,
+                                                    ),
+                                                    const TextSpan(
+                                                      text: ' y la ',
+                                                    ),
+                                                    TextSpan(
+                                                      text:
+                                                          'Política de Privacidad',
+                                                      style: const TextStyle(
+                                                        color: AppColors
+                                                            .primaryGold,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                      recognizer:
+                                                          TapGestureRecognizer()
+                                                            ..onTap =
+                                                                _openPrivacyPolicy,
                                                     ),
                                                     const TextSpan(text: '.'),
                                                   ],
@@ -430,50 +555,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ],
                                     ),
                             ),
-                            // Submit button and biometric button
+                            // Submit button
                             BlocBuilder<AuthCubit, AuthState>(
                               builder: (context, state) {
                                 final isLoading = state is AuthLoading;
-                                
-                                return Row(
-                                  children: [
-                                    if (_isLogin && _biometricEnabled && _biometricAvailable) ...[
-                                      Expanded(
-                                        child: OutlinedButton.icon(
-                                          onPressed: isLoading ? null : _handleBiometricAuth,
-                                          icon: const Icon(
-                                            Icons.fingerprint,
-                                            color: AppColors.primaryGold,
-                                          ),
-                                          label: const Text(
-                                            'Huella',
-                                            style: TextStyle(
-                                              color: AppColors.primaryGold,
-                                            ),
-                                          ),
-                                          style: OutlinedButton.styleFrom(
-                                            side: const BorderSide(
-                                              color: AppColors.primaryGold,
-                                              width: 1.5,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(vertical: 14),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                    ],
-                                    Expanded(
-                                      flex: _isLogin && _biometricEnabled && _biometricAvailable ? 2 : 1,
-                                      child: AppButton(
-                                        text: _isLogin ? 'Entrar' : 'Registrarse',
-                                        onPressed: isLoading ? null : _handleSubmit,
-                                        isLoading: isLoading,
-                                      ),
-                                    ),
-                                  ],
+
+                                return AppButton(
+                                  text: _isLogin ? 'Entrar' : 'Registrarse',
+                                  onPressed: isLoading ? null : _handleSubmit,
+                                  isLoading: isLoading,
                                 );
                               },
                             ),

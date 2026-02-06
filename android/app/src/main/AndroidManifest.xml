@@ -6,8 +6,8 @@
     <!-- Permisos de media para Android 13+ (API 33+) - Requeridos para targetSdk 34 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <!-- Permiso para autenticación biométrica (USE_FINGERPRINT está deprecado) -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
     <!-- Permisos para notificaciones push -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />

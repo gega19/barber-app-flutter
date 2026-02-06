@@ -29,6 +29,7 @@ abstract class BarberRemoteDataSource {
   Future<List<BarberModel>> getFavorites();
 
   Future<BarberModel> getBarberBySlug(String slug);
+  Future<BarberModel?> getMyBarberProfile();
 }
 
 class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
@@ -285,6 +286,27 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
     } on DioException catch (e) {
       appLogger.e('GetBarberBySlug error: ${e.message}', error: e);
       throw Exception('Error al obtener barbero por slug: ${e.message}');
+    }
+  }
+
+  @override
+  Future<BarberModel?> getMyBarberProfile() async {
+    try {
+      final response = await dio.get(
+        '${AppConstants.baseUrl}/api/barbers/me',
+        options: Options(
+          validateStatus: (status) =>
+              status != null && (status < 400 || status == 404),
+        ),
+      );
+      if (response.statusCode == 200 && response.data['data'] != null) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return BarberModel.fromJson(data);
+      }
+      return null;
+    } on DioException catch (e) {
+      appLogger.e('GetMyBarberProfile error: ${e.message}', error: e);
+      rethrow;
     }
   }
 }

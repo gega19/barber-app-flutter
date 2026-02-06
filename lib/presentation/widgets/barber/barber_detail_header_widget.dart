@@ -14,12 +14,20 @@ class BarberDetailHeaderWidget extends StatelessWidget {
   final BarberEntity barber;
   final String? instagramUrl;
   final String? tiktokUrl;
+  final bool isLastCompetitionWinner;
+  final int top1Count;
+  final int top2Count;
+  final int top3Count;
 
   const BarberDetailHeaderWidget({
     super.key,
     required this.barber,
     this.instagramUrl,
     this.tiktokUrl,
+    this.isLastCompetitionWinner = false,
+    this.top1Count = 0,
+    this.top2Count = 0,
+    this.top3Count = 0,
   });
 
   @override
@@ -63,12 +71,50 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        AppAvatar(
-                          imageUrl: barber.image,
-                          name: barber.name,
-                          avatarSeed: barber.avatarSeed,
-                          size: 96,
-                          borderColor: AppColors.primaryGold,
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AppAvatar(
+                              imageUrl: barber.image,
+                              name: barber.name,
+                              avatarSeed: barber.avatarSeed,
+                              size: 96,
+                              borderColor: AppColors.primaryGold,
+                            ),
+                            if (top1Count > 0 ||
+                                top2Count > 0 ||
+                                top3Count > 0) ...[
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                alignment: WrapAlignment.center,
+                                children: [
+                                  if (top1Count > 0)
+                                    AppBadge(
+                                      text:
+                                          'Top 1${top1Count > 1 ? ' ($top1Count)' : ''}',
+                                      type: BadgeType.primary,
+                                      icon: Icons.emoji_events,
+                                    ),
+                                  if (top2Count > 0)
+                                    AppBadge(
+                                      text:
+                                          'Top 2${top2Count > 1 ? ' ($top2Count)' : ''}',
+                                      type: BadgeType.outline,
+                                      icon: Icons.workspace_premium,
+                                    ),
+                                  if (top3Count > 0)
+                                    AppBadge(
+                                      text:
+                                          'Top 3${top3Count > 1 ? ' ($top3Count)' : ''}',
+                                      type: BadgeType.outline,
+                                      icon: Icons.military_tech,
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -127,14 +173,18 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  Text(
-                                    ' (${barber.reviews} reseñas)',
-                                    style: const TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontSize: 14,
+                                  Flexible(
+                                    child: Text(
+                                      ' (${barber.reviews} reseñas)',
+                                      style: const TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 14,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                     ),
                                   ),
-                                  const Spacer(),
+                                  const SizedBox(width: 8),
                                   FavoriteButton(
                                     barberId: barber.id,
                                     color: AppColors.primaryGold,

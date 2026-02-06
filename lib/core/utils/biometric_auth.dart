@@ -8,9 +8,9 @@ class BiometricAuth {
   /// Checks if biometric authentication is available
   static Future<bool> isAvailable() async {
     try {
-      final bool isAvailable = await _localAuth.canCheckBiometrics;
+      final bool canCheckBiometrics = await _localAuth.canCheckBiometrics;
       final bool isDeviceSupported = await _localAuth.isDeviceSupported();
-      return isAvailable || isDeviceSupported;
+      return canCheckBiometrics || isDeviceSupported;
     } catch (e) {
       return false;
     }
@@ -28,22 +28,23 @@ class BiometricAuth {
   /// Authenticates the user using biometrics
   static Future<bool> authenticate({
     String reason = 'Autentícate para continuar',
-    bool useErrorDialogs = true,
-    bool stickyAuth = true,
+    bool biometricOnly = false,
+    bool persistAcrossBackgrounding = true,
   }) async {
     try {
       final bool didAuthenticate = await _localAuth.authenticate(
         localizedReason: reason,
-        options: AuthenticationOptions(
-          useErrorDialogs: useErrorDialogs,
-          stickyAuth: stickyAuth,
-        ),
+        biometricOnly: biometricOnly,
+        persistAcrossBackgrounding: persistAcrossBackgrounding,
       );
       return didAuthenticate;
-    } on PlatformException {
+    } on PlatformException catch (e) {
       // Handle platform-specific errors
+      print('PlatformException: ${e.code} - ${e.message}');
       return false;
-    } catch (_) {
+    } catch (e) {
+      // Handle any other errors
+      print('Error in authenticate: $e');
       return false;
     }
   }
@@ -54,7 +55,7 @@ class BiometricAuth {
     if (availableBiometrics.isEmpty) {
       return 'Biometría';
     }
-    
+
     if (availableBiometrics.contains(BiometricType.face)) {
       return 'Face ID';
     } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
@@ -69,4 +70,3 @@ class BiometricAuth {
     return 'Biometría';
   }
 }
-

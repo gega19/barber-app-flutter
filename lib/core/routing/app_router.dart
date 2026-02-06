@@ -18,7 +18,10 @@ import '../../presentation/screens/profile/barber_info_screen.dart';
 import '../../presentation/screens/profile/barber_availability_screen.dart';
 import '../../presentation/screens/profile/barber_courses_screen.dart';
 import '../../presentation/screens/profile/favorites_screen.dart';
+import '../../presentation/screens/competition/competition_screen.dart';
 import '../../presentation/screens/profile/security_settings_screen.dart';
+import '../../presentation/screens/profile/notifications_settings_screen.dart';
+import '../../presentation/screens/profile/preferences_screen.dart';
 import '../../presentation/screens/booking/booking_screen.dart';
 import '../../presentation/screens/appointment/appointment_detail_screen.dart';
 import '../../presentation/screens/force_update/force_update_screen.dart';
@@ -446,11 +449,23 @@ GoRouter createAppRouter() {
         ),
       ),
       GoRoute(
+        path: '/notifications-settings',
+        builder: (context, state) => const NotificationsSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/preferences',
+        builder: (context, state) => const PreferencesScreen(),
+      ),
+      GoRoute(
         path: '/favorites',
         builder: (context, state) => BlocProvider.value(
           value: sl<FavoritesCubit>()..loadFavorites(),
           child: const FavoritesScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/competition',
+        builder: (context, state) => const CompetitionScreen(),
       ),
       GoRoute(
         path: '/barbers',

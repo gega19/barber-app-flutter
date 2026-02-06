@@ -93,6 +93,9 @@ dependencies {
     // Firebase Analytics (opcional pero recomendado)
     implementation("com.google.firebase:firebase-analytics")
     
+    // AppCompat (requerido para local_auth y Theme.AppCompat)
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    
     // Core library desugaring (requerido para flutter_local_notifications)
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
