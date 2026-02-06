@@ -7,6 +7,8 @@ import '../../../domain/usecases/auth/get_user_stats_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
 import '../../../domain/usecases/auth/become_barber_usecase.dart';
 import '../../../domain/usecases/auth/delete_account_usecase.dart';
+import '../../../domain/usecases/auth/send_phone_verification_code_usecase.dart';
+import '../../../domain/usecases/auth/confirm_phone_verification_usecase.dart';
 import '../../../domain/usecases/barber/get_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_with_total_usecase.dart';
@@ -51,6 +53,8 @@ class UseCasesModule {
     sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
     sl.registerLazySingleton(() => BecomeBarberUseCase(sl()));
     sl.registerLazySingleton(() => DeleteAccountUseCase(sl()));
+    sl.registerLazySingleton(() => SendPhoneVerificationCodeUseCase(sl()));
+    sl.registerLazySingleton(() => ConfirmPhoneVerificationUseCase(sl()));
 
     // Barber UseCases
     sl.registerLazySingleton(() => GetBarbersUseCase(sl()));

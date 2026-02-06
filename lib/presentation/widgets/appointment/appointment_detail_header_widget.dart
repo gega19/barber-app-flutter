@@ -39,7 +39,13 @@ class AppointmentDetailHeaderWidget extends StatelessWidget {
                   size: 20,
                 ),
               ),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
+                }
+              },
             ),
             const SizedBox(width: 12),
             const Expanded(

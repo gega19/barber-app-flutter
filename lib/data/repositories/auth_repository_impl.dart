@@ -21,7 +21,9 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Validación local
       if (email.isEmpty || password.isEmpty) {
-        return const Left(ValidationFailure('Email y contraseña son requeridos'));
+        return const Left(
+          ValidationFailure('Email y contraseña son requeridos'),
+        );
       }
 
       // Llamada al backend
@@ -84,7 +86,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Llamar al backend para cerrar sesión
       await remoteDataSource.logout();
-      
+
       // Limpiar datos locales
       await localStorage.clearAll();
       return const Right(null);
@@ -113,10 +115,10 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Obtener usuario del servidor
       final userModel = await remoteDataSource.getCurrentUser();
-      
+
       // Actualizar almacenamiento local con el usuario actualizado
       await localStorage.saveUserData(userModelToJson(userModel));
-      
+
       return Right(userModel);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -170,10 +172,10 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(ServerFailure(e.message));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
-          } catch (e) {
-        return Left(ServerFailure(e.toString()));
-      }
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
+  }
 
   @override
   Future<Either<Failure, UserEntity>> becomeBarber({
@@ -199,7 +201,7 @@ class AuthRepositoryImpl implements AuthRepository {
         workplaceId: workplaceId,
         serviceType: serviceType,
       );
-      
+
       final updatedUser = result['user'] as UserModel;
       await localStorage.saveUserData(userModelToJson(updatedUser));
       return Right(updatedUser);
@@ -233,11 +235,55 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-    @override
-    Future<bool> isAuthenticated() async {
-      final token = await localStorage.getToken();
-      return token != null && token.isNotEmpty;
+  @override
+  Future<Either<Failure, bool>> sendPhoneVerificationCode(String phone) async {
+    try {
+      if (phone.isEmpty) {
+        return const Left(ValidationFailure('El teléfono es requerido'));
+      }
+      await remoteDataSource.sendPhoneVerificationCode(phone);
+      return const Right(true);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.retryAfterSeconds));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> confirmPhoneVerification(
+    String phone,
+    String code,
+  ) async {
+    try {
+      if (phone.isEmpty) {
+        return const Left(ValidationFailure('El teléfono es requerido'));
+      }
+      if (code.isEmpty) {
+        return const Left(ValidationFailure('El código es requerido'));
+      }
+      final updatedUser = await remoteDataSource.confirmPhoneVerification(
+        phone,
+        code,
+      );
+      await localStorage.saveUserData(userModelToJson(updatedUser));
+      return Right(updatedUser);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<bool> isAuthenticated() async {
+    final token = await localStorage.getToken();
+    return token != null && token.isNotEmpty;
+  }
 
   String userModelToJson(UserModel user) {
     // Serialización JSON usando el método toJson del modelo
@@ -250,4 +296,3 @@ class AuthRepositoryImpl implements AuthRepository {
     return UserModel.fromJson(json);
   }
 }
-

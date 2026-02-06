@@ -9,6 +9,7 @@ class UserModel extends UserEntity {
     super.avatar,
     super.avatarSeed,
     super.phone,
+    super.phoneVerified,
     super.location,
     super.country,
     super.gender,
@@ -18,6 +19,9 @@ class UserModel extends UserEntity {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    final phoneVerifiedAt = json['phoneVerifiedAt'];
+    final phoneVerified =
+        phoneVerifiedAt != null && phoneVerifiedAt.toString().isNotEmpty;
     return UserModel(
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
@@ -25,6 +29,7 @@ class UserModel extends UserEntity {
       avatar: json['avatar'] as String?,
       avatarSeed: json['avatarSeed'] as String?,
       phone: json['phone'] as String?,
+      phoneVerified: json['phoneVerified'] as bool? ?? phoneVerified,
       location: json['location'] as String?,
       country: json['country'] as String?,
       gender: json['gender'] as String?,
@@ -42,6 +47,7 @@ class UserModel extends UserEntity {
       'avatar': avatar,
       'avatarSeed': avatarSeed,
       'phone': phone,
+      'phoneVerified': phoneVerified,
       'location': location,
       'country': country,
       'gender': gender,
@@ -59,6 +65,7 @@ class UserModel extends UserEntity {
       avatar: entity.avatar,
       avatarSeed: entity.avatarSeed,
       phone: entity.phone,
+      phoneVerified: entity.phoneVerified,
       location: entity.location,
       country: entity.country,
       gender: entity.gender,

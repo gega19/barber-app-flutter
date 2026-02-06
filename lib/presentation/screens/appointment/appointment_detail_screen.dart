@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/constants/app_colors.dart';
+import '../../../domain/entities/appointment_entity.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
@@ -23,6 +25,8 @@ class AppointmentDetailScreen extends StatefulWidget {
 }
 
 class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
+  AppointmentEntity? _cachedAppointment;
+
   @override
   void initState() {
     super.initState();
@@ -47,12 +51,51 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         // Loading state
         if (appointmentState is AppointmentLoading ||
             appointmentState is AppointmentInitial) {
+          // Si tenemos una cita en caché, mantenerla visible mientras carga
+          if (_cachedAppointment != null) {
+            final currentUser = _getCurrentUser(context);
+            return AppointmentDetailContent(
+              appointment: _cachedAppointment!,
+              currentUser: currentUser,
+            );
+          }
           return const AppointmentDetailLoading();
         }
 
         // Error state
         if (appointmentState is AppointmentError) {
+          // Si tenemos una cita en caché, mantenerla visible y mostrar error como snackbar
+          if (_cachedAppointment != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(appointmentState.message),
+                  backgroundColor: AppColors.error,
+                ),
+              );
+            });
+            final currentUser = _getCurrentUser(context);
+            return AppointmentDetailContent(
+              appointment: _cachedAppointment!,
+              currentUser: currentUser,
+            );
+          }
           return AppointmentDetailError(message: appointmentState.message);
+        }
+
+        // Estados transitorios (completando, cancelando) - mantener contenido actual
+        if (appointmentState is AppointmentCompleting ||
+            appointmentState is AppointmentCancelling ||
+            appointmentState is AppointmentCreating) {
+          if (_cachedAppointment != null) {
+            final currentUser = _getCurrentUser(context);
+            return AppointmentDetailContent(
+              appointment: _cachedAppointment!,
+              currentUser: currentUser,
+            );
+          }
+          // Si no hay caché, mostrar loading
+          return const AppointmentDetailLoading();
         }
 
         // Empty state
@@ -62,14 +105,20 @@ class _AppointmentDetailScreenState extends State<AppointmentDetailScreen> {
         }
 
         // Loaded state - render appointment details
-        final appointment =
-            (appointmentState as AppointmentLoaded).appointments.first;
-        final currentUser = _getCurrentUser(context);
+        if (appointmentState is AppointmentLoaded) {
+          final appointment = appointmentState.appointments.first;
+          // Guardar en caché para estados transitorios
+          _cachedAppointment = appointment;
+          final currentUser = _getCurrentUser(context);
 
-        return AppointmentDetailContent(
-          appointment: appointment,
-          currentUser: currentUser,
-        );
+          return AppointmentDetailContent(
+            appointment: appointment,
+            currentUser: currentUser,
+          );
+        }
+
+        // Fallback - no debería llegar aquí
+        return const AppointmentDetailLoading();
       },
     );
   }

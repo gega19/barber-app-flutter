@@ -26,6 +26,8 @@ class CubitsModule {
         updateProfileUseCase: sl(),
         becomeBarberUseCase: sl(),
         deleteAccountUseCase: sl(),
+        sendPhoneVerificationCodeUseCase: sl(),
+        confirmPhoneVerificationUseCase: sl(),
         fcmTokenRepository: sl(),
         notificationService: sl(),
       )..init(),

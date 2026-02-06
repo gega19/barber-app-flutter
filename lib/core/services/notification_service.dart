@@ -1,9 +1,13 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:logger/logger.dart';
+import '../injection/injection.dart';
+import '../routing/app_router.dart';
+import '../../domain/repositories/fcm_token_repository.dart';
 
 /// Handler para notificaciones en segundo plano (debe ser una función top-level)
 @pragma('vm:entry-point')
@@ -92,7 +96,9 @@ class NotificationService {
       }
 
       _initialized = true;
-      _logger.i('✅ NotificationService initialized (without permission request)');
+      _logger.i(
+        '✅ NotificationService initialized (without permission request)',
+      );
     } catch (e) {
       _logger.e('❌ Error initializing NotificationService: $e');
       rethrow;
@@ -101,7 +107,9 @@ class NotificationService {
 
   /// Inicializa las notificaciones locales
   Future<void> _initializeLocalNotifications() async {
-    const androidSettings = AndroidInitializationSettings('@drawable/ic_notification');
+    const androidSettings = AndroidInitializationSettings(
+      '@drawable/ic_notification',
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
@@ -130,7 +138,8 @@ class NotificationService {
 
       await _localNotifications
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(androidChannel);
     }
   }
@@ -160,9 +169,11 @@ class NotificationService {
           provisional: false,
         );
 
-        _logger.i('📱 iOS notification permission status: ${settings.authorizationStatus}');
+        _logger.i(
+          '📱 iOS notification permission status: ${settings.authorizationStatus}',
+        );
         return settings.authorizationStatus == AuthorizationStatus.authorized ||
-               settings.authorizationStatus == AuthorizationStatus.provisional;
+            settings.authorizationStatus == AuthorizationStatus.provisional;
       } else if (Platform.isAndroid) {
         // Verificar primero si ya tiene el permiso
         final hasPermission = await hasNotificationPermission();
@@ -177,9 +188,11 @@ class NotificationService {
         try {
           final status = await Permission.notification.request();
           _logger.i('📱 Permission handler result: $status');
-          
+
           if (status.isGranted) {
-            _logger.i('✅ Notification permission granted via permission_handler');
+            _logger.i(
+              '✅ Notification permission granted via permission_handler',
+            );
             return true;
           } else if (status.isPermanentlyDenied) {
             _logger.w('⚠️ Notification permission permanently denied');
@@ -191,13 +204,15 @@ class NotificationService {
 
         // Método 2: Usar flutter_local_notifications como alternativa
         try {
-          final androidImplementation =
-              _localNotifications.resolvePlatformSpecificImplementation<
-                  AndroidFlutterLocalNotificationsPlugin>();
+          final androidImplementation = _localNotifications
+              .resolvePlatformSpecificImplementation<
+                AndroidFlutterLocalNotificationsPlugin
+              >();
 
           if (androidImplementation != null) {
             // Verificar si las notificaciones están habilitadas
-            final areEnabled = await androidImplementation.areNotificationsEnabled();
+            final areEnabled = await androidImplementation
+                .areNotificationsEnabled();
             _logger.i('📱 Are notifications enabled: $areEnabled');
 
             if (areEnabled == true) {
@@ -206,11 +221,14 @@ class NotificationService {
             }
 
             // Solicitar permiso
-            final granted = await androidImplementation.requestNotificationsPermission();
+            final granted = await androidImplementation
+                .requestNotificationsPermission();
             _logger.i('📱 Local notifications permission result: $granted');
-            
+
             if (granted == true) {
-              _logger.i('✅ Notification permission granted via local notifications');
+              _logger.i(
+                '✅ Notification permission granted via local notifications',
+              );
               return true;
             }
           }
@@ -264,18 +282,25 @@ class NotificationService {
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     _logger.i('📨 Handling foreground message: ${message.messageId}');
     _logger.i('📨 Message data: ${message.data}');
-    _logger.i('📨 Message notification: ${message.notification?.title} - ${message.notification?.body}');
-    
+    _logger.i(
+      '📨 Message notification: ${message.notification?.title} - ${message.notification?.body}',
+    );
+
     final notification = message.notification;
     if (notification == null) {
       _logger.w('⚠️ Message has no notification payload');
       return;
     }
 
-    _logger.i('📱 Showing local notification: ${notification.title} - ${notification.body}');
+    _logger.i(
+      '📱 Showing local notification: ${notification.title} - ${notification.body}',
+    );
 
     // Mostrar notificación local
     try {
+      // Convertir el Map de data a JSON string para el payload
+      final payloadJson = jsonEncode(message.data);
+
       await _localNotifications.show(
         message.hashCode,
         notification.title,
@@ -297,7 +322,7 @@ class NotificationService {
             presentSound: true,
           ),
         ),
-        payload: message.data.toString(),
+        payload: payloadJson,
       );
       _logger.i('✅ Local notification shown successfully');
     } catch (e) {
@@ -307,20 +332,81 @@ class NotificationService {
 
   /// Maneja cuando se toca una notificación
   void _handleNotificationTap(RemoteMessage message) {
-    // Aquí puedes navegar a una pantalla específica basada en message.data
     final data = message.data;
-    _logger.i('Notification tapped with data: $data');
+    _logger.i('🔔 Notification tapped with data: $data');
 
-    // Ejemplo: navegar a detalles de cita si viene appointmentId
-    // if (data.containsKey('appointmentId')) {
-    //   // Navigator.push(...)
-    // }
+    // Navegar a detalles de cita si viene appointmentId
+    if (data.containsKey('appointmentId')) {
+      final appointmentId = data['appointmentId'] as String?;
+      if (appointmentId != null && appointmentId.isNotEmpty) {
+        _logger.i('📍 Navigating to appointment: $appointmentId');
+        // Usar GoRouter para navegar
+        appRouter.go('/appointment/$appointmentId');
+      } else {
+        _logger.w('⚠️ appointmentId is empty or null');
+      }
+    } else {
+      _logger.i(
+        'ℹ️ No appointmentId in notification data, skipping navigation',
+      );
+    }
   }
 
   /// Callback cuando se toca una notificación local
   void _onNotificationTapped(NotificationResponse response) {
-    _logger.i('Local notification tapped: ${response.payload}');
-    // Aquí puedes manejar la navegación
+    _logger.i('🔔 Local notification tapped: ${response.payload}');
+
+    // El payload es un JSON string que representa el Map de data
+    if (response.payload != null && response.payload!.isNotEmpty) {
+      try {
+        final payload = response.payload!;
+        _logger.i('📦 Parsing payload: $payload');
+
+        // Parsear el JSON string a Map
+        final data = jsonDecode(payload) as Map<String, dynamic>;
+
+        // Extraer appointmentId del Map
+        if (data.containsKey('appointmentId')) {
+          final appointmentId = data['appointmentId'] as String?;
+          if (appointmentId != null && appointmentId.isNotEmpty) {
+            _logger.i(
+              '📍 Navigating to appointment from local notification: $appointmentId',
+            );
+            appRouter.go('/appointment/$appointmentId');
+            return;
+          } else {
+            _logger.w('⚠️ appointmentId is empty or null in payload');
+          }
+        } else {
+          _logger.i(
+            'ℹ️ No appointmentId in notification payload, skipping navigation',
+          );
+        }
+      } catch (e) {
+        _logger.e('❌ Error parsing notification payload: $e');
+        // Intentar parseo alternativo si el JSON falla (por compatibilidad con formato anterior)
+        try {
+          final payload = response.payload!;
+          final appointmentIdMatch = RegExp(
+            r'"appointmentId"\s*:\s*"([^"]+)"',
+          ).firstMatch(payload);
+          if (appointmentIdMatch != null) {
+            final appointmentId = appointmentIdMatch.group(1);
+            if (appointmentId != null && appointmentId.isNotEmpty) {
+              _logger.i(
+                '📍 Navigating to appointment (fallback parsing): $appointmentId',
+              );
+              appRouter.go('/appointment/$appointmentId');
+              return;
+            }
+          }
+        } catch (e2) {
+          _logger.e('❌ Error in fallback parsing: $e2');
+        }
+      }
+    } else {
+      _logger.i('ℹ️ No payload in local notification, skipping navigation');
+    }
   }
 
   /// Obtiene el token FCM del dispositivo
@@ -331,10 +417,10 @@ class NotificationService {
 
       // Escuchar cambios en el token
       _firebaseMessaging.onTokenRefresh.listen((newToken) {
-        _logger.i('FCM Token refreshed: ${newToken.substring(0, 20)}...');
+        _logger.i('🔄 FCM Token refreshed: ${newToken.substring(0, 20)}...');
         _fcmToken = newToken;
-        // Aquí deberías actualizar el token en el backend
-        // _updateTokenInBackend(newToken);
+        // Actualizar el token en el backend
+        _updateTokenInBackend(newToken);
       });
 
       return _fcmToken;
@@ -380,5 +466,36 @@ class NotificationService {
       _logger.e('Error unsubscribing from topic $topic: $e');
     }
   }
-}
 
+  /// Actualiza el token FCM en el backend cuando se refresca
+  Future<void> _updateTokenInBackend(String newToken) async {
+    try {
+      // Obtener el repositorio de FCM tokens usando GetIt
+      final fcmTokenRepository = sl<FcmTokenRepository>();
+      final deviceType = Platform.isAndroid ? 'android' : 'ios';
+
+      _logger.i(
+        '📤 Updating FCM token in backend: ${newToken.substring(0, 20)}... (deviceType: $deviceType)',
+      );
+
+      final result = await fcmTokenRepository.registerToken(
+        token: newToken,
+        deviceType: deviceType,
+      );
+
+      result.fold(
+        (failure) {
+          _logger.e(
+            '❌ Error updating FCM token in backend: ${failure.message}',
+          );
+        },
+        (_) {
+          _logger.i('✅ FCM token updated successfully in backend');
+        },
+      );
+    } catch (e) {
+      // No lanzar error, solo loggear - las notificaciones no son críticas
+      _logger.e('❌ Unexpected error updating FCM token in backend: $e');
+    }
+  }
+}

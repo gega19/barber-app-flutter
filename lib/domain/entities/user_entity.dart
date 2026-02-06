@@ -8,6 +8,7 @@ class UserEntity extends Equatable {
   final String? avatar;
   final String? avatarSeed;
   final String? phone;
+  final bool phoneVerified;
   final String? location;
   final String? country;
   final String? gender;
@@ -22,6 +23,7 @@ class UserEntity extends Equatable {
     this.avatar,
     this.avatarSeed,
     this.phone,
+    this.phoneVerified = false,
     this.location,
     this.country,
     this.gender,
@@ -38,6 +40,7 @@ class UserEntity extends Equatable {
     avatar,
     avatarSeed,
     phone,
+    phoneVerified,
     location,
     country,
     gender,

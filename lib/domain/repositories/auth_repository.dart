@@ -39,24 +39,27 @@ abstract class AuthRepository {
     String? avatarSeed,
   });
 
-        Future<Either<Failure, UserEntity>> becomeBarber({
-      String? specialtyId,
-      required String specialty,
-      required int experienceYears,
-      required String location,
-      double? latitude,
-      double? longitude,
-      String? image,
-      String? workplaceId,
-      String? serviceType,
-    });
-
-  Future<Either<Failure, void>> deleteAccount({
-    required String password,
+  Future<Either<Failure, UserEntity>> becomeBarber({
+    String? specialtyId,
+    required String specialty,
+    required int experienceYears,
+    required String location,
+    double? latitude,
+    double? longitude,
+    String? image,
+    String? workplaceId,
+    String? serviceType,
   });
+
+  Future<Either<Failure, void>> deleteAccount({required String password});
+
+  Future<Either<Failure, bool>> sendPhoneVerificationCode(String phone);
+
+  Future<Either<Failure, UserEntity>> confirmPhoneVerification(
+    String phone,
+    String code,
+  );
 
   /// Verifica si hay una sesión activa
   Future<bool> isAuthenticated();
 }
-
-

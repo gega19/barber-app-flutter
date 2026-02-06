@@ -8,6 +8,9 @@ import '../../../domain/usecases/auth/get_current_user_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
 import '../../../domain/usecases/auth/become_barber_usecase.dart';
 import '../../../domain/usecases/auth/delete_account_usecase.dart';
+import '../../../domain/usecases/auth/send_phone_verification_code_usecase.dart';
+import '../../../domain/usecases/auth/confirm_phone_verification_usecase.dart';
+import '../../../core/errors/failures.dart';
 import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
@@ -28,6 +31,8 @@ class AuthCubit extends Cubit<AuthState> {
   final UpdateProfileUseCase updateProfileUseCase;
   final BecomeBarberUseCase becomeBarberUseCase;
   final DeleteAccountUseCase deleteAccountUseCase;
+  final SendPhoneVerificationCodeUseCase sendPhoneVerificationCodeUseCase;
+  final ConfirmPhoneVerificationUseCase confirmPhoneVerificationUseCase;
   final FcmTokenRepository fcmTokenRepository;
   final NotificationService notificationService;
   final AnalyticsService analyticsService = sl<AnalyticsService>();
@@ -40,6 +45,8 @@ class AuthCubit extends Cubit<AuthState> {
     required this.updateProfileUseCase,
     required this.becomeBarberUseCase,
     required this.deleteAccountUseCase,
+    required this.sendPhoneVerificationCodeUseCase,
+    required this.confirmPhoneVerificationUseCase,
     required this.fcmTokenRepository,
     required this.notificationService,
   }) : super(AuthInitial());
@@ -148,17 +155,14 @@ class AuthCubit extends Cubit<AuthState> {
     }
 
     final result = await logoutUseCase();
-    result.fold(
-      (failure) => emit(AuthError(failure.message)),
-      (_) async {
-        // Track analytics
-        await analyticsService.trackEvent(
-          eventName: 'user_logged_out',
-          eventType: 'user_action',
-        );
-        emit(AuthInitial());
-      },
-    );
+    result.fold((failure) => emit(AuthError(failure.message)), (_) async {
+      // Track analytics
+      await analyticsService.trackEvent(
+        eventName: 'user_logged_out',
+        eventType: 'user_action',
+      );
+      emit(AuthInitial());
+    });
   }
 
   Future<void> updateProfile({
@@ -250,6 +254,34 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     return success;
+  }
+
+  /// Envía el código de verificación por SMS (Twilio vía backend).
+  /// Retorna (success, errorMessage, retryAfterSeconds).
+  /// retryAfterSeconds solo viene cuando el servidor responde 429 (cooldown).
+  Future<(bool success, String? errorMessage, int? retryAfterSeconds)>
+  sendPhoneVerificationCode(String phone) async {
+    final result = await sendPhoneVerificationCodeUseCase(phone);
+    return result.fold(
+      (failure) => (
+        false,
+        failure.message,
+        failure is ServerFailure ? failure.retryAfterSeconds : null,
+      ),
+      (_) => (true, null, null),
+    );
+  }
+
+  /// Confirma la verificación de teléfono con el código SMS (Twilio vía backend).
+  Future<(bool success, String? errorMessage)> confirmPhoneVerification(
+    String phone,
+    String code,
+  ) async {
+    final result = await confirmPhoneVerificationUseCase(phone, code);
+    return result.fold((failure) => (false, failure.message), (user) {
+      emit(AuthAuthenticated(user));
+      return (true, null);
+    });
   }
 
   /// Actualiza el perfil del usuario desde el servidor (silenciosamente)

@@ -45,6 +45,10 @@ abstract class AuthRemoteDataSource {
 
   Future<void> updateBarberStep2({String? workplaceId, String? serviceType});
 
+  Future<void> sendPhoneVerificationCode(String phone);
+
+  Future<UserModel> confirmPhoneVerification(String phone, String code);
+
   Future<void> deleteAccount({required String password});
 }
 
@@ -428,6 +432,70 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     }
   }
 
+  @override
+  Future<void> sendPhoneVerificationCode(String phone) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/auth/send-phone-code',
+        data: {'phone': phone},
+      );
+      if (response.statusCode == 429) {
+        final data = response.data is Map ? response.data as Map : null;
+        final msg =
+            data?['message'] ?? 'Espera antes de solicitar otro código.';
+        final seconds = data?['retryAfterSeconds'];
+        throw ServerException(msg, seconds is int ? seconds : null);
+      }
+      if (response.statusCode != 200) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error al enviar el código',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('SendPhoneVerificationCode error: ${e.message}', error: e);
+      if (e.response?.statusCode == 429) {
+        final data = e.response?.data is Map ? e.response!.data as Map : null;
+        final seconds = data?['retryAfterSeconds'];
+        throw ServerException(
+          e.response?.data['message'] ??
+              'Espera antes de solicitar otro código.',
+          seconds is int ? seconds : null,
+        );
+      }
+      throw ServerException(
+        e.response?.data['message'] ?? 'Error al enviar el código',
+      );
+    }
+  }
+
+  @override
+  Future<UserModel> confirmPhoneVerification(String phone, String code) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/auth/confirm-phone',
+        data: {'phone': phone, 'code': code},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return UserModel.fromJson(data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error al verificar teléfono',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('ConfirmPhoneVerification error: ${e.message}', error: e);
+      throw ServerException(
+        e.response?.data['message'] ?? 'Error al verificar teléfono',
+      );
+    }
+  }
+
   /// Extrae el mensaje de error de la respuesta del servidor
   /// Prioriza el array de errors (validación) sobre el campo message
   /// Traduce los mensajes comunes del inglés al español
@@ -486,6 +554,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       'Internal server error': 'Error interno del servidor',
       'Bad request': 'Solicitud incorrecta',
       'Validation failed': 'Validación fallida',
+      'Phone is already verified and cannot be changed':
+          'El teléfono ya está verificado y no se puede cambiar',
+      'Phone number is already in use by another account':
+          'Este número ya está en uso por otra cuenta',
+      'Invalid or expired verification code':
+          'Código inválido o expirado. Solicita uno nuevo.',
+      'Phone verification is not configured (Twilio).':
+          'La verificación por teléfono no está configurada.',
     };
 
     // Buscar traducción exacta
@@ -509,8 +585,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
 class ServerException implements Exception {
   final String message;
+  final int? retryAfterSeconds;
 
-  ServerException(this.message);
+  ServerException(this.message, [this.retryAfterSeconds]);
 
   @override
   String toString() => message;

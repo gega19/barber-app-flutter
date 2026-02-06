@@ -10,6 +10,7 @@ class ProfileInfoRowWidget extends StatelessWidget {
   final bool isEditable;
   final String? fieldType;
   final VoidCallback? onEdit;
+  final Widget? trailing;
 
   const ProfileInfoRowWidget({
     super.key,
@@ -19,6 +20,7 @@ class ProfileInfoRowWidget extends StatelessWidget {
     required this.isEditable,
     this.fieldType,
     this.onEdit,
+    this.trailing,
   });
 
   @override
@@ -35,11 +37,7 @@ class ProfileInfoRowWidget extends StatelessWidget {
                 color: AppColors.primaryGold.withValues(alpha: 0.2),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: AppColors.primaryGold,
-                size: 20,
-              ),
+              child: Icon(icon, color: AppColors.primaryGold, size: 20),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -65,6 +63,7 @@ class ProfileInfoRowWidget extends StatelessWidget {
                 ],
               ),
             ),
+            if (trailing != null) ...[trailing!, const SizedBox(width: 8)],
             if (isEditable && onEdit != null)
               IconButton(
                 icon: const Icon(
@@ -80,4 +79,3 @@ class ProfileInfoRowWidget extends StatelessWidget {
     );
   }
 }
-

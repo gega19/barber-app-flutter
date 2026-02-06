@@ -1,7 +1,7 @@
 name: barber_app
 description: Barber Appointment App - Aplicación móvil para reservas de citas en barbería
 publish_to: "none"
-version: 1.0.2+8
+version: 1.0.3+9
 
 environment:
   sdk: ^3.9.0
@@ -66,8 +66,9 @@ dependencies:
   # URL Launcher
   url_launcher: ^6.3.1
 
-  # App Info
+  # App Info & Device
   package_info_plus: ^9.0.0
+  device_info_plus: ^11.2.0
 
   # SVG Support
   flutter_svg: ^2.0.10+1

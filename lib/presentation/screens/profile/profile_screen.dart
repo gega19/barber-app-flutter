@@ -6,6 +6,7 @@ import 'dart:math';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/utils/phone_utils.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../../domain/usecases/auth/get_user_stats_usecase.dart';
 import '../../../data/datasources/remote/upload_remote_datasource.dart';
@@ -13,6 +14,7 @@ import 'package:dio/dio.dart';
 import '../../widgets/profile/profile_header_widget.dart';
 import '../../widgets/profile/profile_stats_card_widget.dart';
 import '../../widgets/profile/profile_info_card_widget.dart';
+import '../../widgets/profile/profile_phone_verification_widget.dart';
 import '../../widgets/profile/profile_barber_management_card_widget.dart';
 import '../../widgets/profile/profile_activity_card_widget.dart';
 import '../../widgets/profile/profile_settings_card_widget.dart';
@@ -236,8 +238,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         authCubit.updateProfile(name: value);
         break;
       case 'phone':
-        authCubit.updateProfile(phone: value);
-        break;
+        {
+          final normalized = normalizePhoneToE164(value);
+          authCubit.updateProfile(
+            phone: normalized.isEmpty ? null : normalized,
+          );
+          break;
+        }
       case 'location':
         authCubit.updateProfile(location: value);
         break;
@@ -442,6 +449,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       prevUser.avatar != currUser.avatar ||
                       prevUser.avatarSeed != currUser.avatarSeed ||
                       prevUser.phone != currUser.phone ||
+                      prevUser.phoneVerified != currUser.phoneVerified ||
                       prevUser.location != currUser.location ||
                       prevUser.country != currUser.country ||
                       prevUser.gender != currUser.gender;
@@ -482,6 +490,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                    // Phone verification status (solo cuando no está verificado)
+                    if (!user.phoneVerified)
+                      SliverToBoxAdapter(
+                        child: ProfilePhoneVerificationWidget(
+                          user: user,
+                          onVerificationComplete: () => setState(() {}),
+                        ),
+                      ),
+                    if (!user.phoneVerified)
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Info Card
                     SliverToBoxAdapter(
                       child: ProfileInfoCardWidget(

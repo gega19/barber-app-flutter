@@ -75,5 +75,17 @@
 			<string>tel</string>
 			<string>mailto</string>
 		</array>
+		<!-- Firebase Phone Auth: reemplaza REVERSED_CLIENT_ID por el valor de GoogleService-Info.plist (clave REVERSED_CLIENT_ID). Si no existe, activa Google Sign-In en Firebase y vuelve a descargar el plist. -->
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>REVERSED_CLIENT_ID</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

@@ -3,10 +3,11 @@ import 'main.dart' as entry_point;
 import 'config/environment.dart';
 
 /// Dev entry point. API base URL:
-/// - Emulador Android: 10.0.2.2 (por defecto)
-/// - Dispositivo físico: pasa la IP de tu PC/Mac en la red local.
-///   Ejemplo: flutter run -t lib/main_dev.dart --dart-define=DEV_API_HOST=192.168.1.100
-///   O usa el script: ./scripts/run_dev_device.sh
+/// - Simulador iOS: 127.0.0.1 (localhost del Mac).
+///   Ejemplo: flutter run -t lib/main_dev.dart --dart-define=DEV_API_HOST=127.0.0.1
+/// - Emulador Android: 10.0.2.2 (por defecto).
+/// - Dispositivo físico: IP del Mac en la red. Ejemplo: DEV_API_HOST=192.168.1.100
+///   O script: ./scripts/run_dev_device.sh
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
