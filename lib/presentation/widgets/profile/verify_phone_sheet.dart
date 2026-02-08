@@ -149,157 +149,161 @@ class _VerifyPhoneSheetState extends State<VerifyPhoneSheet> {
         left: 24,
         right: 24,
         top: 24,
-        bottom: 24 + MediaQuery.of(context).padding.bottom,
+        bottom: 24 + MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.textSecondary.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(2),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.textSecondary.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            _step == _VerifyStep.phone
-                ? 'Verificar teléfono'
-                : 'Código de verificación',
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _step == _VerifyStep.phone
-                ? 'Ingresa tu número en formato internacional (ej: +58 412 1234567)'
-                : 'Ingresa el código de 6 dígitos que enviamos al $_phone',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 24),
-          if (_step == _VerifyStep.phone) ...[
-            AppTextField(
-              label: 'Número de teléfono',
-              hint: '+58 412 1234567',
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              prefixIcon: Icons.phone,
-              onChanged: (_) => setState(() => _errorMessage = null),
-            ),
-          ] else ...[
-            AppTextField(
-              label: 'Código SMS',
-              hint: '123456',
-              controller: _codeController,
-              keyboardType: TextInputType.number,
-              prefixIcon: Icons.sms,
-              onChanged: (_) => setState(() => _errorMessage = null),
+            const SizedBox(height: 20),
+            Text(
+              _step == _VerifyStep.phone
+                  ? 'Verificar teléfono'
+                  : 'Código de verificación',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: 16,
-                  color: AppColors.textSecondary.withValues(alpha: 0.9),
-                ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Si no aparece el SMS, revisa la carpeta de Spam o Mensajes desconocidos.',
-                    style: TextStyle(
-                      color: AppColors.textSecondary.withValues(alpha: 0.9),
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-          if (_errorMessage != null) ...[
-            const SizedBox(height: 12),
             Text(
-              _errorMessage!,
-              style: const TextStyle(color: AppColors.error, fontSize: 13),
+              _step == _VerifyStep.phone
+                  ? 'Ingresa tu número en formato internacional (ej: +58 412 1234567)'
+                  : 'Ingresa el código de 6 dígitos que enviamos al $_phone',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
             ),
-          ],
-          const SizedBox(height: 24),
-          if (_step == _VerifyStep.phone)
-            AppButton(
-              text: 'Enviar código',
-              onPressed: _isSending ? null : _sendCode,
-              isLoading: _isSending,
-              icon: Icons.send,
-            )
-          else ...[
-            AppButton(
-              text: 'Verificar',
-              onPressed: _isVerifying ? null : _verifyCode,
-              isLoading: _isVerifying,
-              icon: Icons.verified,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed:
-                      (_isSending || _isVerifying || _resendCooldownSeconds > 0)
-                      ? null
-                      : _sendCode,
-                  child: Text(
-                    _resendCooldownSeconds > 0
-                        ? 'Reenviar código en ${_resendCooldownSeconds}s'
-                        : 'Reenviar código',
-                    style: TextStyle(
-                      color: _resendCooldownSeconds > 0
-                          ? AppColors.textSecondary
-                          : AppColors.primaryGold,
-                      fontSize: 14,
+            const SizedBox(height: 24),
+            if (_step == _VerifyStep.phone) ...[
+              AppTextField(
+                label: 'Número de teléfono',
+                hint: '+58 412 1234567',
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                prefixIcon: Icons.phone,
+                onChanged: (_) => setState(() => _errorMessage = null),
+              ),
+            ] else ...[
+              AppTextField(
+                label: 'Código SMS',
+                hint: '123456',
+                controller: _codeController,
+                keyboardType: TextInputType.number,
+                prefixIcon: Icons.sms,
+                onChanged: (_) => setState(() => _errorMessage = null),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AppColors.textSecondary.withValues(alpha: 0.9),
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Si no aparece el SMS, revisa la carpeta de Spam o Mensajes desconocidos.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary.withValues(alpha: 0.9),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: _isSending || _isVerifying
-                      ? null
-                      : () {
-                          setState(() {
-                            _step = _VerifyStep.phone;
-                            _errorMessage = null;
-                            _codeController.clear();
-                            _resendCooldownSeconds = 0;
-                            _cooldownTimer?.cancel();
-                          });
-                        },
-                  child: const Text(
-                    'Cambiar número',
-                    style: TextStyle(color: AppColors.primaryGold),
+                ],
+              ),
+            ],
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _errorMessage!,
+                style: const TextStyle(color: AppColors.error, fontSize: 13),
+              ),
+            ],
+            const SizedBox(height: 24),
+            if (_step == _VerifyStep.phone)
+              AppButton(
+                text: 'Enviar código',
+                onPressed: _isSending ? null : _sendCode,
+                isLoading: _isSending,
+                icon: Icons.send,
+              )
+            else ...[
+              AppButton(
+                text: 'Verificar',
+                onPressed: _isVerifying ? null : _verifyCode,
+                isLoading: _isVerifying,
+                icon: Icons.verified,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed:
+                        (_isSending ||
+                            _isVerifying ||
+                            _resendCooldownSeconds > 0)
+                        ? null
+                        : _sendCode,
+                    child: Text(
+                      _resendCooldownSeconds > 0
+                          ? 'Reenviar código en ${_resendCooldownSeconds}s'
+                          : 'Reenviar código',
+                      style: TextStyle(
+                        color: _resendCooldownSeconds > 0
+                            ? AppColors.textSecondary
+                            : AppColors.primaryGold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: _isSending || _isVerifying
+                        ? null
+                        : () {
+                            setState(() {
+                              _step = _VerifyStep.phone;
+                              _errorMessage = null;
+                              _codeController.clear();
+                              _resendCooldownSeconds = 0;
+                              _cooldownTimer?.cancel();
+                            });
+                          },
+                    child: const Text(
+                      'Cambiar número',
+                      style: TextStyle(color: AppColors.primaryGold),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _isSending || _isVerifying ? null : widget.onCancel,
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
             ),
           ],
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: _isSending || _isVerifying ? null : widget.onCancel,
-            child: const Text(
-              'Cancelar',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

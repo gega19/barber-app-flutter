@@ -7,7 +7,7 @@ import '../common/app_avatar.dart';
 import '../common/app_badge.dart';
 import '../common/social_media_links_widget.dart';
 import '../common/favorite_button.dart';
-// import 'package:share_plus/share_plus.dart'; // Compartir deshabilitado temporalmente
+import 'package:share_plus/share_plus.dart';
 
 /// Widget para el header del detalle del barbero
 class BarberDetailHeaderWidget extends StatelessWidget {
@@ -49,7 +49,13 @@ class BarberDetailHeaderWidget extends StatelessWidget {
             size: 20,
           ),
         ),
-        onPressed: () => context.pop(),
+        onPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/home');
+          }
+        },
       ),
       actions: const [],
       flexibleSpace: FlexibleSpaceBar(
@@ -206,60 +212,62 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                           SocialMediaLinksWidget(
                             instagramUrl: instagramUrl,
                             tiktokUrl: tiktokUrl,
+                            phoneNumber: barber.phone,
                             iconSize: 18.0,
                             spacing: 8.0,
+                            showLabels: false,
                           ),
                           const SizedBox(width: 16),
                         ],
                         // Opción Compartir deshabilitada temporalmente (deep link / web pendiente)
-                        // Material(
-                        //   color: Colors.transparent,
-                        //   child: InkWell(
-                        //     onTap: () {
-                        //       final shareUrl =
-                        //           barber.slug != null && barber.slug!.isNotEmpty
-                        //               ? 'https://bartop.app/barber/${barber.slug}'
-                        //               : 'https://bartop.app/barber/${barber.id}';
-                        //       Share.share(
-                        //         'Mira el perfil de ${barber.name} en Bartop! $shareUrl',
-                        //         subject: 'Perfil de ${barber.name}',
-                        //       );
-                        //     },
-                        //     borderRadius: BorderRadius.circular(20),
-                        //     child: Container(
-                        //       padding: const EdgeInsets.symmetric(
-                        //         horizontal: 16,
-                        //         vertical: 8,
-                        //       ),
-                        //       decoration: BoxDecoration(
-                        //         border: Border.all(
-                        //           color: AppColors.primaryGold,
-                        //           width: 1.5,
-                        //         ),
-                        //         borderRadius: BorderRadius.circular(20),
-                        //       ),
-                        //       child: Row(
-                        //         mainAxisSize: MainAxisSize.min,
-                        //         children: const [
-                        //           Icon(
-                        //             Icons.share,
-                        //             color: AppColors.primaryGold,
-                        //             size: 18,
-                        //           ),
-                        //           SizedBox(width: 6),
-                        //           Text(
-                        //             'Compartir',
-                        //             style: TextStyle(
-                        //               color: AppColors.primaryGold,
-                        //               fontSize: 14,
-                        //               fontWeight: FontWeight.w600,
-                        //             ),
-                        //           ),
-                        //         ],
-                        //       ),
-                        //     ),
-                        //   ),
-                        // ),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              final shareUrl =
+                                  barber.slug != null && barber.slug!.isNotEmpty
+                                  ? 'https://bartopve.vercel.app/share/barber/slug/${barber.slug}'
+                                  : 'https://bartopve.vercel.app/share/barber/${barber.id}';
+                              Share.share(
+                                'Mira el perfil de ${barber.name} en Bartop! $shareUrl',
+                                subject: 'Perfil de ${barber.name}',
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.primaryGold,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(
+                                    Icons.share,
+                                    color: AppColors.primaryGold,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Compartir',
+                                    style: TextStyle(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ],

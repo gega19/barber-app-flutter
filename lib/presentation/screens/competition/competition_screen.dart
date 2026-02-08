@@ -273,11 +273,45 @@ class _CompetitionScreenState extends State<CompetitionScreen>
                     _sectionTitle('Top barberos'),
                     if (_entries.isEmpty)
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 32),
+                        padding: const EdgeInsets.symmetric(vertical: 48),
                         child: Center(
-                          child: Text(
-                            'Aún no hay puntuaciones',
-                            style: TextStyle(color: AppColors.textSecondary),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.timer_outlined,
+                                size: 64,
+                                color: AppColors.primaryGold.withValues(
+                                  alpha: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'El ranking aún no comienza',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 32,
+                                ),
+                                child: Text(
+                                  'Las puntuaciones se actualizarán pronto.\n¡Realiza citas para aparecer aquí!',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary.withValues(
+                                      alpha: 0.8,
+                                    ),
+                                    fontSize: 14,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       )
