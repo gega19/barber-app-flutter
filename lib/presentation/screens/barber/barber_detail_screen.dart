@@ -310,28 +310,22 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
           );
         }
 
-        final isOwnProfile =
-            _currentUserBarberId != null &&
-            _currentUserBarberId == widget.barberId;
-
         return Stack(
           children: [
             Scaffold(
-              floatingActionButton: isOwnProfile
-                  ? null
-                  : FloatingActionButton.extended(
-                      onPressed: () =>
-                          context.push('/booking/${barber!.id}', extra: barber),
-                      backgroundColor: AppColors.primaryGold,
-                      label: const Text(
-                        'Agendar Cita',
-                        style: TextStyle(color: AppColors.textDark),
-                      ),
-                      icon: const Icon(
-                        Icons.calendar_today,
-                        color: AppColors.textDark,
-                      ),
-                    ),
+              floatingActionButton: FloatingActionButton.extended(
+                onPressed: () =>
+                    context.push('/booking/${barber!.id}', extra: barber),
+                backgroundColor: AppColors.primaryGold,
+                label: const Text(
+                  'Agendar Cita',
+                  style: TextStyle(color: AppColors.textDark),
+                ),
+                icon: const Icon(
+                  Icons.calendar_today,
+                  color: AppColors.textDark,
+                ),
+              ),
               floatingActionButtonLocation:
                   FloatingActionButtonLocation.centerFloat,
               body: Container(

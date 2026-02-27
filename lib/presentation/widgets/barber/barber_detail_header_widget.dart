@@ -8,6 +8,7 @@ import '../common/app_badge.dart';
 import '../common/social_media_links_widget.dart';
 import '../common/favorite_button.dart';
 import 'package:share_plus/share_plus.dart';
+import 'barber_qr_share_sheet.dart';
 
 /// Widget para el header del detalle del barbero
 class BarberDetailHeaderWidget extends StatelessWidget {
@@ -219,7 +220,35 @@ class BarberDetailHeaderWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 16),
                         ],
-                        // Opción Compartir deshabilitada temporalmente (deep link / web pendiente)
+                        // QR Code Button
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => BarberQrShareSheet.show(
+                              context,
+                              barber.id,
+                              barber.name,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: AppColors.primaryGold,
+                                  width: 1.5,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.qr_code_2,
+                                color: AppColors.primaryGold,
+                                size: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Opción Compartir
                         Material(
                           color: Colors.transparent,
                           child: InkWell(
