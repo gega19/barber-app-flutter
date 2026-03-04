@@ -1,7 +1,7 @@
 name: barber_app
 description: Barber Appointment App - Aplicación móvil para reservas de citas en barbería
 publish_to: "none"
-version: 1.0.6+12
+version: 1.0.7+13
 
 environment:
   sdk: ^3.9.0

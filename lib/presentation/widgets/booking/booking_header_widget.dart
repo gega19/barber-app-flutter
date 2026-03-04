@@ -8,10 +8,7 @@ import '../common/app_avatar.dart';
 class BookingHeaderWidget extends StatelessWidget {
   final BarberEntity barber;
 
-  const BookingHeaderWidget({
-    super.key,
-    required this.barber,
-  });
+  const BookingHeaderWidget({super.key, required this.barber});
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +35,13 @@ class BookingHeaderWidget extends StatelessWidget {
                 size: 20,
               ),
             ),
-            onPressed: () => context.pop(),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
           ),
           const SizedBox(width: 12),
           AppAvatar(
@@ -86,4 +89,3 @@ class BookingHeaderWidget extends StatelessWidget {
     );
   }
 }
-

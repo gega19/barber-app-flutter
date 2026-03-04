@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../domain/entities/appointment_entity.dart';
 import '../../../../domain/entities/user_entity.dart';
@@ -77,7 +78,11 @@ class AppointmentActionsSection extends StatelessWidget {
 
       if (success && context.mounted) {
         if (_isBarber) {
-          Navigator.of(context).pop();
+          if (context.canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/home');
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -85,7 +90,11 @@ class AppointmentActionsSection extends StatelessWidget {
               backgroundColor: AppColors.success,
             ),
           );
-          Navigator.of(context).pop();
+          if (context.canPop()) {
+            Navigator.of(context).pop();
+          } else {
+            context.go('/home');
+          }
         }
       }
     }

@@ -47,10 +47,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.backgroundDark,
-              AppColors.backgroundCardDark,
-            ],
+            colors: [AppColors.backgroundDark, AppColors.backgroundCardDark],
           ),
         ),
         child: SafeArea(
@@ -62,8 +59,17 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                      onPressed: () => context.pop(),
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: AppColors.textPrimary,
+                      ),
+                      onPressed: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -141,11 +147,26 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            _buildSummaryRow('Fecha', DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(widget.date), Icons.calendar_today),
+                            _buildSummaryRow(
+                              'Fecha',
+                              DateFormat(
+                                'EEEE, d MMMM yyyy',
+                                'es_ES',
+                              ).format(widget.date),
+                              Icons.calendar_today,
+                            ),
                             const SizedBox(height: 12),
-                            _buildSummaryRow('Hora', widget.time, Icons.access_time),
+                            _buildSummaryRow(
+                              'Hora',
+                              widget.time,
+                              Icons.access_time,
+                            ),
                             const SizedBox(height: 12),
-                            _buildSummaryRow('Total', '\$${widget.price.toStringAsFixed(2)}', Icons.attach_money),
+                            _buildSummaryRow(
+                              'Total',
+                              '\$${widget.price.toStringAsFixed(2)}',
+                              Icons.attach_money,
+                            ),
                           ],
                         ),
                       ),
@@ -240,8 +261,12 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: AppButton(
-                          text: _isCreating ? 'Creando cita...' : 'Confirmar cita',
-                          onPressed: (_isUploading || _isCreating) ? null : _confirmAppointment,
+                          text: _isCreating
+                              ? 'Creando cita...'
+                              : 'Confirmar cita',
+                          onPressed: (_isUploading || _isCreating)
+                              ? null
+                              : _confirmAppointment,
                           isLoading: _isCreating,
                         ),
                       ),
@@ -261,10 +286,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
     if (config == null || config.isEmpty) {
       return Text(
         'No hay información adicional disponible',
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 14,
-        ),
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
       );
     }
 
@@ -328,10 +350,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
             width: 100,
             child: Text(
               '$label:',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
             ),
           ),
           Expanded(
@@ -357,10 +376,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
           ),
         ),
         Text(
@@ -419,7 +435,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
     try {
       // Upload proof
       final proofUrl = await _uploadDataSource.uploadFile(_selectedProof!);
-      
+
       if (!mounted) return;
 
       setState(() {
@@ -446,4 +462,3 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
     }
   }
 }
-

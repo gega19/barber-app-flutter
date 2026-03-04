@@ -335,7 +335,11 @@ class _BookingScreenState extends State<BookingScreen> {
           backgroundColor: AppColors.success,
         ),
       );
-      context.pop();
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
     } else {
       final state = appointmentCubit.state;
       if (state is AppointmentError) {

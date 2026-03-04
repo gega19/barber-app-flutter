@@ -17,7 +17,10 @@ class WorkplaceDetailHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: workplace.instagramUrl != null || workplace.tiktokUrl != null ? 340 : 300,
+      expandedHeight:
+          workplace.instagramUrl != null || workplace.tiktokUrl != null
+          ? 340
+          : 300,
       pinned: true,
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -106,7 +109,13 @@ class WorkplaceDetailHeaderWidget extends StatelessWidget {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(20),
-                      onTap: () => context.pop(),
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          context.go('/home');
+                        }
+                      },
                       child: const Center(
                         child: Icon(
                           Icons.arrow_back,
@@ -218,7 +227,9 @@ class WorkplaceDetailHeaderWidget extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                    if (WorkplaceUtils.isTopWorkplace(workplace))
+                                    if (WorkplaceUtils.isTopWorkplace(
+                                      workplace,
+                                    ))
                                       AppBadge(
                                         text: 'Top',
                                         type: BadgeType.primary,
