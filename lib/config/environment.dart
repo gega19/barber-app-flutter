@@ -24,7 +24,8 @@ class Environment {
       // Default fallback to Prod if not manually initialized (safety)
       return AppConfig(
         environment: EnvironmentType.prod,
-        apiBaseUrl: 'https://barber-api.corporacionceg.com',
+        // apiBaseUrl: 'https://barber-api.corporacionceg.com',
+        apiBaseUrl: 'http://10.16.1.134:3000',
         enableAnalytics: true,
       );
     }

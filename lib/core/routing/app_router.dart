@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../presentation/screens/auth/login_screen.dart';
+import '../../presentation/screens/auth/forgot_password_screen.dart';
 import '../../presentation/screens/main/main_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/barber/barber_detail_screen.dart';
@@ -163,9 +164,9 @@ GoRouter createAppRouter() {
       final authState = authCubit.state;
       final isOnboarding = state.matchedLocation == '/onboarding';
       final isLoggingIn = state.matchedLocation == '/login';
-
-      final isAuthenticated =
-          authState is AuthAuthenticated || authState is AuthProfileUpdateError;
+      final isForgotPassword = state.matchedLocation == '/forgot-password';
+      
+      final isAuthenticated = authState is AuthAuthenticated || authState is AuthProfileUpdateError;
       final isLoading = authState is AuthLoading;
 
       // Verificar si el onboarding ya se completó
@@ -189,11 +190,8 @@ GoRouter createAppRouter() {
       if (isAuthenticated && isLoggingIn) {
         return '/home';
       }
-
-      if (!isAuthenticated &&
-          !isLoading &&
-          !isLoggingIn &&
-          onboardingCompleted) {
+      
+      if (!isAuthenticated && !isLoading && !isLoggingIn && !isForgotPassword && onboardingCompleted) {
         return '/login';
       }
 
@@ -301,7 +299,14 @@ GoRouter createAppRouter() {
         builder: (context, state) =>
             BlocProvider.value(value: authCubit, child: const LoginScreen()),
       ),
-      GoRoute(path: '/home', builder: (context, state) => const MainScreen()),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => const MainScreen(),
+      ),
       GoRoute(
         path: '/barber/:id',
         builder: (context, state) {

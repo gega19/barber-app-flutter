@@ -50,6 +50,8 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> confirmPhoneVerification(String phone, String code);
 
   Future<void> deleteAccount({required String password});
+
+  Future<void> requestPasswordResetCode({required String email});
 }
 
 /// Respuesta de autenticación del backend
@@ -190,6 +192,42 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ServerException('Error desconocido: ${e.message}');
     } catch (e) {
       appLogger.e('Unexpected error in register', error: e);
+      throw ServerException('Error inesperado: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<void> requestPasswordResetCode({required String email}) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/auth/request-password-reset-code',
+        data: {'email': email},
+      );
+
+      if (response.statusCode != 200) {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error al enviar código',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('RequestPasswordResetCode error: ${e.message}', error: e);
+
+      if (e.response != null) {
+        final message = _extractErrorMessage(e.response!.data);
+        throw ServerException(message);
+      }
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        throw NetworkException('Error de conexión. Verifica tu internet.');
+      }
+
+      throw ServerException('Error desconocido: ${e.message}');
+    } catch (e) {
+      appLogger.e('Unexpected error in requestPasswordResetCode', error: e);
       throw ServerException('Error inesperado: ${e.toString()}');
     }
   }
@@ -543,6 +581,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'La contraseña debe tener al menos 8 caracteres',
       'User already exists': 'El usuario ya existe',
       'User not found': 'Usuario no encontrado',
+      'User not found with this email': 'No existe usuario con ese correo',
       'Invalid credentials': 'Credenciales inválidas',
       'Invalid password': 'Contraseña inválida',
       'Email already registered': 'El correo electrónico ya está registrado',
