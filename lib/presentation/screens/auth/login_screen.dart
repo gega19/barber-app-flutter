@@ -451,6 +451,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 isRegister: !_isLogin,
                               ),
                             ),
+                            if (_isLogin) ...[
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: TextButton(
+                                  onPressed: () => context.push('/forgot-password'),
+                                  child: const Text(
+                                    '¿Olvidaste tu contraseña?',
+                                    style: TextStyle(
+                                      color: AppColors.primaryGold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                            ],
                             const SizedBox(height: 16),
                             // Remember me / Terms block with smooth animation
                             AnimatedSize(
