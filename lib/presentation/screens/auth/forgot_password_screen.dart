@@ -46,7 +46,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           backgroundColor: AppColors.primaryGold,
         ),
       );
-      context.pop();
+      final email = _emailController.text.trim();
+      context.push('/reset-password-otp?email=$email');
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

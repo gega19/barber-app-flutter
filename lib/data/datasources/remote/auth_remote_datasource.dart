@@ -52,6 +52,8 @@ abstract class AuthRemoteDataSource {
   Future<void> deleteAccount({required String password});
 
   Future<void> requestPasswordResetCode({required String email});
+
+  Future<void> changePassword({required String newPassword});
 }
 
 /// Respuesta de autenticación del backend
@@ -615,8 +617,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       }
     }
 
-    // Si no hay traducción, devolver el mensaje original
     return message;
+  }
+
+  @override
+  Future<void> changePassword({required String newPassword}) async {
+    try {
+      await dio.put(
+        '${AppConstants.baseUrl}/api/auth/change-password',
+        data: {'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      if (e.response != null) {
+        final message = _extractErrorMessage(e.response!.data);
+        throw ServerException(message);
+      }
+      throw ServerException('Error desconocido al cambiar la contraseña');
+    } catch (e) {
+      throw ServerException('Error inesperado: ${e.toString()}');
+    }
   }
 }
 

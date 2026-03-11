@@ -16,6 +16,7 @@ class UserModel extends UserEntity {
     super.role,
     super.isBarber,
     super.barberId,
+    super.mustUpdatePassword,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -36,6 +37,7 @@ class UserModel extends UserEntity {
       role: json['role'] as String? ?? 'CLIENT',
       isBarber: json['isBarber'] as bool? ?? false,
       barberId: json['barberId'] as String?,
+      mustUpdatePassword: json['mustUpdatePassword'] as bool? ?? false,
     );
   }
 
@@ -54,6 +56,7 @@ class UserModel extends UserEntity {
       'role': role,
       'isBarber': isBarber,
       'barberId': barberId,
+      'mustUpdatePassword': mustUpdatePassword,
     };
   }
 
@@ -72,6 +75,41 @@ class UserModel extends UserEntity {
       role: entity.role,
       isBarber: entity.isBarber,
       barberId: entity.barberId,
+      mustUpdatePassword: entity.mustUpdatePassword,
+    );
+  }
+
+  UserModel copyWith({
+    String? id,
+    String? name,
+    String? email,
+    String? avatar,
+    String? avatarSeed,
+    String? phone,
+    bool? phoneVerified,
+    String? location,
+    String? country,
+    String? gender,
+    String? role,
+    bool? isBarber,
+    String? barberId,
+    bool? mustUpdatePassword,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      email: email ?? this.email,
+      avatar: avatar ?? this.avatar,
+      avatarSeed: avatarSeed ?? this.avatarSeed,
+      phone: phone ?? this.phone,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
+      location: location ?? this.location,
+      country: country ?? this.country,
+      gender: gender ?? this.gender,
+      role: role ?? this.role,
+      isBarber: isBarber ?? this.isBarber,
+      barberId: barberId ?? this.barberId,
+      mustUpdatePassword: mustUpdatePassword ?? this.mustUpdatePassword,
     );
   }
 }

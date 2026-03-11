@@ -15,6 +15,7 @@ class UserEntity extends Equatable {
   final String role;
   final bool isBarber;
   final String? barberId;
+  final bool mustUpdatePassword;
 
   const UserEntity({
     required this.id,
@@ -30,6 +31,7 @@ class UserEntity extends Equatable {
     this.role = 'CLIENT',
     this.isBarber = false,
     this.barberId,
+    this.mustUpdatePassword = false,
   });
 
   @override
@@ -47,5 +49,6 @@ class UserEntity extends Equatable {
     role,
     isBarber,
     barberId,
+    mustUpdatePassword,
   ];
 }

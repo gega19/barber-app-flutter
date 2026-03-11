@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/forgot_password_screen.dart';
+import '../../presentation/screens/auth/reset_password_otp_screen.dart';
+import '../../presentation/screens/auth/force_change_password_screen.dart';
 import '../../presentation/screens/main/main_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/barber/barber_detail_screen.dart';
@@ -175,8 +177,15 @@ GoRouter createAppRouter() {
       // Si viene con parámetro return, permitir ver el onboarding aunque esté completado
       final hasReturnParam = state.uri.queryParameters.containsKey('return');
 
+      final isRequirePasswordChange = authState is AuthRequiresPasswordChange;
+      final isForceChangeScreen = state.matchedLocation == '/force-change-password';
+
+      if (isRequirePasswordChange && !isForceChangeScreen) {
+        return '/force-change-password';
+      }
+
       // Si no ha completado el onboarding y no está en la pantalla de onboarding, redirigir
-      if (!onboardingCompleted && !isOnboarding && !isLoading) {
+      if (!onboardingCompleted && !isOnboarding && !isLoading && !isRequirePasswordChange) {
         return '/onboarding';
       }
 
@@ -187,11 +196,12 @@ GoRouter createAppRouter() {
         return isAuthenticated ? '/home' : '/login';
       }
 
-      if (isAuthenticated && isLoggingIn) {
+      if (isAuthenticated && (isLoggingIn || isForceChangeScreen || state.matchedLocation == '/reset-password-otp')) {
         return '/home';
       }
       
-      if (!isAuthenticated && !isLoading && !isLoggingIn && !isForgotPassword && onboardingCompleted) {
+      final isResetOtpScreen = state.matchedLocation == '/reset-password-otp';
+      if (!isAuthenticated && !isLoading && !isLoggingIn && !isForgotPassword && !isResetOtpScreen && !isRequirePasswordChange && onboardingCompleted) {
         return '/login';
       }
 
@@ -302,6 +312,23 @@ GoRouter createAppRouter() {
       GoRoute(
         path: '/forgot-password',
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/reset-password-otp',
+        builder: (context, state) {
+          final email = state.uri.queryParameters['email'] ?? '';
+          return BlocProvider.value(
+            value: authCubit,
+            child: ResetPasswordOtpScreen(email: email),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/force-change-password',
+        builder: (context, state) => BlocProvider.value(
+          value: authCubit,
+          child: const ForceChangePasswordScreen(),
+        ),
       ),
       GoRoute(
         path: '/home',

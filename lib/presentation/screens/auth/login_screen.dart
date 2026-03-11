@@ -451,23 +451,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 isRegister: !_isLogin,
                               ),
                             ),
-                            if (_isLogin) ...[
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () => context.push('/forgot-password'),
-                                  child: const Text(
-                                    '¿Olvidaste tu contraseña?',
-                                    style: TextStyle(
-                                      color: AppColors.primaryGold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                            ],
-                            const SizedBox(height: 16),
+
+                            const SizedBox(height: 5),
                             // Remember me / Terms block with smooth animation
                             AnimatedSize(
                               duration: const Duration(milliseconds: 300),
@@ -584,6 +569,19 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                             ),
                             const SizedBox(height: 16),
+                            if (_isLogin) ...[
+                              TextButton(
+                                onPressed: () =>
+                                    context.push('/forgot-password'),
+                                child: const Text(
+                                  '¿Olvidaste tu contraseña?',
+                                  style: TextStyle(
+                                    color: AppColors.primaryGold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
                             // Button to toggle between login and register
                             TextButton(
                               onPressed: _toggleAuthMode,
@@ -592,7 +590,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ? '¿No tienes cuenta? Regístrate'
                                     : '¿Ya tienes cuenta? Inicia sesión',
                                 style: const TextStyle(
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.primaryGold,
                                 ),
                               ),
                             ),

@@ -25,7 +25,7 @@ class Environment {
       return AppConfig(
         environment: EnvironmentType.prod,
         // apiBaseUrl: 'https://barber-api.corporacionceg.com',
-        apiBaseUrl: 'http://10.16.1.134:3000',
+        apiBaseUrl: 'http://10.16.1.159:3000',
         enableAnalytics: true,
       );
     }

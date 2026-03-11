@@ -62,4 +62,7 @@ abstract class AuthRepository {
 
   /// Verifica si hay una sesión activa
   Future<bool> isAuthenticated();
+
+  /// Cambia la contraseña (cuando se usa código temporal)
+  Future<Either<Failure, void>> changePassword(String newPassword);
 }

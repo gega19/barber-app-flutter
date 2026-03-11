@@ -285,6 +285,29 @@ class AuthRepositoryImpl implements AuthRepository {
     return token != null && token.isNotEmpty;
   }
 
+  @override
+  Future<Either<Failure, void>> changePassword(String newPassword) async {
+    try {
+      await remoteDataSource.changePassword(newPassword: newPassword);
+      
+      // We should also update the local user data to indicate mustUpdatePassword is now false
+      final userDataStr = await localStorage.getUserData();
+      if (userDataStr != null) {
+        final userData = jsonDecode(userDataStr) as Map<String, dynamic>;
+        userData['mustUpdatePassword'] = false;
+        await localStorage.saveUserData(jsonEncode(userData));
+      }
+
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
   String userModelToJson(UserModel user) {
     // Serialización JSON usando el método toJson del modelo
     return jsonEncode(user.toJson());

@@ -20,6 +20,8 @@ import '../../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../../data/datasources/local/local_storage.dart';
 import 'dart:io';
 import 'dart:convert';
+import '../../../domain/repositories/auth_repository.dart';
+import '../../../data/models/user_model.dart';
 
 part 'auth_state.dart';
 
@@ -56,9 +58,13 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await getCurrentUserUseCase();
     result.fold((failure) => emit(AuthInitial()), (user) async {
       if (user != null) {
-        emit(AuthAuthenticated(user));
-        // Registrar token FCM si el usuario está autenticado
-        await _registerFcmToken();
+        if (user.mustUpdatePassword) {
+          emit(AuthRequiresPasswordChange(user));
+        } else {
+          emit(AuthAuthenticated(user));
+          // Registrar token FCM si el usuario está autenticado
+          await _registerFcmToken();
+        }
       } else {
         emit(AuthInitial());
       }
@@ -118,15 +124,19 @@ class AuthCubit extends Cubit<AuthState> {
         print('Error validating biometric credentials: $e');
       }
 
-      emit(AuthAuthenticated(user));
-      // Registrar token FCM después de login exitoso
-      await _registerFcmToken();
-      // Track analytics
-      await analyticsService.trackEvent(
-        eventName: 'user_logged_in',
-        eventType: 'user_action',
-      );
-      await analyticsService.startNewSession();
+      if (user.mustUpdatePassword) {
+        emit(AuthRequiresPasswordChange(user));
+      } else {
+        emit(AuthAuthenticated(user));
+        // Registrar token FCM después de login exitoso
+        await _registerFcmToken();
+        // Track analytics
+        await analyticsService.trackEvent(
+          eventName: 'user_logged_in',
+          eventType: 'user_action',
+        );
+        await analyticsService.startNewSession();
+      }
     });
   }
 
@@ -324,13 +334,47 @@ class AuthCubit extends Cubit<AuthState> {
       await localStorage.saveUserData(jsonEncode(userModel.toJson()));
 
       // Actualizar el estado con el usuario actualizado (UserModel extiende UserEntity)
-      emit(AuthAuthenticated(userModel));
+      if (userModel.mustUpdatePassword) {
+        emit(AuthRequiresPasswordChange(userModel));
+      } else {
+        emit(AuthAuthenticated(userModel));
+      }
     } catch (e) {
       // Silenciosamente fallar - no mostrar errores al usuario
       // Solo loggear en desarrollo
       if (const bool.fromEnvironment('dart.vm.product') == false) {
         print('⚠️ Error al actualizar perfil silenciosamente: $e');
       }
+    }
+  }
+
+  /// Cambia la contraseña obligatoria del usuario
+  Future<void> changePassword(String newPassword) async {
+    final currentState = state;
+    if (currentState is! AuthRequiresPasswordChange) return;
+
+    final user = currentState.user;
+    emit(AuthLoading());
+
+    try {
+      final authRepository = sl<AuthRepository>();
+      final result = await authRepository.changePassword(newPassword);
+
+      result.fold(
+        (failure) => emit(AuthError(failure.message)),
+        (_) async {
+          // If successful, we manually set mustUpdatePassword to false in state to unlock
+          emit(AuthAuthenticated(UserModel.fromEntity(user).copyWith(mustUpdatePassword: false)));
+          await _registerFcmToken();
+          await analyticsService.trackEvent(
+            eventName: 'password_reset_completed',
+            eventType: 'user_action',
+          );
+          await analyticsService.startNewSession();
+        },
+      );
+    } catch (e) {
+      emit(AuthError(e.toString()));
     }
   }
 }

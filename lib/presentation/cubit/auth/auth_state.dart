@@ -20,6 +20,15 @@ class AuthAuthenticated extends AuthState {
   List<Object?> get props => [user];
 }
 
+class AuthRequiresPasswordChange extends AuthState {
+  final UserEntity user;
+
+  const AuthRequiresPasswordChange(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}
+
 class AuthProfileUpdateError extends AuthState {
   final String message;
   final UserEntity user;
