@@ -519,7 +519,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Activity Card
                     SliverToBoxAdapter(
-                      child: const ProfileActivityCardWidget(),
+                      child: ProfileActivityCardWidget(
+                        userBarberId: _isBarber ? _userBarberId : null,
+                      ),
                     ),
                     const SliverToBoxAdapter(child: SizedBox(height: 24)),
                     // Settings Card

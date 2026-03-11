@@ -21,6 +21,8 @@ import '../../../domain/repositories/barber_course_repository.dart';
 import '../../../data/repositories/barber_course_repository_impl.dart';
 import '../../../domain/repositories/competition_repository.dart';
 import '../../../data/repositories/competition_repository_impl.dart';
+import '../../../domain/repositories/barber_dashboard_repository.dart';
+import '../../../data/repositories/barber_dashboard_repository_impl.dart';
 
 /// Módulo para registrar todos los Repositories
 class RepositoriesModule {
@@ -57,6 +59,9 @@ class RepositoriesModule {
     );
     sl.registerLazySingleton<CompetitionRepository>(
       () => CompetitionRepositoryImpl(sl()),
+    );
+    sl.registerLazySingleton<BarberDashboardRepository>(
+      () => BarberDashboardRepositoryImpl(sl()),
     );
   }
 }

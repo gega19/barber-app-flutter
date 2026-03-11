@@ -6,8 +6,13 @@ import '../common/app_card.dart';
 import 'profile_settings_row_widget.dart';
 
 /// Widget para mostrar la tarjeta de "Mi Actividad"
+///
+/// Si [userBarberId] no es null (el usuario es barbero) muestra además
+/// el acceso al Dashboard de analítica.
 class ProfileActivityCardWidget extends StatelessWidget {
-  const ProfileActivityCardWidget({super.key});
+  final String? userBarberId;
+
+  const ProfileActivityCardWidget({super.key, this.userBarberId});
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +41,25 @@ class ProfileActivityCardWidget extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
+                    // ── Dashboard (solo para barberos) ───────────────────
+                    if (userBarberId != null) ...[
+                      ProfileSettingsRowWidget(
+                            icon: Icons.bar_chart_rounded,
+                            title: 'Mi Analítica',
+                            subtitle: 'Ingresos, citas, clientes y más',
+                            onTap: () =>
+                                context.push('/barber-dashboard/$userBarberId'),
+                            iconColor: AppColors.primaryGold,
+                            iconBackgroundColor: AppColors.primaryGold
+                                .withValues(alpha: 0.15),
+                          )
+                          .animate()
+                          .fadeIn(duration: 300.ms)
+                          .slideX(begin: -0.05, end: 0, duration: 300.ms),
+                      Divider(color: AppColors.borderGold),
+                    ],
+
+                    // ── Favoritos (todos los usuarios) ───────────────────
                     ProfileSettingsRowWidget(
                           key: const ValueKey('favorites'),
                           icon: Icons.favorite,
@@ -45,8 +69,9 @@ class ProfileActivityCardWidget extends StatelessWidget {
                             context.push('/favorites');
                           },
                           iconColor: AppColors.primaryGold,
-                          iconBackgroundColor: AppColors.primaryGold
-                              .withOpacity(0.15),
+                          iconBackgroundColor: AppColors.primaryGold.withValues(
+                            alpha: 0.15,
+                          ),
                         )
                         .animate()
                         .fadeIn(duration: 300.ms, delay: 50.ms)

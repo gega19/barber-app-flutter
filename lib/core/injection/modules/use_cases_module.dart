@@ -46,6 +46,7 @@ import '../../../domain/usecases/competition/get_leaderboard_usecase.dart';
 import '../../../domain/usecases/competition/get_my_competition_result_usecase.dart';
 import '../../../domain/usecases/competition/get_barber_top_positions_usecase.dart';
 import '../../../domain/usecases/competition/get_help_rules_usecase.dart';
+import '../../../domain/usecases/barber/barber_dashboard_usecases.dart';
 
 /// Módulo para registrar todos los UseCases
 class UseCasesModule {
@@ -116,5 +117,19 @@ class UseCasesModule {
     sl.registerLazySingleton(() => GetMyCompetitionResultUseCase(sl()));
     sl.registerLazySingleton(() => GetBarberTopPositionsUseCase(sl()));
     sl.registerLazySingleton(() => GetHelpRulesUseCase(sl()));
+
+    // Barber Dashboard UseCases
+    sl.registerLazySingleton(() => GetDailySummaryUseCase(sl()));
+    sl.registerLazySingleton(() => GetMonthlySummaryUseCase(sl()));
+    sl.registerLazySingleton(() => GetRevenueChartUseCase(sl()));
+    sl.registerLazySingleton(() => GetTopServicesUseCase(sl()));
+    sl.registerLazySingleton(() => GetClientStatsUseCase(sl()));
+    sl.registerLazySingleton(() => GetPromotionStatsUseCase(sl()));
+    sl.registerLazySingleton(() => GetProfileViewsUseCase(sl()));
+    sl.registerLazySingleton(() => GetPeakHoursUseCase(sl()));
+    sl.registerLazySingleton(() => GetRatingTrendUseCase(sl()));
+    sl.registerLazySingleton(() => GetRevenueByPaymentMethodUseCase(sl()));
+    sl.registerLazySingleton(() => GetReviewDistributionUseCase(sl()));
+    sl.registerLazySingleton(() => GetRevenueByWeekdayUseCase(sl()));
   }
 }

@@ -12,6 +12,7 @@ import '../../../presentation/cubit/barber_availability/barber_availability_cubi
 import '../../../presentation/cubit/barber_course/barber_course_cubit.dart';
 import '../../../presentation/cubit/map/map_cubit.dart';
 import '../../../presentation/cubit/barber/favorites/favorites_cubit.dart';
+import '../../../presentation/cubit/barber_dashboard/barber_dashboard_cubit.dart';
 
 /// Módulo para registrar todos los Cubits
 class CubitsModule {
@@ -98,6 +99,23 @@ class CubitsModule {
         getWorkplacesUseCase: sl(),
         getNearbyWorkplacesUseCase: sl(),
         locationService: sl(),
+      ),
+    );
+    // BarberDashboardCubit is Factory (per screen)
+    sl.registerFactory(
+      () => BarberDashboardCubit(
+        getDailySummary: sl(),
+        getMonthlySummary: sl(),
+        getRevenueChart: sl(),
+        getTopServices: sl(),
+        getClientStats: sl(),
+        getPromotionStats: sl(),
+        getProfileViews: sl(),
+        getPeakHours: sl(),
+        getRatingTrend: sl(),
+        getRevenueByPaymentMethod: sl(),
+        getReviewDistribution: sl(),
+        getRevenueByWeekday: sl(),
       ),
     );
   }
