@@ -12,6 +12,7 @@ import '../discover/discover_screen.dart';
 import '../map/barbershops_map_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../widgets/home/upcoming_appointment_banner.dart';
 
 /// MainScreen - Root container with bottom navigation
 ///
@@ -60,7 +61,14 @@ class _MainScreenState extends State<MainScreen> {
           });
 
           return Scaffold(
-            body: IndexedStack(index: _currentIndex, children: _screens),
+            body: Column(
+              children: [
+                Expanded(
+                  child: IndexedStack(index: _currentIndex, children: _screens),
+                ),
+                const UpcomingAppointmentBanner(),
+              ],
+            ),
             bottomNavigationBar: Container(
               decoration: BoxDecoration(
                 color: AppColors.backgroundCard,
@@ -103,15 +111,16 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  void _loadTabData(BuildContext context, int index) {
-    // Avoid reloading the same tab
-    if (index == _previousIndex) return;
+  void _loadTabData(BuildContext context, int index, {bool forceRefresh = false}) {
+    // Avoid reloading the same tab unless forced
+    if (index == _previousIndex && !forceRefresh) return;
 
     // Load data based on the selected tab
     switch (index) {
       case 0: // Home
         context.read<BarberCubit>().loadBarbers(reset: true);
         context.read<WorkplaceCubit>().loadWorkplaces();
+        context.read<AppointmentCubit>().loadAppointments();
         break;
       case 1: // Discover
         context.read<PromotionCubit>().loadPromotions();
@@ -142,11 +151,16 @@ class _MainScreenState extends State<MainScreen> {
 
     return InkWell(
       onTap: () {
-        setState(() {
-          _currentIndex = index;
-        });
-        // Load data for new tab
-        _loadTabData(context, index);
+        if (_currentIndex == index) {
+          // If tapping the already active tab, force a refresh
+          _loadTabData(context, index, forceRefresh: true);
+        } else {
+          setState(() {
+            _currentIndex = index;
+          });
+          // Load data for new tab
+          _loadTabData(context, index);
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

@@ -34,7 +34,7 @@ class BarberDetailHeaderWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: tiktokUrl != null || instagramUrl != null ? 280 : 240,
+      expandedHeight: tiktokUrl != null || instagramUrl != null ? 300 : 260,
       pinned: true,
       backgroundColor: AppColors.backgroundCard,
       leading: IconButton(

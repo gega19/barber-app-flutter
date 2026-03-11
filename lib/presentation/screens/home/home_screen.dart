@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
+import '../../cubit/appointment/appointment_cubit.dart';
 import '../../widgets/barber_queue/barber_queue_widget.dart';
 import '../../widgets/home/home_header.dart';
 import '../../widgets/home/home_tabs.dart';
@@ -25,7 +26,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, RouteAware {
   final _searchController = TextEditingController();
   late TabController _tabController;
   Timer? _searchDebounce;
@@ -43,11 +44,21 @@ class _HomeScreenState extends State<HomeScreen>
 
     context.read<BarberCubit>().loadBarbers(reset: true);
     context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
+    context.read<AppointmentCubit>().loadAppointments();
     _requestNotificationPermission();
 
     _tabController.addListener(() {
       setState(() {});
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Assuming there is a global route observer or we can inject one.
+    // If not, we can use an alternative approach. For now, let's use the standard one if available, 
+    // but the easiest robust way is just listening to auth or app lifecycle.
+    // However, since we use go_router, let's just make sure AppointmentCubit is reloaded when Auth Changes or we can use the Cubit's stream.
   }
 
   @override
