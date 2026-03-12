@@ -13,10 +13,8 @@ import 'presentation/cubit/auth/auth_cubit.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Default to Prod if not already initialized
-  try {
-    Environment.config;
-  } catch (_) {
+  // Initialize Environment to Prod if not already initialized (e.g., via main_dev.dart)
+  if (!Environment.isInitialized) {
     Environment.init(
       AppConfig(
         environment: EnvironmentType.prod,

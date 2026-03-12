@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -20,11 +21,70 @@ class ResetPasswordOtpScreen extends StatefulWidget {
 class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
+  int _secondsRemaining = 60;
+  bool _canResend = false;
+  late Timer _timer;
+  bool _isResending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  void _startTimer() {
+    setState(() {
+      _secondsRemaining = 60;
+      _canResend = false;
+    });
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsRemaining == 0) {
+        setState(() {
+          _canResend = true;
+          _timer.cancel();
+        });
+      } else {
+        setState(() {
+          _secondsRemaining--;
+        });
+      }
+    });
+  }
 
   @override
   void dispose() {
     _codeController.dispose();
+    _timer.cancel();
     super.dispose();
+  }
+
+  Future<void> _handleResendCode() async {
+    if (!_canResend) return;
+
+    setState(() => _isResending = true);
+    try {
+      await context.read<AuthCubit>().requestPasswordResetCode(widget.email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Código reenviado. Revisa tu correo.'),
+          backgroundColor: AppColors.primaryGold,
+        ),
+      );
+      _startTimer();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al reenviar código: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isResending = false);
+      }
+    }
   }
 
   void _handleSubmit() {
@@ -33,9 +93,9 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
 
     // Call login with the 6-digit code as password
     context.read<AuthCubit>().login(
-          email: widget.email,
-          password: _codeController.text.trim(),
-        );
+      email: widget.email,
+      password: _codeController.text.trim(),
+    );
   }
 
   @override
@@ -59,11 +119,7 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF0F0F0F),
-                Color(0xFF1A1A1A),
-                Color(0xFF000000),
-              ],
+              colors: [Color(0xFF0F0F0F), Color(0xFF1A1A1A), Color(0xFF000000)],
             ),
           ),
           child: SafeArea(
@@ -97,10 +153,20 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Ingresa el código de 6 dígitos que enviamos a:\\n${widget.email}',
+                              'Ingresa el código de 6 dígitos que enviamos a:',
                               style: TextStyle(
                                 color: AppColors.textSecondary.withOpacity(0.9),
-                                fontSize: 14,
+                                fontSize: 12,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              widget.email,
+                              style: const TextStyle(
+                                color: AppColors.primaryGold,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -125,10 +191,39 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                             BlocBuilder<AuthCubit, AuthState>(
                               builder: (context, state) {
                                 final isLoading = state is AuthLoading;
-                                return AppButton(
-                                  text: 'Verificar y Entrar',
-                                  onPressed: isLoading ? null : _handleSubmit,
-                                  isLoading: isLoading,
+                                return Column(
+                                  children: [
+                                    if (_isResending)
+                                      const CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      )
+                                    else
+                                      TextButton(
+                                        onPressed: _canResend
+                                            ? _handleResendCode
+                                            : null,
+                                        child: Text(
+                                          _canResend
+                                              ? 'Reenviar código'
+                                              : 'Reenviar en ${_secondsRemaining}s',
+                                          style: TextStyle(
+                                            color: _canResend
+                                                ? AppColors.primaryGold
+                                                : AppColors.textSecondary,
+                                            fontWeight: _canResend
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ),
+                                    AppButton(
+                                      text: 'Verificar',
+                                      onPressed: isLoading
+                                          ? null
+                                          : _handleSubmit,
+                                      isLoading: isLoading,
+                                    ),
+                                  ],
                                 );
                               },
                             ),
@@ -137,7 +232,9 @@ class _ResetPasswordOtpScreenState extends State<ResetPasswordOtpScreen> {
                               onPressed: () => context.pop(),
                               child: const Text(
                                 'Volver',
-                                style: TextStyle(color: AppColors.textSecondary),
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
                             ),
                           ],

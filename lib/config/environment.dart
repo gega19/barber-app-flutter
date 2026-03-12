@@ -19,13 +19,14 @@ class Environment {
     _config = config;
   }
 
+  static bool get isInitialized => _config != null;
+
   static AppConfig get config {
     if (_config == null) {
       // Default fallback to Prod if not manually initialized (safety)
       return AppConfig(
         environment: EnvironmentType.prod,
-        // apiBaseUrl: 'https://barber-api.corporacionceg.com',
-        apiBaseUrl: 'http://10.16.1.159:3000',
+        apiBaseUrl: 'https://barber-api.corporacionceg.com',
         enableAnalytics: true,
       );
     }

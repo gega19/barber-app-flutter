@@ -15,7 +15,7 @@ import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/analytics_service.dart';
-import '../../../core/injection/injection.dart';
+import '../../../core/injection/injection.dart' as injection;
 import '../../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../../data/datasources/local/local_storage.dart';
 import 'dart:io';
@@ -37,7 +37,7 @@ class AuthCubit extends Cubit<AuthState> {
   final ConfirmPhoneVerificationUseCase confirmPhoneVerificationUseCase;
   final FcmTokenRepository fcmTokenRepository;
   final NotificationService notificationService;
-  final AnalyticsService analyticsService = sl<AnalyticsService>();
+  final AnalyticsService analyticsService = injection.sl<AnalyticsService>();
 
   AuthCubit({
     required this.loginUseCase,
@@ -325,8 +325,8 @@ class AuthCubit extends Cubit<AuthState> {
 
     try {
       // Obtener usuario actualizado del servidor directamente
-      final authRemoteDataSource = sl<AuthRemoteDataSource>();
-      final localStorage = sl<LocalStorage>();
+      final authRemoteDataSource = injection.sl<AuthRemoteDataSource>();
+      final localStorage = injection.sl<LocalStorage>();
 
       final userModel = await authRemoteDataSource.getCurrentUser();
 
@@ -357,7 +357,7 @@ class AuthCubit extends Cubit<AuthState> {
     emit(AuthLoading());
 
     try {
-      final authRepository = sl<AuthRepository>();
+      final authRepository = injection.sl<AuthRepository>();
       final result = await authRepository.changePassword(newPassword);
 
       result.fold(
@@ -375,6 +375,18 @@ class AuthCubit extends Cubit<AuthState> {
       );
     } catch (e) {
       emit(AuthError(e.toString()));
+    }
+  }
+  /// Solicita un código de recuperación de contraseña (usado para reenvío)
+  Future<void> requestPasswordResetCode(String email) async {
+    try {
+      final authRemoteDataSource = injection.sl<AuthRemoteDataSource>();
+      await authRemoteDataSource.requestPasswordResetCode(email: email);
+      // No emitimos un nuevo estado aquí para no interrumpir el flujo de ingreso de código
+    } catch (e) {
+      // Si falla el reenvío, podemos emitir un error si es necesario, 
+      // pero usualmente es mejor manejarlo localmente en la pantalla para no perder el estado.
+      rethrow;
     }
   }
 }
