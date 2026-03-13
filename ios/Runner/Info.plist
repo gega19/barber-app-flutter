@@ -47,6 +47,14 @@
 		<true/>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Usamos Face ID para autenticarte de forma segura</string>
+		<key>NSCameraUsageDescription</key>
+		<string>Necesitamos acceso a la camara para tomar fotos o videos en tu perfil y contenido compartido</string>
+		<key>NSPhotoLibraryUsageDescription</key>
+		<string>Necesitamos acceso a tu galeria para que puedas seleccionar imagenes o videos</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>Necesitamos permiso para guardar imagenes o videos generados por la app en tu galeria</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Necesitamos acceso al microfono para capturar audio al grabar video</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>remote-notification</string>
@@ -54,8 +62,8 @@
 		<!-- Permisos de ubicación -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Necesitamos tu ubicación para mostrarte barberías cercanas en el mapa</string>
-		<key>NSLocationAlwaysUsageDescription</key>
-		<string>Necesitamos tu ubicación para mostrarte barberías cercanas en el mapa</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>Necesitamos tu ubicación para mostrarte barberías cercanas en el mapa y mejorar la continuidad del servicio cuando sea necesario</string>
 		<key>UIStatusBarHidden</key>
 		<true/>
 		<key>UIViewControllerBasedStatusBarAppearance</key>
@@ -63,7 +71,7 @@
 		<key>NSAppTransportSecurity</key>
 		<dict>
 			<key>NSAllowsArbitraryLoads</key>
-			<true/>
+			<false/>
 		</dict>
 		<key>LSApplicationQueriesSchemes</key>
 		<array>
@@ -76,7 +84,7 @@
 			<string>mailto</string>
             <string>whatsapp</string>
 		</array>
-		<!-- Firebase Phone Auth: reemplaza REVERSED_CLIENT_ID por el valor de GoogleService-Info.plist (clave REVERSED_CLIENT_ID). Si no existe, activa Google Sign-In en Firebase y vuelve a descargar el plist. -->
+		<!-- URL scheme interno de la app. Si Firebase iOS agrega REVERSED_CLIENT_ID en GoogleService-Info.plist, incluirlo aqui para flujos que lo requieran. -->
 		<key>CFBundleURLTypes</key>
 		<array>
 			<dict>
@@ -84,7 +92,6 @@
 				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>REVERSED_CLIENT_ID</string>
                     <string>bartop</string>
 				</array>
 			</dict>
