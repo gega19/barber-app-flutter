@@ -194,8 +194,8 @@ GoRouter createAppRouter() {
       // Si ya completó el onboarding y está en la pantalla de onboarding (sin return param), redirigir
       // Pero si tiene return param, permitir verlo (viene del perfil)
       if (onboardingCompleted && isOnboarding && !hasReturnParam) {
-        // Si está autenticado, ir a home, si no, a login
-        return isAuthenticated ? '/home' : '/login';
+        // Invitados pueden usar el catálogo; login solo para funciones de cuenta.
+        return '/home';
       }
 
       if (isAuthenticated && (isLoggingIn || isForceChangeScreen || state.matchedLocation == '/reset-password-otp')) {
@@ -203,10 +203,18 @@ GoRouter createAppRouter() {
       }
       
       final isResetOtpScreen = state.matchedLocation == '/reset-password-otp';
-      if (!isAuthenticated && !isLoading && !isLoggingIn && !isForgotPassword && !isResetOtpScreen && !isRequirePasswordChange && onboardingCompleted) {
-        return '/login';
+      
+      // Permitir acceso de invitado a rutas públicas (MainScreen y subrutas)
+      // Solo forzamos el login si intenta ir a rutas estrictamente protegidas
+      // Las rutas protegidas (citas, perfil) se manejarán a nivel UI en MainScreen
+      
+      // Si el usuario intentó ir explícitamente a /login o /forgot-password u /onboarding, lo permitimos
+      if (isLoggingIn || isForgotPassword || isResetOtpScreen || isOnboarding) {
+        return null;
       }
-
+      
+      // Si estamos en cualquier otra ruta y no estamos autenticados, simplemente permitimos 
+      // navegar. El estado "AuthInitial" o "AuthUnauthenticated" representará a un Invitado.
       return null;
     },
     refreshListenable: authNotifier,

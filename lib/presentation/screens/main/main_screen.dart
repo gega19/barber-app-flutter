@@ -7,12 +7,14 @@ import '../../cubit/appointment/appointment_cubit.dart';
 import '../../cubit/promotion/promotion_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
 import '../../cubit/map/map_cubit.dart';
+import '../../cubit/auth/auth_cubit.dart';
 import '../home/home_screen.dart';
 import '../discover/discover_screen.dart';
 import '../map/barbershops_map_screen.dart';
 import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../widgets/home/upcoming_appointment_banner.dart';
+import '../../widgets/auth/guest_login_prompt.dart';
 
 /// MainScreen - Root container with bottom navigation
 ///
@@ -151,6 +153,22 @@ class _MainScreenState extends State<MainScreen> {
 
     return InkWell(
       onTap: () {
+        // Verificar si es invitado intentando acceder a rutas protegidas
+        if (index == 3 || index == 4) {
+          final authState = context.read<AuthCubit>().state;
+          final isAuthenticated = authState is AuthAuthenticated;
+          
+          if (!isAuthenticated) {
+            GuestLoginPrompt.show(
+              context, 
+              message: index == 3 
+                ? 'Regístrate o inicia sesión para gestionar tus citas médicas o de barbería.'
+                : 'Crea tu perfil para guardar tus barberos favoritos y ver tu historial.',
+            );
+            return;
+          }
+        }
+
         if (_currentIndex == index) {
           // If tapping the already active tab, force a refresh
           _loadTabData(context, index, forceRefresh: true);

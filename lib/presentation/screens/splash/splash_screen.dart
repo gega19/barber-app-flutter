@@ -91,15 +91,16 @@ class _SplashScreenState extends State<SplashScreen> {
           context.go('/home');
         }
       } else {
+        // Modo Invitado: Si no está autenticado pero completó el onboarding, ir a Home
         if (mounted) {
-          context.go('/login');
+          context.go('/home');
         }
       }
     } catch (e) {
       debugPrint('❌ Error initializing app: $e');
-      // En caso de error, redirigir a login
+      // En caso de error, preferimos ir a Home (Modo Invitado) en lugar de bloquear en Login
       if (mounted) {
-        context.go('/login');
+        context.go('/home');
       }
     }
   }

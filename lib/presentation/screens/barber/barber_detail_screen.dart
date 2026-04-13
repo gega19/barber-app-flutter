@@ -23,6 +23,7 @@ import '../../cubit/barber/barber_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
 import '../../cubit/review/review_cubit.dart';
 
+import '../../widgets/auth/guest_login_prompt.dart';
 import '../../widgets/common/app_card.dart';
 import '../../widgets/reviews/reviews_tab.dart';
 import '../../widgets/barber/barber_detail_header_widget.dart';
@@ -314,8 +315,17 @@ class _BarberDetailScreenState extends State<BarberDetailScreen>
           children: [
             Scaffold(
               floatingActionButton: FloatingActionButton.extended(
-                onPressed: () =>
-                    context.push('/booking/${barber!.id}', extra: barber),
+                onPressed: () {
+                  final authState = context.read<AuthCubit>().state;
+                  if (authState is! AuthAuthenticated) {
+                    GuestLoginPrompt.show(
+                      context,
+                      message: 'Inicia sesión o regístrate para agendar una cita con este especialista.',
+                    );
+                    return;
+                  }
+                  context.push('/booking/${barber!.id}', extra: barber);
+                },
                 backgroundColor: AppColors.primaryGold,
                 label: const Text(
                   'Agendar Cita',

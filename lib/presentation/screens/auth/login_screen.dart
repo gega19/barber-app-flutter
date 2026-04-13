@@ -582,6 +582,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ],
+                            TextButton(
+                              onPressed: () => context.go('/home'),
+                              child: Text(
+                                'Explorar sin cuenta',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary.withValues(
+                                    alpha: 0.95,
+                                  ),
+                                  fontSize: 14,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: AppColors.textSecondary
+                                      .withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ),
                             // Button to toggle between login and register
                             TextButton(
                               onPressed: _toggleAuthMode,

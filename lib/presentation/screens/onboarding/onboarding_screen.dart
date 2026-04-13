@@ -49,7 +49,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _skipOnboarding() async {
     await _markOnboardingAsCompleted();
     if (mounted) {
-      final route = widget.returnRoute ?? '/login';
+      // Apple 5.1.1(v): no forzar registro para ver información de servicios.
+      final route = widget.returnRoute ?? '/home';
       context.go(route);
     }
   }
@@ -57,7 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _getStarted() async {
     await _markOnboardingAsCompleted();
     if (mounted) {
-      final route = widget.returnRoute ?? '/login';
+      final route = widget.returnRoute ?? '/home';
       context.go(route);
     }
   }
