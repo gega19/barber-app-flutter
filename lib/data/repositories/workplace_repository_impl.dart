@@ -27,9 +27,13 @@ class WorkplaceRepositoryImpl implements WorkplaceRepository {
   @override
   Future<Either<Failure, List<WorkplaceEntity>>> getWorkplaces({
     int? limit,
+    String? country,
   }) async {
     try {
-      final workplaces = await remoteDataSource.getWorkplaces(limit: limit);
+      final workplaces = await remoteDataSource.getWorkplaces(
+        limit: limit,
+        country: country,
+      );
       return Right(workplaces);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -44,11 +48,13 @@ class WorkplaceRepositoryImpl implements WorkplaceRepository {
   Future<Either<Failure, WorkplaceListResult>> getBestWorkplacesWithTotal({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     try {
       final result = await remoteDataSource.getBestWorkplacesWithMetadata(
         limit: limit,
         offset: offset,
+        country: country,
       );
       final list = result['workplaces'] as List;
       final total = result['total'] as int;
@@ -69,10 +75,14 @@ class WorkplaceRepositoryImpl implements WorkplaceRepository {
 
   @override
   Future<Either<Failure, List<WorkplaceEntity>>> searchWorkplaces(
-    String query,
-  ) async {
+    String query, {
+    String? country,
+  }) async {
     try {
-      final workplaces = await remoteDataSource.searchWorkplaces(query);
+      final workplaces = await remoteDataSource.searchWorkplaces(
+        query,
+        country: country,
+      );
       return Right(workplaces);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -102,12 +112,14 @@ class WorkplaceRepositoryImpl implements WorkplaceRepository {
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
+    String? country,
   }) async {
     try {
       final workplaces = await remoteDataSource.getNearbyWorkplaces(
         latitude: latitude,
         longitude: longitude,
         radiusKm: radiusKm,
+        country: country,
       );
       return Right(workplaces);
     } on ServerException catch (e) {

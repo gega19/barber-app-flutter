@@ -11,7 +11,12 @@ class GetBestBarbersUseCase {
   Future<Either<Failure, List<BarberEntity>>> call({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
-    return await repository.getBestBarbers(limit: limit, offset: offset);
+    return await repository.getBestBarbers(
+      limit: limit,
+      offset: offset,
+      country: country,
+    );
   }
 }

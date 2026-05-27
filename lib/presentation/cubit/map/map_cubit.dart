@@ -5,6 +5,8 @@ import '../../../domain/entities/workplace_entity.dart';
 import '../../../domain/usecases/workplace/get_workplaces_usecase.dart';
 import '../../../domain/usecases/workplace/get_nearby_workplaces_usecase.dart';
 import '../../../core/services/location_service.dart';
+import '../../../core/services/effective_country_code_resolver.dart';
+import '../auth/auth_cubit.dart';
 
 part 'map_state.dart';
 
@@ -12,12 +14,19 @@ class MapCubit extends Cubit<MapState> {
   final GetWorkplacesUseCase getWorkplacesUseCase;
   final GetNearbyWorkplacesUseCase getNearbyWorkplacesUseCase;
   final LocationService locationService;
+  final AuthCubit authCubit;
+  final EffectiveCountryCodeResolver effectiveCountryCodeResolver;
 
   MapCubit({
     required this.getWorkplacesUseCase,
     required this.getNearbyWorkplacesUseCase,
     required this.locationService,
+    required this.authCubit,
+    required this.effectiveCountryCodeResolver,
   }) : super(MapInitial());
+
+    Future<String> _countryFilter() =>
+      effectiveCountryCodeResolver.resolveForAuthStateAsync(authCubit.state);
 
   /// Carga todas las barberías
   Future<void> loadWorkplaces({bool showLoading = true}) async {
@@ -28,7 +37,7 @@ class MapCubit extends Cubit<MapState> {
       emit(MapLoading());
     }
 
-    final result = await getWorkplacesUseCase();
+    final result = await getWorkplacesUseCase(country: await _countryFilter());
 
     if (isClosed) return;
 
@@ -82,6 +91,7 @@ class MapCubit extends Cubit<MapState> {
       latitude: latitude,
       longitude: longitude,
       radiusKm: radiusKm,
+      country: await _countryFilter(),
     );
 
     if (isClosed) return;

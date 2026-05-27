@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../cubit/appointment/appointment_cubit.dart';
+import '../../cubit/auth/auth_cubit.dart';
 import '../../../domain/entities/appointment_entity.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/appointment_shop_time.dart';
 
 class UpcomingAppointmentBanner extends StatefulWidget {
   const UpcomingAppointmentBanner({super.key});
@@ -26,67 +28,41 @@ class _UpcomingAppointmentBannerState extends State<UpcomingAppointmentBanner> {
           apt.status == AppointmentStatus.completed) {
         return false;
       }
-      return _getHoursDiff(apt.date, apt.time) >= 0;
+      return _hoursUntil(apt) >= 0;
     }).toList();
 
     if (upcoming.isEmpty) return null;
 
     // Ordenar por cercanía
     upcoming.sort((a, b) {
-      final diffA = _getHoursDiff(a.date, a.time);
-      final diffB = _getHoursDiff(b.date, b.time);
+      final diffA = _hoursUntil(a);
+      final diffB = _hoursUntil(b);
       return diffA.compareTo(diffB);
     });
 
     final nearest = upcoming.first;
-    // Solo mostramos si faltan menos de 24 horas (y no ha pasado)
-    final diff = _getHoursDiff(nearest.date, nearest.time);
+    final diff = _hoursUntil(nearest);
     if (diff >= 0 && diff <= 24) {
       return nearest;
     }
     return null;
   }
 
-  int _getHoursDiff(DateTime aptDate, String time) {
+  double _hoursUntil(AppointmentEntity apt) {
     try {
-      final parts = time.split(':');
-      final hour = int.parse(parts[0]);
-      final minute = int.parse(parts[1]);
-      // Use local date from API, set hours/mins
-      final appointmentDateTime = DateTime(
-        aptDate.year,
-        aptDate.month,
-        aptDate.day,
-        hour,
-        minute,
-      );
-      final now = DateTime.now();
-
-      // Calculate strict difference
-      final diff = appointmentDateTime.difference(now);
-      return diff.inHours;
+      final end = AppointmentShopTime.utcInstant(apt);
+      return end.difference(DateTime.now().toUtc()).inMilliseconds /
+          (1000 * 60 * 60);
     } catch (_) {
       return -1;
     }
   }
 
-  String _getTimeRemainingLabel(DateTime aptDate, String time) {
+  String _getTimeRemainingLabel(AppointmentEntity apt) {
     try {
-      final parts = time.split(':');
-      final hour = int.parse(parts[0]);
-      final minute = int.parse(parts[1]);
-      final appointmentDateTime = DateTime(
-        aptDate.year,
-        aptDate.month,
-        aptDate.day,
-        hour,
-        minute,
-      );
-      final now = DateTime.now();
+      final diff =
+          AppointmentShopTime.utcInstant(apt).difference(DateTime.now().toUtc());
 
-      final diff = appointmentDateTime.difference(now);
-
-      // Round up hours if there are remaining minutes
       final totalHours = diff.inHours;
       final remainingMinutes = diff.inMinutes % 60;
 
@@ -105,24 +81,43 @@ class _UpcomingAppointmentBannerState extends State<UpcomingAppointmentBanner> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppointmentCubit, AppointmentState>(
-      builder: (context, state) {
-        if (state is AppointmentLoaded) {
-          final nearest = _getNearestAppointment(state.appointments);
-
-          if (nearest != null) {
-            return _buildBanner(context, nearest);
-          }
+    return BlocBuilder<AuthCubit, AuthState>(
+      buildWhen: (previous, current) {
+        final prevIn = previous is AuthAuthenticated ||
+            previous is AuthProfileUpdateError;
+        final currIn =
+            current is AuthAuthenticated || current is AuthProfileUpdateError;
+        return prevIn != currIn || previous.runtimeType != current.runtimeType;
+      },
+      builder: (context, authState) {
+        final signedIn = authState is AuthAuthenticated ||
+            authState is AuthProfileUpdateError;
+        if (!signedIn) {
+          return const SizedBox.shrink();
         }
-        return const SizedBox.shrink();
+
+        return BlocBuilder<AppointmentCubit, AppointmentState>(
+          builder: (context, state) {
+            if (state is AppointmentLoaded) {
+              final nearest = _getNearestAppointment(state.appointments);
+
+              if (nearest != null) {
+                return _buildBanner(context, nearest);
+              }
+            }
+            return const SizedBox.shrink();
+          },
+        );
       },
     );
   }
 
   Widget _buildBanner(BuildContext context, AppointmentEntity apt) {
     final dateFormat = DateFormat('dd MMM', 'es');
+    final ymdParts = apt.dateYmd.split('-').map(int.parse).toList();
+    final dd = DateTime.utc(ymdParts[0], ymdParts[1], ymdParts[2]);
     final barberName = apt.barber?.name ?? 'tu barbero';
-    final timeLabel = _getTimeRemainingLabel(apt.date, apt.time);
+    final timeLabel = _getTimeRemainingLabel(apt);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 2),
@@ -217,7 +212,7 @@ class _UpcomingAppointmentBannerState extends State<UpcomingAppointmentBanner> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${dateFormat.format(apt.date)} a las ${apt.time}',
+                            '${dateFormat.format(dd)} a las ${apt.time}',
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 14,

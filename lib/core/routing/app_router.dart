@@ -37,6 +37,7 @@ import '../../presentation/cubit/barber/barber_cubit.dart';
 import '../../presentation/cubit/workplace/workplace_cubit.dart';
 import '../../presentation/cubit/review/review_cubit.dart';
 import '../../presentation/cubit/payment_method/payment_method_cubit.dart';
+import '../../presentation/cubit/barber_payment_methods/barber_payment_methods_cubit.dart';
 import '../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
 import '../../presentation/cubit/appointment/appointment_cubit.dart';
 import '../../presentation/cubit/barber_course/barber_course_cubit.dart';
@@ -44,6 +45,7 @@ import '../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../presentation/cubit/barber/favorites/favorites_cubit.dart';
 import '../../presentation/cubit/barber_dashboard/barber_dashboard_cubit.dart';
 import '../../presentation/screens/barber/barber_dashboard_screen.dart';
+import '../../presentation/screens/barber/barber_payment_methods_screen.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../core/services/analytics_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -529,6 +531,16 @@ GoRouter createAppRouter() {
           create: (_) => sl<PromotionCubit>(),
           child: const PromotionsListScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/barber-dashboard/:barberId/payment-methods',
+        builder: (context, state) {
+          final barberId = state.pathParameters['barberId']!;
+          return BlocProvider(
+            create: (_) => sl<BarberPaymentMethodsCubit>(),
+            child: BarberPaymentMethodsScreen(barberId: barberId),
+          );
+        },
       ),
       GoRoute(
         path: '/barber-dashboard/:barberId',

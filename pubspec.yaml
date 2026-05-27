@@ -83,6 +83,7 @@ dependencies:
 
   # Permissions
   permission_handler: ^11.3.1
+  timezone: ^0.10.1
 
 dev_dependencies:
   flutter_test:

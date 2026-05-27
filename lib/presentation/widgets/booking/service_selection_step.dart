@@ -13,6 +13,7 @@ class ServiceSelectionStep extends StatelessWidget {
   final bool loadingServices;
   final String? selectedServiceId;
   final PromotionModel? activePromotion;
+  final String? currencySymbol;
   final ValueChanged<String?> onServiceSelected;
 
   const ServiceSelectionStep({
@@ -21,6 +22,7 @@ class ServiceSelectionStep extends StatelessWidget {
     required this.loadingServices,
     required this.selectedServiceId,
     this.activePromotion,
+    this.currencySymbol,
     required this.onServiceSelected,
   });
 
@@ -106,6 +108,7 @@ class ServiceSelectionStep extends StatelessWidget {
               service: service,
               isSelected: selectedServiceId == service.id,
               activePromotion: activePromotion,
+              currencySymbol: currencySymbol,
               onTap: () => onServiceSelected(service.id),
             ),
           )

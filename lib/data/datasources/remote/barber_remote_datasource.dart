@@ -4,14 +4,19 @@ import '../../../core/utils/logger.dart';
 import 'package:dio/dio.dart';
 
 abstract class BarberRemoteDataSource {
-  Future<List<BarberModel>> getBarbers();
-  Future<List<BarberModel>> getBestBarbers({int limit = 10, int offset = 0});
+  Future<List<BarberModel>> getBarbers({String? country});
+  Future<List<BarberModel>> getBestBarbers({
+    int limit = 10,
+    int offset = 0,
+    String? country,
+  });
   Future<Map<String, dynamic>> getBestBarbersWithMetadata({
     int limit = 10,
     int offset = 0,
+    String? country,
   });
   Future<BarberModel> getBarberById(String id);
-  Future<List<BarberModel>> searchBarbers(String query);
+  Future<List<BarberModel>> searchBarbers(String query, {String? country});
   Future<List<BarberModel>> getBarbersByWorkplaceId(String workplaceId);
   Future<Map<String, dynamic>> updateBarberInfo({
     String? specialty,
@@ -38,9 +43,14 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
   BarberRemoteDataSourceImpl(this.dio);
 
   @override
-  Future<List<BarberModel>> getBarbers() async {
+  Future<List<BarberModel>> getBarbers({String? country}) async {
     try {
-      final response = await dio.get('${AppConstants.baseUrl}/api/barbers');
+      final response = await dio.get(
+        '${AppConstants.baseUrl}/api/barbers',
+        queryParameters: {
+          if (country != null && country.isNotEmpty) 'country': country,
+        },
+      );
 
       if (response.statusCode == 200) {
         final data = response.data['data'] as List;
@@ -62,10 +72,12 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
   Future<List<BarberModel>> getBestBarbers({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     final result = await getBestBarbersWithMetadata(
       limit: limit,
       offset: offset,
+      country: country,
     );
     return result['barbers'] as List<BarberModel>;
   }
@@ -74,11 +86,16 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
   Future<Map<String, dynamic>> getBestBarbersWithMetadata({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     try {
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/barbers/best',
-        queryParameters: {'limit': limit, 'offset': offset},
+        queryParameters: {
+          'limit': limit,
+          'offset': offset,
+          if (country != null && country.isNotEmpty) 'country': country,
+        },
       );
 
       if (response.statusCode == 200) {
@@ -126,11 +143,17 @@ class BarberRemoteDataSourceImpl implements BarberRemoteDataSource {
   }
 
   @override
-  Future<List<BarberModel>> searchBarbers(String query) async {
+  Future<List<BarberModel>> searchBarbers(
+    String query, {
+    String? country,
+  }) async {
     try {
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/barbers/search',
-        queryParameters: {'q': query},
+        queryParameters: {
+          'q': query,
+          if (country != null && country.isNotEmpty) 'country': country,
+        },
       );
 
       if (response.statusCode == 200) {

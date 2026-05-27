@@ -3,6 +3,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/promotion_model.dart';
 import '../../../core/utils/booking_utils.dart';
+import '../../../core/utils/price_display.dart';
 import '../common/app_card.dart';
 
 /// Widget para mostrar una tarjeta de servicio individual
@@ -10,6 +11,7 @@ class ServiceCardWidget extends StatelessWidget {
   final ServiceModel service;
   final bool isSelected;
   final PromotionModel? activePromotion;
+  final String? currencySymbol;
   final VoidCallback onTap;
 
   const ServiceCardWidget({
@@ -17,6 +19,7 @@ class ServiceCardWidget extends StatelessWidget {
     required this.service,
     required this.isSelected,
     this.activePromotion,
+    this.currencySymbol,
     required this.onTap,
   });
 
@@ -106,7 +109,7 @@ class ServiceCardWidget extends StatelessWidget {
                     children: [
                       if (hasDiscount)
                         Text(
-                          '\$${service.price.toStringAsFixed(2)}',
+                          PriceDisplay.format(service.price, currencySymbol: currencySymbol),
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 14,
@@ -114,7 +117,7 @@ class ServiceCardWidget extends StatelessWidget {
                           ),
                         ),
                       Text(
-                        '\$${finalPrice.toStringAsFixed(2)}',
+                        PriceDisplay.format(finalPrice, currencySymbol: currencySymbol),
                         style: TextStyle(
                           color: isSelected
                               ? AppColors.primaryGold

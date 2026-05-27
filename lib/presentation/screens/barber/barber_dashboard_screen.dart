@@ -134,6 +134,17 @@ class _BarberDashboardScreenState extends State<BarberDashboardScreen> {
                   label: 'Métodos de pago',
                 ),
                 const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => context.push('/barber-dashboard/${widget.barberId}/payment-methods'),
+                    icon: const Icon(Icons.manage_accounts_rounded, color: Color(0xFFD4AF37)),
+                    label: const Text(
+                      'Gestionar métodos',
+                      style: TextStyle(color: Color(0xFFD4AF37)),
+                    ),
+                  ),
+                ),
                 _PaymentMethodsCard(state: state),
                 const SizedBox(height: 24),
 

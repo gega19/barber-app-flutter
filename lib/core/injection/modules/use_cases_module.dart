@@ -3,6 +3,7 @@ import '../../../domain/usecases/auth/login_usecase.dart';
 import '../../../domain/usecases/auth/register_usecase.dart';
 import '../../../domain/usecases/auth/logout_usecase.dart';
 import '../../../domain/usecases/auth/get_current_user_usecase.dart';
+import '../../../domain/usecases/auth/refresh_current_user_usecase.dart';
 import '../../../domain/usecases/auth/get_user_stats_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
 import '../../../domain/usecases/auth/become_barber_usecase.dart';
@@ -10,7 +11,6 @@ import '../../../domain/usecases/auth/delete_account_usecase.dart';
 import '../../../domain/usecases/auth/send_phone_verification_code_usecase.dart';
 import '../../../domain/usecases/auth/confirm_phone_verification_usecase.dart';
 import '../../../domain/usecases/barber/get_barbers_usecase.dart';
-import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_with_total_usecase.dart';
 import '../../../domain/usecases/barber/search_barbers_usecase.dart';
 import '../../../domain/usecases/barber/toggle_favorite_usecase.dart';
@@ -43,6 +43,7 @@ import '../../../domain/usecases/barber_course/delete_course_usecase.dart';
 import '../../../domain/usecases/competition/get_current_period_usecase.dart';
 import '../../../domain/usecases/competition/get_periods_usecase.dart';
 import '../../../domain/usecases/competition/get_leaderboard_usecase.dart';
+import '../../../domain/usecases/country/get_countries_usecase.dart';
 import '../../../domain/usecases/competition/get_my_competition_result_usecase.dart';
 import '../../../domain/usecases/competition/get_barber_top_positions_usecase.dart';
 import '../../../domain/usecases/competition/get_help_rules_usecase.dart';
@@ -56,6 +57,7 @@ class UseCasesModule {
     sl.registerLazySingleton(() => RegisterUseCase(sl()));
     sl.registerLazySingleton(() => LogoutUseCase(sl()));
     sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
+    sl.registerLazySingleton(() => RefreshCurrentUserUseCase(sl()));
     sl.registerLazySingleton(() => GetUserStatsUseCase(sl()));
     sl.registerLazySingleton(() => UpdateProfileUseCase(sl()));
     sl.registerLazySingleton(() => BecomeBarberUseCase(sl()));
@@ -65,7 +67,9 @@ class UseCasesModule {
 
     // Barber UseCases
     sl.registerLazySingleton(() => GetBarbersUseCase(sl()));
-    sl.registerLazySingleton(() => GetBestBarbersUseCase(sl()));
+    sl.registerLazySingleton(
+      () => GetCountriesUseCase(sl()),
+    );
     sl.registerLazySingleton(() => GetBestBarbersWithTotalUseCase(sl()));
     sl.registerLazySingleton(() => SearchBarbersUseCase(sl()));
     sl.registerLazySingleton(() => ToggleFavoriteUseCase(sl()));

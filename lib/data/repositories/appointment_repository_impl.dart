@@ -76,6 +76,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   }) async {
@@ -86,6 +87,7 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
         date: date,
         time: time,
         paymentMethod: paymentMethod,
+        barberPaymentOptionId: barberPaymentOptionId,
         paymentProof: paymentProof,
         notes: notes,
       );

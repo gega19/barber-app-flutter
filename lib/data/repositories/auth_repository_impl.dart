@@ -52,6 +52,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String name,
     required String email,
     required String password,
+    String? country,
   }) async {
     try {
       // Validación local
@@ -64,6 +65,7 @@ class AuthRepositoryImpl implements AuthRepository {
         name: name,
         email: email,
         password: password,
+        country: country,
       );
 
       // Guardar tokens y usuario

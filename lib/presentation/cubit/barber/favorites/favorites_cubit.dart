@@ -12,6 +12,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     required this.toggleFavoriteUseCase,
   }) : super(FavoritesInitial());
 
+  void clearSession() {
+    emit(FavoritesInitial());
+  }
+
   Future<void> loadFavorites() async {
     emit(FavoritesLoading());
     final result = await getFavoritesUseCase();

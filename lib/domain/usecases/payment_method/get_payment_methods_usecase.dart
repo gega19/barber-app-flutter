@@ -8,8 +8,8 @@ class GetPaymentMethodsUseCase {
 
   GetPaymentMethodsUseCase(this.repository);
 
-  Future<Either<Failure, List<PaymentMethodEntity>>> call() async {
-    return await repository.getPaymentMethods();
+  Future<Either<Failure, List<PaymentMethodEntity>>> call({String? barberId}) async {
+    return await repository.getPaymentMethods(barberId: barberId);
   }
 }
 

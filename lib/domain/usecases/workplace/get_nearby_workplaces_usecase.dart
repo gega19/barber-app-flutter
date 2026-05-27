@@ -12,11 +12,13 @@ class GetNearbyWorkplacesUseCase {
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
+    String? country,
   }) async {
     return await repository.getNearbyWorkplaces(
       latitude: latitude,
       longitude: longitude,
       radiusKm: radiusKm,
+      country: country,
     );
   }
 }

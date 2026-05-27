@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
+import '../../../core/services/effective_country_code_resolver.dart';
 import '../../../core/services/location_service.dart';
 import '../../utils/location_error_dialog.dart';
 import '../map/location_map_picker_screen.dart';
@@ -125,7 +126,12 @@ class _BecomeBarberScreenState extends State<BecomeBarberScreen> {
         _workplacesError = null;
       });
 
-      final workplaces = await sl<WorkplaceRemoteDataSource>().getWorkplaces();
+      final country = sl<EffectiveCountryCodeResolver>().resolveForAuthState(
+        sl<AuthCubit>().state,
+      );
+      final workplaces = await sl<WorkplaceRemoteDataSource>().getWorkplaces(
+        country: country,
+      );
 
       setState(() {
         _workplaces = workplaces;

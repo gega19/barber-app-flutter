@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../common/app_button.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/injection/injection.dart';
+import '../../../core/utils/country_display.dart';
+import '../../cubit/country/country_cubit.dart';
+import '../../cubit/country/country_state.dart';
 
 /// Modal para editar campos del perfil
 class EditFieldModal extends StatefulWidget {
@@ -24,16 +29,30 @@ class EditFieldModal extends StatefulWidget {
 class _EditFieldModalState extends State<EditFieldModal> {
   late TextEditingController _controller;
   late String? _selectedGender;
+  late String? _selectedCountry;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(
-      text: widget.currentValue == 'No configurado' ? '' : widget.currentValue,
-    );
-    _selectedGender = widget.currentValue != 'No configurado'
-        ? widget.currentValue
+    final cv = widget.currentValue;
+    final unset = cv == 'No configurado' || cv.trim().isEmpty;
+
+    _controller = TextEditingController(text: unset ? '' : cv);
+    _selectedGender =
+        widget.fieldType == 'gender' ? (unset ? null : cv) : null;
+    _selectedCountry = widget.fieldType == 'country'
+        ? (unset ? null : cv.trim().toUpperCase())
         : null;
+  }
+
+  /// Código tal como viene del API para que coincida con [DropdownMenuItem.value].
+  String? _matchingCountryCode(CountryLoaded state, String? code) {
+    if (code == null || code.isEmpty) return null;
+    final upper = code.toUpperCase();
+    for (final c in state.countries) {
+      if (c.code.toUpperCase() == upper) return c.code;
+    }
+    return null;
   }
 
   @override
@@ -55,7 +74,8 @@ class _EditFieldModalState extends State<EditFieldModal> {
         right: 24,
         top: 24,
       ),
-      child: Column(
+      child: SingleChildScrollView(
+        child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -128,6 +148,88 @@ class _EditFieldModalState extends State<EditFieldModal> {
                 ),
               ],
             ),
+          ] else if (widget.fieldType == 'country') ...[
+            const Text(
+              'Seleccionar País',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            BlocProvider(
+              create: (context) => sl<CountryCubit>()..fetchCountries(),
+              child: BlocBuilder<CountryCubit, CountryState>(
+                builder: (context, state) {
+                  if (state is CountryLoading || state is CountryInitial) {
+                    return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
+                  } else if (state is CountryLoaded) {
+                    final codesSeen = <String>{};
+                    final items = state.countries
+                        .where((country) => codesSeen.add(country.code))
+                        .map((country) {
+                      return DropdownMenuItem<String>(
+                        value: country.code,
+                        child: Row(
+                          children: [
+                            Text(
+                              countryEmojiForCode(country.code),
+                              style: const TextStyle(fontSize: 18),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                country.name,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList();
+
+                    final dropdownValue =
+                        _matchingCountryCode(state, _selectedCountry);
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.borderGold),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          isExpanded: true,
+                          dropdownColor: AppColors.backgroundCard,
+                          value: dropdownValue,
+                          hint: const Text(
+                            'Selecciona un país',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.primaryGold,
+                          ),
+                          items: items,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedCountry = value;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  } else if (state is CountryError) {
+                    return Text('Error: ${state.message}', style: const TextStyle(color: AppColors.error));
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
           ] else
             TextField(
               controller: _controller,
@@ -153,7 +255,9 @@ class _EditFieldModalState extends State<EditFieldModal> {
             onPressed: () {
               final newValue = widget.fieldType == 'gender'
                   ? _selectedGender
-                  : _controller.text.trim();
+                  : widget.fieldType == 'country'
+                      ? _selectedCountry
+                      : _controller.text.trim();
 
               if (newValue != null && newValue.isNotEmpty) {
                 widget.onSave(newValue);
@@ -164,6 +268,7 @@ class _EditFieldModalState extends State<EditFieldModal> {
           ),
           const SizedBox(height: 16),
         ],
+        ),
       ),
     );
   }

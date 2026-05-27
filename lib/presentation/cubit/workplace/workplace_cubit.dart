@@ -3,12 +3,16 @@ import 'package:equatable/equatable.dart';
 import '../../../domain/entities/workplace_entity.dart';
 import '../../../domain/usecases/workplace/get_best_workplaces_with_total_usecase.dart';
 import '../../../domain/usecases/workplace/search_workplaces_usecase.dart';
+import '../../../core/services/effective_country_code_resolver.dart';
+import '../auth/auth_cubit.dart';
 
 part 'workplace_state.dart';
 
 class WorkplaceCubit extends Cubit<WorkplaceState> {
   final GetBestWorkplacesWithTotalUseCase getBestWorkplacesWithTotalUseCase;
   final SearchWorkplacesUseCase searchWorkplacesUseCase;
+  final AuthCubit authCubit;
+  final EffectiveCountryCodeResolver effectiveCountryCodeResolver;
 
   List<WorkplaceEntity> _allWorkplaces = [];
   int _currentPage = 0;
@@ -21,7 +25,12 @@ class WorkplaceCubit extends Cubit<WorkplaceState> {
   WorkplaceCubit({
     required this.getBestWorkplacesWithTotalUseCase,
     required this.searchWorkplacesUseCase,
+    required this.authCubit,
+    required this.effectiveCountryCodeResolver,
   }) : super(WorkplaceInitial());
+
+    Future<String> _countryFilter() =>
+      effectiveCountryCodeResolver.resolveForAuthStateAsync(authCubit.state);
 
   Future<void> loadWorkplaces({int limit = 10, bool reset = true}) async {
     if (isClosed) return;
@@ -40,6 +49,7 @@ class WorkplaceCubit extends Cubit<WorkplaceState> {
     final result = await getBestWorkplacesWithTotalUseCase(
       limit: limit,
       offset: _currentPage * _pageSize,
+      country: await _countryFilter(),
     );
 
     result.fold((failure) => emit(WorkplaceError(failure.message)), (data) {
@@ -63,7 +73,10 @@ class WorkplaceCubit extends Cubit<WorkplaceState> {
     _isSearchResult = true;
     emit(WorkplaceLoading());
 
-    final result = await searchWorkplacesUseCase(query);
+    final result = await searchWorkplacesUseCase(
+      query,
+      country: await _countryFilter(),
+    );
 
     result.fold(
       (failure) => emit(WorkplaceError(failure.message)),
@@ -81,6 +94,7 @@ class WorkplaceCubit extends Cubit<WorkplaceState> {
     final result = await getBestWorkplacesWithTotalUseCase(
       limit: _pageSize,
       offset: _currentPage * _pageSize,
+      country: await _countryFilter(),
     );
 
     result.fold(

@@ -9,6 +9,7 @@ import '../../../data/datasources/remote/upload_remote_datasource.dart';
 import '../../widgets/common/app_button.dart';
 import '../../widgets/common/app_card.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/price_display.dart';
 
 class PaymentDetailsScreen extends StatefulWidget {
   final PaymentMethodEntity paymentMethod;
@@ -17,6 +18,7 @@ class PaymentDetailsScreen extends StatefulWidget {
   final DateTime date;
   final String time;
   final double price;
+  final String? currencySymbol;
 
   const PaymentDetailsScreen({
     super.key,
@@ -26,6 +28,7 @@ class PaymentDetailsScreen extends StatefulWidget {
     required this.date,
     required this.time,
     required this.price,
+    this.currencySymbol,
   });
 
   @override
@@ -164,7 +167,7 @@ class _PaymentDetailsScreenState extends State<PaymentDetailsScreen> {
                             const SizedBox(height: 12),
                             _buildSummaryRow(
                               'Total',
-                              '\$${widget.price.toStringAsFixed(2)}',
+                              PriceDisplay.format(widget.price, currencySymbol: widget.currencySymbol),
                               Icons.attach_money,
                             ),
                           ],

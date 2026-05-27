@@ -2,10 +2,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/barber_entity.dart';
 import '../../../domain/usecases/barber/get_barbers_usecase.dart';
-import '../../../domain/usecases/barber/get_best_barbers_usecase.dart';
 import '../../../domain/usecases/barber/get_best_barbers_with_total_usecase.dart';
 import '../../../domain/usecases/barber/search_barbers_usecase.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/effective_country_code_resolver.dart';
+import '../../../presentation/cubit/auth/auth_cubit.dart';
 import '../../../core/injection/injection.dart';
 import '../../../core/utils/logger.dart';
 
@@ -13,9 +14,10 @@ part 'barber_state.dart';
 
 class BarberCubit extends Cubit<BarberState> {
   final GetBarbersUseCase getBarbersUseCase;
-  final GetBestBarbersUseCase getBestBarbersUseCase;
   final GetBestBarbersWithTotalUseCase getBestBarbersWithTotalUseCase;
   final SearchBarbersUseCase searchBarbersUseCase;
+  final AuthCubit authCubit;
+  final EffectiveCountryCodeResolver effectiveCountryCodeResolver;
   final AnalyticsService analyticsService = sl<AnalyticsService>();
 
   List<BarberEntity> _allBarbers = [];
@@ -28,10 +30,14 @@ class BarberCubit extends Cubit<BarberState> {
 
   BarberCubit({
     required this.getBarbersUseCase,
-    required this.getBestBarbersUseCase,
     required this.getBestBarbersWithTotalUseCase,
     required this.searchBarbersUseCase,
+    required this.authCubit,
+    required this.effectiveCountryCodeResolver,
   }) : super(BarberInitial());
+
+    Future<String> _countryFilter() =>
+      effectiveCountryCodeResolver.resolveForAuthStateAsync(authCubit.state);
 
   /// Loads barbers with pagination support
   ///
@@ -64,6 +70,7 @@ class BarberCubit extends Cubit<BarberState> {
     final result = await getBestBarbersWithTotalUseCase(
       limit: limit,
       offset: _currentPage * _pageSize,
+      country: await _countryFilter(),
     );
 
     result.fold((failure) => emit(BarberError(failure.message)), (data) {
@@ -100,7 +107,10 @@ class BarberCubit extends Cubit<BarberState> {
       properties: {'query': query, 'queryLength': query.length},
     );
 
-    final result = await searchBarbersUseCase(query);
+    final result = await searchBarbersUseCase(
+      query,
+      country: await _countryFilter(),
+    );
 
     result.fold((failure) => emit(BarberError(failure.message)), (barbers) {
       emit(BarberLoaded(barbers));
@@ -133,6 +143,7 @@ class BarberCubit extends Cubit<BarberState> {
     final result = await getBestBarbersWithTotalUseCase(
       limit: _pageSize,
       offset: _currentPage * _pageSize,
+      country: await _countryFilter(),
     );
 
     result.fold(

@@ -16,8 +16,10 @@ class AppointmentInfoSection extends StatelessWidget {
 
   const AppointmentInfoSection({super.key, required this.appointment});
 
-  String _formatDate(DateTime date) {
-    return DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(date);
+  String _formatEntityDate(AppointmentEntity a) {
+    final p = a.dateYmd.split('-').map(int.parse).toList();
+    final d = DateTime.utc(p[0], p[1], p[2]);
+    return DateFormat('EEEE, d MMMM yyyy', 'es_ES').format(d);
   }
 
   @override
@@ -33,7 +35,7 @@ class AppointmentInfoSection extends StatelessWidget {
                     AppointmentDetailRowWidget(
                       icon: Icons.calendar_today,
                       label: 'Fecha',
-                      value: _formatDate(appointment.date),
+                      value: _formatEntityDate(appointment),
                     ),
                     const SizedBox(height: 16),
                     AppointmentDetailRowWidget(

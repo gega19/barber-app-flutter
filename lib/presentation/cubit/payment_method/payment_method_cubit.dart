@@ -12,10 +12,10 @@ class PaymentMethodCubit extends Cubit<PaymentMethodState> {
     required this.getPaymentMethodsUseCase,
   }) : super(PaymentMethodInitial());
 
-  Future<void> loadPaymentMethods() async {
+  Future<void> loadPaymentMethods({String? barberId}) async {
     emit(PaymentMethodLoading());
 
-    final result = await getPaymentMethodsUseCase();
+    final result = await getPaymentMethodsUseCase(barberId: barberId);
 
     result.fold(
       (failure) => emit(PaymentMethodError(failure.message)),

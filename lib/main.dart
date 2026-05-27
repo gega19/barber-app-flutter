@@ -8,6 +8,7 @@ import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/socket_service.dart';
+import 'presentation/utils/timezone_utils.dart';
 import 'presentation/cubit/auth/auth_cubit.dart';
 
 void main() async {
@@ -40,6 +41,8 @@ void main() async {
 
   // Inicializar inyección de dependencias
   await init();
+
+  await TimezoneUtils.initialize();
 
   // Configurar conexión/desconexión automática de Socket.IO basada en autenticación
   _setupSocketConnection();

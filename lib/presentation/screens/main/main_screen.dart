@@ -8,6 +8,7 @@ import '../../cubit/promotion/promotion_cubit.dart';
 import '../../cubit/workplace/workplace_cubit.dart';
 import '../../cubit/map/map_cubit.dart';
 import '../../cubit/auth/auth_cubit.dart';
+import '../../cubit/barber/favorites/favorites_cubit.dart';
 import '../home/home_screen.dart';
 import '../discover/discover_screen.dart';
 import '../map/barbershops_map_screen.dart';
@@ -15,6 +16,7 @@ import '../history/history_screen.dart';
 import '../profile/profile_screen.dart';
 import '../../widgets/home/upcoming_appointment_banner.dart';
 import '../../widgets/auth/guest_login_prompt.dart';
+import '../../widgets/auth/country_confirm_dialog.dart';
 
 /// MainScreen - Root container with bottom navigation
 ///
@@ -32,7 +34,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  int _previousIndex = -1; // Track previous index to avoid re-loading
+  int _previousIndex = -1;
+  bool _countryPromptShown = false;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -59,50 +62,93 @@ class _MainScreenState extends State<MainScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted && _previousIndex == -1) {
               _loadTabData(builderContext, 0);
+              _checkSuggestedCountry(builderContext);
+              _ensureAppointmentsIfSignedIn(builderContext);
             }
           });
 
-          return Scaffold(
-            body: Column(
-              children: [
-                Expanded(
-                  child: IndexedStack(index: _currentIndex, children: _screens),
+          return BlocListener<AuthCubit, AuthState>(
+            listenWhen: (prev, curr) =>
+                curr is AuthInitial &&
+                (prev is AuthAuthenticated ||
+                    prev is AuthProfileUpdateError ||
+                    prev is AuthLoading),
+            listener: (context, state) =>
+                _onSessionEndedAsGuest(builderContext),
+            child: BlocListener<AuthCubit, AuthState>(
+              listenWhen: (prev, curr) {
+                if (curr is! AuthAuthenticated) return false;
+                if (prev is! AuthAuthenticated) return true;
+                return prev.user.country != curr.user.country ||
+                    prev.user.suggestedCountry != curr.user.suggestedCountry;
+              },
+              listener: (context, state) {
+                if (state is AuthAuthenticated) {
+                  _maybeShowCountryPrompt(context, state);
+                  context.read<BarberCubit>().loadBarbers(reset: true);
+                  context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
+                  context.read<AppointmentCubit>().loadAppointments();
+                  if (_currentIndex == 2) {
+                    context.read<MapCubit>().getUserLocation();
+                  }
+                }
+              },
+              child: Scaffold(
+                body: Column(
+                  children: [
+                    Expanded(
+                      child: IndexedStack(
+                        index: _currentIndex,
+                        children: _screens,
+                      ),
+                    ),
+                    const UpcomingAppointmentBanner(),
+                  ],
                 ),
-                const UpcomingAppointmentBanner(),
-              ],
-            ),
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: AppColors.backgroundCard,
-                border: Border(
-                  top: BorderSide(color: AppColors.primaryGold, width: 2),
-                ),
-              ),
-              child: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 8,
+                bottomNavigationBar: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.backgroundCard,
+                    border: Border(
+                      top: BorderSide(color: AppColors.primaryGold, width: 2),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(builderContext, Icons.home, 'Inicio', 0),
-                      _buildNavItem(
-                        builderContext,
-                        Icons.explore,
-                        'Descubrir',
-                        1,
+                  child: SafeArea(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 8,
                       ),
-                      _buildNavItem(builderContext, Icons.map, 'Mapa', 2),
-                      _buildNavItem(
-                        builderContext,
-                        Icons.calendar_today,
-                        'Citas',
-                        3,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _buildNavItem(
+                            builderContext,
+                            Icons.home,
+                            'Inicio',
+                            0,
+                          ),
+                          _buildNavItem(
+                            builderContext,
+                            Icons.explore,
+                            'Descubrir',
+                            1,
+                          ),
+                          _buildNavItem(builderContext, Icons.map, 'Mapa', 2),
+                          _buildNavItem(
+                            builderContext,
+                            Icons.calendar_today,
+                            'Citas',
+                            3,
+                          ),
+                          _buildNavItem(
+                            builderContext,
+                            Icons.person,
+                            'Perfil',
+                            4,
+                          ),
+                        ],
                       ),
-                      _buildNavItem(builderContext, Icons.person, 'Perfil', 4),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -113,16 +159,47 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  void _loadTabData(BuildContext context, int index, {bool forceRefresh = false}) {
+  void _onSessionEndedAsGuest(BuildContext context) {
+    if (!mounted) return;
+    setState(() {
+      _currentIndex = 0;
+      _countryPromptShown = false;
+    });
+    try {
+      context.read<AppointmentCubit>().clear();
+      sl<FavoritesCubit>().clearSession();
+      context.read<BarberCubit>().loadBarbers(reset: true);
+      context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
+    } catch (_) {
+      /* providers disponibles dentro de MainScreen */
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _loadTabData(context, 0, forceRefresh: true);
+    });
+  }
+
+  void _loadTabData(
+    BuildContext context,
+    int index, {
+    bool forceRefresh = false,
+  }) {
     // Avoid reloading the same tab unless forced
     if (index == _previousIndex && !forceRefresh) return;
+
+    final authSnapshot = context.read<AuthCubit>().state;
+    final hasAccount =
+        authSnapshot is AuthAuthenticated ||
+        authSnapshot is AuthProfileUpdateError;
 
     // Load data based on the selected tab
     switch (index) {
       case 0: // Home
         context.read<BarberCubit>().loadBarbers(reset: true);
         context.read<WorkplaceCubit>().loadWorkplaces();
-        context.read<AppointmentCubit>().loadAppointments();
+        if (hasAccount) {
+          context.read<AppointmentCubit>().loadAppointments();
+        }
         break;
       case 1: // Discover
         context.read<PromotionCubit>().loadPromotions();
@@ -133,7 +210,9 @@ class _MainScreenState extends State<MainScreen> {
         context.read<MapCubit>().getUserLocation();
         break;
       case 3: // Citas
-        context.read<AppointmentCubit>().loadAppointments();
+        if (hasAccount) {
+          context.read<AppointmentCubit>().loadAppointments();
+        }
         break;
       case 4: // Profile
         // Profile doesn't need refresh as it's managed by AuthCubit
@@ -141,6 +220,38 @@ class _MainScreenState extends State<MainScreen> {
     }
 
     _previousIndex = index;
+  }
+
+  /// Carga citas para barberos/clientes cuando ya hay sesión (banner en Home).
+  void _ensureAppointmentsIfSignedIn(BuildContext context) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated || authState is AuthProfileUpdateError) {
+      final aptState = context.read<AppointmentCubit>().state;
+      final alreadyLoaded = aptState is AppointmentLoaded;
+      final alreadyLoading = aptState is AppointmentLoading;
+      if (!alreadyLoaded && !alreadyLoading) {
+        context.read<AppointmentCubit>().loadAppointments();
+      }
+    }
+  }
+
+  void _maybeShowCountryPrompt(BuildContext context, AuthAuthenticated state) {
+    if (_countryPromptShown) return;
+    final user = state.user;
+    if (user.country == null && user.suggestedCountry != null) {
+      _countryPromptShown = true;
+      CountryConfirmDialog.show(
+        context,
+        suggestedCountryCode: user.suggestedCountry!,
+      );
+    }
+  }
+
+  void _checkSuggestedCountry(BuildContext context) {
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated) {
+      _maybeShowCountryPrompt(context, authState);
+    }
   }
 
   Widget _buildNavItem(
@@ -157,13 +268,13 @@ class _MainScreenState extends State<MainScreen> {
         if (index == 3 || index == 4) {
           final authState = context.read<AuthCubit>().state;
           final isAuthenticated = authState is AuthAuthenticated;
-          
+
           if (!isAuthenticated) {
             GuestLoginPrompt.show(
-              context, 
-              message: index == 3 
-                ? 'Regístrate o inicia sesión para gestionar tus citas médicas o de barbería.'
-                : 'Crea tu perfil para guardar tus barberos favoritos y ver tu historial.',
+              context,
+              message: index == 3
+                  ? 'Regístrate o inicia sesión para gestionar tus citas médicas o de barbería.'
+                  : 'Crea tu perfil para guardar tus barberos favoritos y ver tu historial.',
             );
             return;
           }

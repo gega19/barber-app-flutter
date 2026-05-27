@@ -4,6 +4,13 @@ import '../../domain/entities/user_entity.dart';
 import 'barber_model.dart';
 import 'user_model.dart';
 
+String _calendarYmdUtcFallback(DateTime d) {
+  final u = d.toUtc();
+  final m = u.month.toString().padLeft(2, '0');
+  final day = u.day.toString().padLeft(2, '0');
+  return '${u.year}-$m-$day';
+}
+
 class AppointmentModel extends AppointmentEntity {
   const AppointmentModel({
     required super.id,
@@ -12,10 +19,13 @@ class AppointmentModel extends AppointmentEntity {
     super.serviceId,
     super.serviceName,
     required super.date,
+    required super.dateYmd,
     required super.time,
+    super.barberTimezone,
     super.price,
     required super.status,
     super.paymentMethod,
+    super.barberPaymentOptionId,
     super.paymentMethodName,
     super.paymentStatus,
     super.paymentProof,
@@ -69,6 +79,10 @@ class AppointmentModel extends AppointmentEntity {
 
     final timeStr = json['time'] as String?;
     final time = timeStr ?? '00:00';
+    final apiYmd = json['dateYmd'] as String?;
+    final dateYmd = (apiYmd != null && apiYmd.isNotEmpty)
+        ? apiYmd
+        : _calendarYmdUtcFallback(date);
 
     return AppointmentModel(
       id: json['id'] as String? ?? '',
@@ -79,7 +93,9 @@ class AppointmentModel extends AppointmentEntity {
           ? json['service']['name'] as String?
           : null,
       date: date,
+      dateYmd: dateYmd,
       time: time,
+      barberTimezone: json['barberTimezone'] as String?,
       price: json['price'] != null
           ? (json['price'] as num).toDouble()
           : (json['service'] != null && json['service']['price'] != null
@@ -87,6 +103,7 @@ class AppointmentModel extends AppointmentEntity {
                 : null),
       status: status,
       paymentMethod: json['paymentMethod'] as String?,
+      barberPaymentOptionId: json['barberPaymentOptionId'] as String?,
       paymentMethodName: json['paymentMethodName'] as String?,
       paymentStatus: json['paymentStatus'] as String?,
       paymentProof: json['paymentProof'] as String?,
@@ -103,10 +120,13 @@ class AppointmentModel extends AppointmentEntity {
       'serviceId': serviceId,
       'serviceName': serviceName,
       'date': date.toIso8601String(),
+      'dateYmd': dateYmd,
+      'barberTimezone': barberTimezone,
       'time': time,
       'price': price,
       'status': status.toString(),
       'paymentMethod': paymentMethod,
+      'barberPaymentOptionId': barberPaymentOptionId,
       'paymentMethodName': paymentMethodName,
       'paymentStatus': paymentStatus,
       'paymentProof': paymentProof,
@@ -123,10 +143,13 @@ class AppointmentModel extends AppointmentEntity {
       serviceId: entity.serviceId,
       serviceName: entity.serviceName,
       date: entity.date,
+      dateYmd: entity.dateYmd,
       time: entity.time,
+      barberTimezone: entity.barberTimezone,
       price: entity.price,
       status: entity.status,
       paymentMethod: entity.paymentMethod,
+      barberPaymentOptionId: entity.barberPaymentOptionId,
       paymentMethodName: entity.paymentMethodName,
       paymentStatus: entity.paymentStatus,
       paymentProof: entity.paymentProof,

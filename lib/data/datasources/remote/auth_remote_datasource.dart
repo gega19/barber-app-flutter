@@ -11,6 +11,7 @@ abstract class AuthRemoteDataSource {
     required String name,
     required String email,
     required String password,
+    String? country,
   });
 
   Future<void> logout();
@@ -153,11 +154,21 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String name,
     required String email,
     required String password,
+    String? country,
   }) async {
     try {
+      final data = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'password': password,
+      };
+      if (country != null && country.isNotEmpty) {
+        data['country'] = country;
+      }
+
       final response = await dio.post(
         '${AppConstants.baseUrl}/api/auth/register',
-        data: {'name': name, 'email': email, 'password': password},
+        data: data,
       );
 
       if (response.statusCode == 201) {

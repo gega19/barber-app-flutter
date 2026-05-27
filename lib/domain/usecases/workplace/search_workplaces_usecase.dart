@@ -9,7 +9,10 @@ class SearchWorkplacesUseCase {
 
   SearchWorkplacesUseCase(this.repository);
 
-  Future<Either<Failure, List<WorkplaceEntity>>> call(String query) async {
-    return await repository.searchWorkplaces(query);
+  Future<Either<Failure, List<WorkplaceEntity>>> call(
+    String query, {
+    String? country,
+  }) async {
+    return await repository.searchWorkplaces(query, country: country);
   }
 }

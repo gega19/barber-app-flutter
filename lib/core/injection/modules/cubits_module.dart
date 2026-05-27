@@ -8,11 +8,13 @@ import '../../../presentation/cubit/promotion/promotion_cubit.dart';
 import '../../../presentation/cubit/workplace/workplace_cubit.dart';
 import '../../../presentation/cubit/review/review_cubit.dart';
 import '../../../presentation/cubit/payment_method/payment_method_cubit.dart';
+import '../../../presentation/cubit/barber_payment_methods/barber_payment_methods_cubit.dart';
 import '../../../presentation/cubit/barber_availability/barber_availability_cubit.dart';
 import '../../../presentation/cubit/barber_course/barber_course_cubit.dart';
 import '../../../presentation/cubit/map/map_cubit.dart';
 import '../../../presentation/cubit/barber/favorites/favorites_cubit.dart';
 import '../../../presentation/cubit/barber_dashboard/barber_dashboard_cubit.dart';
+import '../../../presentation/cubit/country/country_cubit.dart';
 
 /// Módulo para registrar todos los Cubits
 class CubitsModule {
@@ -24,6 +26,7 @@ class CubitsModule {
         registerUseCase: sl(),
         logoutUseCase: sl(),
         getCurrentUserUseCase: sl(),
+        refreshCurrentUserUseCase: sl(),
         updateProfileUseCase: sl(),
         becomeBarberUseCase: sl(),
         deleteAccountUseCase: sl(),
@@ -31,6 +34,7 @@ class CubitsModule {
         confirmPhoneVerificationUseCase: sl(),
         fcmTokenRepository: sl(),
         notificationService: sl(),
+        effectiveCountryCodeResolver: sl(),
       )..init(),
     );
 
@@ -38,10 +42,14 @@ class CubitsModule {
     sl.registerFactory(
       () => BarberCubit(
         getBarbersUseCase: sl(),
-        getBestBarbersUseCase: sl(),
         getBestBarbersWithTotalUseCase: sl(),
         searchBarbersUseCase: sl(),
+        authCubit: sl(),
+        effectiveCountryCodeResolver: sl(),
       ),
+    );
+    sl.registerFactory(
+      () => CountryCubit(getCountriesUseCase: sl()),
     );
     sl.registerLazySingleton(
       () => FavoritesCubit(
@@ -64,6 +72,8 @@ class CubitsModule {
       () => WorkplaceCubit(
         getBestWorkplacesWithTotalUseCase: sl(),
         searchWorkplacesUseCase: sl(),
+        authCubit: sl(),
+        effectiveCountryCodeResolver: sl(),
       ),
     );
     sl.registerFactory(
@@ -77,6 +87,9 @@ class CubitsModule {
     );
     sl.registerFactory(
       () => PaymentMethodCubit(getPaymentMethodsUseCase: sl()),
+    );
+    sl.registerFactory(
+      () => BarberPaymentMethodsCubit(paymentMethodRepository: sl()),
     );
     sl.registerFactory(
       () => BarberAvailabilityCubit(
@@ -99,6 +112,8 @@ class CubitsModule {
         getWorkplacesUseCase: sl(),
         getNearbyWorkplacesUseCase: sl(),
         locationService: sl(),
+        authCubit: sl(),
+        effectiveCountryCodeResolver: sl(),
       ),
     );
     // BarberDashboardCubit is Factory (per screen)

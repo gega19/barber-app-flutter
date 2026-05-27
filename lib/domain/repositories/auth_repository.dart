@@ -15,6 +15,7 @@ abstract class AuthRepository {
     required String name,
     required String email,
     required String password,
+    String? country,
   });
 
   /// Cierra sesión

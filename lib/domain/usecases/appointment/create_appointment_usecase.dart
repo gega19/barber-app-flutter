@@ -14,6 +14,7 @@ class CreateAppointmentUseCase {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   }) async {
@@ -23,6 +24,7 @@ class CreateAppointmentUseCase {
       date: date,
       time: time,
       paymentMethod: paymentMethod,
+      barberPaymentOptionId: barberPaymentOptionId,
       paymentProof: paymentProof,
       notes: notes,
     );

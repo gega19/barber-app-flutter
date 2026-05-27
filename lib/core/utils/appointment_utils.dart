@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/appointment_entity.dart';
 import '../../domain/entities/user_entity.dart';
+import 'appointment_shop_time.dart';
 import '../../presentation/widgets/common/app_badge.dart';
 import '../constants/app_constants.dart';
 
@@ -25,6 +26,13 @@ class AppointmentUtils {
   /// Formatea una fecha de cita en formato completo (ej: "Lunes, 15 Enero 2024")
   static String formatAppointmentDate(DateTime date) {
     return _fullDateFormat.format(date);
+  }
+
+  /// Fecha civil de la cita (día en la barbería) usando [AppointmentEntity.dateYmd].
+  static String formatAppointmentEntityDate(AppointmentEntity a) {
+    final p = a.dateYmd.split('-').map(int.parse).toList();
+    final calUtc = DateTime.utc(p[0], p[1], p[2]);
+    return _fullDateFormat.format(calUtc);
   }
 
   /// Formatea una fecha de cita en formato corto (ej: "15 Ene 2024")
@@ -73,21 +81,9 @@ class AppointmentUtils {
     }
   }
 
-  /// Parsea la fecha y hora de una cita y las combina en un DateTime
+  /// Instante UTC de la cita en la TZ de la barbería.
   static DateTime parseAppointmentDateTime(AppointmentEntity appointment) {
-    // Parsear la hora (formato "HH:mm")
-    final timeParts = appointment.time.split(':');
-    final hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
-
-    // Combinar fecha y hora
-    return DateTime(
-      appointment.date.year,
-      appointment.date.month,
-      appointment.date.day,
-      hour,
-      minute,
-    );
+    return AppointmentShopTime.utcInstant(appointment);
   }
 
   /// Verifica si una cita está próxima (pendiente o upcoming)
@@ -100,8 +96,8 @@ class AppointmentUtils {
   /// (debe estar pendiente o upcoming y no haber pasado)
   static bool canCancel(AppointmentEntity appointment) {
     if (!isUpcoming(appointment)) return false;
-    final appointmentDateTime = parseAppointmentDateTime(appointment);
-    return appointmentDateTime.isAfter(DateTime.now());
+    return AppointmentShopTime.utcInstant(appointment)
+        .isAfter(DateTime.now().toUtc());
   }
 
   /// Construye la URL completa de una imagen

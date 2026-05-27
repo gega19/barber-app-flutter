@@ -5,6 +5,7 @@ import '../../../domain/usecases/auth/login_usecase.dart';
 import '../../../domain/usecases/auth/register_usecase.dart';
 import '../../../domain/usecases/auth/logout_usecase.dart';
 import '../../../domain/usecases/auth/get_current_user_usecase.dart';
+import '../../../domain/usecases/auth/refresh_current_user_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
 import '../../../domain/usecases/auth/become_barber_usecase.dart';
 import '../../../domain/usecases/auth/delete_account_usecase.dart';
@@ -15,6 +16,7 @@ import '../../../domain/repositories/fcm_token_repository.dart';
 import '../../../core/services/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
 import '../../../core/services/analytics_service.dart';
+import '../../../core/services/effective_country_code_resolver.dart';
 import '../../../core/injection/injection.dart' as injection;
 import '../../../data/datasources/remote/auth_remote_datasource.dart';
 import '../../../data/datasources/local/local_storage.dart';
@@ -30,6 +32,7 @@ class AuthCubit extends Cubit<AuthState> {
   final RegisterUseCase registerUseCase;
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
+  final RefreshCurrentUserUseCase refreshCurrentUserUseCase;
   final UpdateProfileUseCase updateProfileUseCase;
   final BecomeBarberUseCase becomeBarberUseCase;
   final DeleteAccountUseCase deleteAccountUseCase;
@@ -37,6 +40,7 @@ class AuthCubit extends Cubit<AuthState> {
   final ConfirmPhoneVerificationUseCase confirmPhoneVerificationUseCase;
   final FcmTokenRepository fcmTokenRepository;
   final NotificationService notificationService;
+  final EffectiveCountryCodeResolver effectiveCountryCodeResolver;
   final AnalyticsService analyticsService = injection.sl<AnalyticsService>();
 
   AuthCubit({
@@ -44,6 +48,7 @@ class AuthCubit extends Cubit<AuthState> {
     required this.registerUseCase,
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
+    required this.refreshCurrentUserUseCase,
     required this.updateProfileUseCase,
     required this.becomeBarberUseCase,
     required this.deleteAccountUseCase,
@@ -51,18 +56,26 @@ class AuthCubit extends Cubit<AuthState> {
     required this.confirmPhoneVerificationUseCase,
     required this.fcmTokenRepository,
     required this.notificationService,
+    required this.effectiveCountryCodeResolver,
   }) : super(AuthInitial());
+
+
+
+  Future<UserEntity> _refreshUserFromServer(UserEntity fallback) async {
+    final result = await refreshCurrentUserUseCase();
+    return result.fold((_) => fallback, (user) => user);
+  }
 
   Future<void> init() async {
     emit(AuthLoading());
     final result = await getCurrentUserUseCase();
-    result.fold((failure) => emit(AuthInitial()), (user) async {
+    await result.fold((failure) async => emit(AuthInitial()), (user) async {
       if (user != null) {
-        if (user.mustUpdatePassword) {
-          emit(AuthRequiresPasswordChange(user));
+        final refreshed = await _refreshUserFromServer(user);
+        if (refreshed.mustUpdatePassword) {
+          emit(AuthRequiresPasswordChange(refreshed));
         } else {
-          emit(AuthAuthenticated(user));
-          // Registrar token FCM si el usuario está autenticado
+          emit(AuthAuthenticated(refreshed));
           await _registerFcmToken();
         }
       } else {
@@ -127,8 +140,8 @@ class AuthCubit extends Cubit<AuthState> {
       if (user.mustUpdatePassword) {
         emit(AuthRequiresPasswordChange(user));
       } else {
-        emit(AuthAuthenticated(user));
-        // Registrar token FCM después de login exitoso
+        final refreshed = await _refreshUserFromServer(user);
+        emit(AuthAuthenticated(refreshed));
         await _registerFcmToken();
         // Track analytics
         await analyticsService.trackEvent(
@@ -154,8 +167,8 @@ class AuthCubit extends Cubit<AuthState> {
     );
 
     result.fold((failure) => emit(AuthError(failure.message)), (user) async {
-      emit(AuthAuthenticated(user));
-      // Registrar token FCM después de registro exitoso
+      final refreshed = await _refreshUserFromServer(user);
+      emit(AuthAuthenticated(refreshed));
       await _registerFcmToken();
       // Track analytics
       await analyticsService.trackEvent(
@@ -189,6 +202,7 @@ class AuthCubit extends Cubit<AuthState> {
 
     final result = await logoutUseCase();
     result.fold((failure) => emit(AuthError(failure.message)), (_) async {
+      effectiveCountryCodeResolver.clearAnonymousCountryCache();
       // Track analytics
       await analyticsService.trackEvent(
         eventName: 'user_logged_out',
@@ -223,7 +237,9 @@ class AuthCubit extends Cubit<AuthState> {
     );
     result.fold((failure) {
       emit(AuthProfileUpdateError(failure.message, currentUser));
-    }, (user) => emit(AuthAuthenticated(user)));
+    }, (user) async {
+      emit(AuthAuthenticated(user));
+    });
   }
 
   Future<void> becomeBarber({

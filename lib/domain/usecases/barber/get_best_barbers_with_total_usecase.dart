@@ -11,10 +11,12 @@ class GetBestBarbersWithTotalUseCase {
   Future<Either<Failure, BarberListResult>> call({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     return await repository.getBestBarbersWithTotal(
       limit: limit,
       offset: offset,
+      country: country,
     );
   }
 }

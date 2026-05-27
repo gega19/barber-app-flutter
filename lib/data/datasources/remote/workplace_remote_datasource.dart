@@ -18,17 +18,19 @@ class NetworkException implements Exception {
 }
 
 abstract class WorkplaceRemoteDataSource {
-  Future<List<WorkplaceModel>> getWorkplaces({int? limit});
+  Future<List<WorkplaceModel>> getWorkplaces({int? limit, String? country});
   Future<Map<String, dynamic>> getBestWorkplacesWithMetadata({
     int limit = 10,
     int offset = 0,
+    String? country,
   });
-  Future<List<WorkplaceModel>> searchWorkplaces(String query);
+  Future<List<WorkplaceModel>> searchWorkplaces(String query, {String? country});
   Future<WorkplaceModel> getWorkplaceById(String id);
   Future<List<WorkplaceModel>> getNearbyWorkplaces({
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
+    String? country,
   });
 }
 
@@ -38,12 +40,15 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
   WorkplaceRemoteDataSourceImpl(this.dio);
 
   @override
-  Future<List<WorkplaceModel>> getWorkplaces({int? limit}) async {
+  Future<List<WorkplaceModel>> getWorkplaces({int? limit, String? country}) async {
     try {
-      final queryParams = limit != null ? {'limit': limit} : null;
+      final queryParams = <String, dynamic>{
+        if (limit != null && limit > 0) 'limit': limit,
+        if (country != null && country.isNotEmpty) 'country': country,
+      };
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/workplaces/public',
-        queryParameters: queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
       if (response.statusCode == 200) {
@@ -73,11 +78,16 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
   Future<Map<String, dynamic>> getBestWorkplacesWithMetadata({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     try {
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/workplaces/public/best',
-        queryParameters: {'limit': limit, 'offset': offset},
+        queryParameters: {
+          'limit': limit,
+          'offset': offset,
+          if (country != null && country.isNotEmpty) 'country': country,
+        },
       );
 
       if (response.statusCode == 200) {
@@ -112,11 +122,17 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
   }
 
   @override
-  Future<List<WorkplaceModel>> searchWorkplaces(String query) async {
+  Future<List<WorkplaceModel>> searchWorkplaces(
+    String query, {
+    String? country,
+  }) async {
     try {
       final response = await dio.get(
         '${AppConstants.baseUrl}/api/workplaces/public/search',
-        queryParameters: {'q': query},
+        queryParameters: {
+          'q': query,
+          if (country != null && country.isNotEmpty) 'country': country,
+        },
       );
 
       if (response.statusCode == 200) {
@@ -177,6 +193,7 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
     required double latitude,
     required double longitude,
     double radiusKm = 5.0,
+    String? country,
   }) async {
     try {
       final response = await dio.get(
@@ -185,6 +202,7 @@ class WorkplaceRemoteDataSourceImpl implements WorkplaceRemoteDataSource {
           'lat': latitude,
           'lng': longitude,
           'radius': radiusKm,
+          if (country != null && country.isNotEmpty) 'country': country,
         },
       );
 

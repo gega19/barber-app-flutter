@@ -152,6 +152,26 @@ class ProfileBarberManagementCardWidget extends StatelessWidget {
                         duration: 300.ms,
                         delay: 300.ms,
                       ),
+                  Divider(color: AppColors.borderGold),
+                  ProfileSettingsRowWidget(
+                        key: ValueKey('barber_payment_methods_$userBarberId'),
+                        icon: Icons.payments_outlined,
+                        title: 'Métodos de pago',
+                        subtitle: 'Configura cómo te pagan tus clientes',
+                        onTap: () {
+                          context.push(
+                            '/barber-dashboard/$userBarberId/payment-methods',
+                          );
+                        },
+                      )
+                      .animate()
+                      .fadeIn(duration: 300.ms, delay: 350.ms)
+                      .slideX(
+                        begin: -0.05,
+                        end: 0,
+                        duration: 300.ms,
+                        delay: 350.ms,
+                      ),
                 ],
               ),
             ),

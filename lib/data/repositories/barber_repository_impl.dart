@@ -11,9 +11,9 @@ class BarberRepositoryImpl implements BarberRepository {
   BarberRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<Either<Failure, List<BarberEntity>>> getBarbers() async {
+  Future<Either<Failure, List<BarberEntity>>> getBarbers({String? country}) async {
     try {
-      final barbers = await remoteDataSource.getBarbers();
+      final barbers = await remoteDataSource.getBarbers(country: country);
       return Right(barbers);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -24,11 +24,13 @@ class BarberRepositoryImpl implements BarberRepository {
   Future<Either<Failure, List<BarberEntity>>> getBestBarbers({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     try {
       final barbers = await remoteDataSource.getBestBarbers(
         limit: limit,
         offset: offset,
+        country: country,
       );
       return Right(barbers);
     } catch (e) {
@@ -40,11 +42,13 @@ class BarberRepositoryImpl implements BarberRepository {
   Future<Either<Failure, BarberListResult>> getBestBarbersWithTotal({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     try {
       final result = await remoteDataSource.getBestBarbersWithMetadata(
         limit: limit,
         offset: offset,
+        country: country,
       );
       final barbers = result['barbers'] as List<BarberEntity>;
       final total = result['total'] as int? ?? barbers.length;
@@ -66,10 +70,12 @@ class BarberRepositoryImpl implements BarberRepository {
 
   @override
   Future<Either<Failure, List<BarberEntity>>> searchBarbers(
-    String query,
-  ) async {
+    String query, {
+    String? country,
+  }) async {
     try {
-      final barbers = await remoteDataSource.searchBarbers(query);
+      final barbers =
+          await remoteDataSource.searchBarbers(query, country: country);
       return Right(barbers);
     } catch (e) {
       return Left(ServerFailure(e.toString()));
@@ -92,10 +98,11 @@ class BarberRepositoryImpl implements BarberRepository {
 
   @override
   Future<Either<Failure, List<BarberEntity>>> getBarbersByCategory(
-    String category,
-  ) async {
+    String category, {
+    String? country,
+  }) async {
     try {
-      final allBarbers = await remoteDataSource.getBarbers();
+      final allBarbers = await remoteDataSource.getBarbers(country: country);
       final filtered = allBarbers
           .where(
             (barber) =>
@@ -109,9 +116,11 @@ class BarberRepositoryImpl implements BarberRepository {
   }
 
   @override
-  Future<Either<Failure, List<BarberEntity>>> getTrendingBarbers() async {
+  Future<Either<Failure, List<BarberEntity>>> getTrendingBarbers({
+    String? country,
+  }) async {
     try {
-      final allBarbers = await remoteDataSource.getBarbers();
+      final allBarbers = await remoteDataSource.getBarbers(country: country);
       final trendingBarbers = allBarbers.toList()
         ..sort((a, b) {
           final scoreA = a.rating * a.reviews;

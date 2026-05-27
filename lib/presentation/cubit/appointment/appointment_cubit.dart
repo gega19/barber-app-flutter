@@ -27,6 +27,11 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     required this.getAppointmentByIdUseCase,
   }) : super(AppointmentInitial());
 
+  void clear() {
+    if (isClosed) return;
+    emit(AppointmentInitial());
+  }
+
   Future<void> loadAppointments() async {
     if (isClosed) return;
     emit(AppointmentLoading());
@@ -69,6 +74,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   }) async {
@@ -81,6 +87,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
       date: date,
       time: time,
       paymentMethod: paymentMethod,
+      barberPaymentOptionId: barberPaymentOptionId,
       paymentProof: paymentProof,
       notes: notes,
     );
@@ -103,6 +110,7 @@ class AppointmentCubit extends Cubit<AppointmentState> {
             'date': date.toIso8601String(),
             'time': time,
             'paymentMethod': paymentMethod,
+            'barberPaymentOptionId': barberPaymentOptionId,
           },
         );
         // Recargar citas después de crear una nueva

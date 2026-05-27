@@ -9,8 +9,11 @@ class SearchBarbersUseCase {
 
   SearchBarbersUseCase(this.repository);
 
-  Future<Either<Failure, List<BarberEntity>>> call(String query) async {
-    return await repository.searchBarbers(query);
+  Future<Either<Failure, List<BarberEntity>>> call(
+    String query, {
+    String? country,
+  }) async {
+    return await repository.searchBarbers(query, country: country);
   }
 }
 

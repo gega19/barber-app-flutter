@@ -8,7 +8,10 @@ class GetWorkplacesUseCase {
 
   GetWorkplacesUseCase(this.repository);
 
-  Future<Either<Failure, List<WorkplaceEntity>>> call({int? limit}) async {
-    return await repository.getWorkplaces(limit: limit);
+  Future<Either<Failure, List<WorkplaceEntity>>> call({
+    int? limit,
+    String? country,
+  }) async {
+    return await repository.getWorkplaces(limit: limit, country: country);
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/utils/appointment_utils.dart';
+import '../../../core/utils/price_display.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/promotion_model.dart';
 import '../../cubit/payment_method/payment_method_cubit.dart';
@@ -19,6 +20,7 @@ class SummaryStep extends StatelessWidget {
   final double basePrice;
   final double discountAmount;
   final double totalPrice;
+  final String? currencySymbol;
 
   const SummaryStep({
     super.key,
@@ -30,6 +32,7 @@ class SummaryStep extends StatelessWidget {
     required this.basePrice,
     required this.discountAmount,
     required this.totalPrice,
+    this.currencySymbol,
   });
 
   @override
@@ -55,7 +58,7 @@ class SummaryStep extends StatelessWidget {
                   _buildSummaryRowWithSubtitle(
                         'Servicio',
                         selectedService.name,
-                        '\$${selectedService.price.toStringAsFixed(2)}',
+                        PriceDisplay.format(selectedService.price, currencySymbol: currencySymbol),
                         Icons.cut,
                       )
                       .animate()
@@ -151,6 +154,7 @@ class SummaryStep extends StatelessWidget {
                         discountAmount: discountAmount,
                         totalPrice: totalPrice,
                         promotion: activePromotion,
+                        currencySymbol: currencySymbol,
                       )
                       .animate()
                       .fadeIn(duration: 300.ms, delay: 400.ms)

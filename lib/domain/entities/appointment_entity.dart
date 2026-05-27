@@ -13,10 +13,15 @@ class AppointmentEntity extends Equatable {
   final String? serviceId;
   final String? serviceName;
   final DateTime date;
+  /// Día civil en la barbería (YYYY-MM-DD), alineado con backend.
+  final String dateYmd;
   final String time;
+  /// Si no hay [barber], p. ej. vista barbero sin nido anidado.
+  final String? barberTimezone;
   final double? price;
   final AppointmentStatus status;
   final String? paymentMethod; // ID del método de pago
+  final String? barberPaymentOptionId; // ID del método de pago propio del barbero
   final String? paymentMethodName; // Nombre del método de pago
   final String? paymentStatus; // 'PENDING', 'VERIFIED', 'REJECTED'
   final String? paymentProof; // URL del comprobante de pago
@@ -30,10 +35,13 @@ class AppointmentEntity extends Equatable {
     this.serviceId,
     this.serviceName,
     required this.date,
+    required this.dateYmd,
     required this.time,
+    this.barberTimezone,
     this.price,
     required this.status,
     this.paymentMethod,
+    this.barberPaymentOptionId,
     this.paymentMethodName,
     this.paymentStatus,
     this.paymentProof,
@@ -49,10 +57,13 @@ class AppointmentEntity extends Equatable {
     serviceId,
     serviceName,
     date,
+    dateYmd,
     time,
+    barberTimezone,
     price,
     status,
     paymentMethod,
+    barberPaymentOptionId,
     paymentMethodName,
     paymentStatus,
     paymentProof,

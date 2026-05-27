@@ -6,8 +6,6 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/injection/injection.dart';
 import '../../../core/utils/booking_utils.dart';
 import '../../../domain/entities/barber_entity.dart';
-import '../../../domain/entities/payment_method_entity.dart';
-import '../../../domain/repositories/payment_method_repository.dart';
 import '../../../data/models/service_model.dart';
 import '../../../data/models/promotion_model.dart';
 import '../../../data/datasources/remote/service_remote_datasource.dart';
@@ -23,7 +21,6 @@ import '../../widgets/booking/availability_selection_step.dart';
 import '../../widgets/booking/payment_selection_step.dart';
 import '../../widgets/booking/summary_step.dart';
 import '../../widgets/booking/step_indicator_widget.dart';
-import 'payment_details_screen.dart';
 
 bool isSameDay(DateTime? a, DateTime? b) {
   if (a == null || b == null) return false;
@@ -59,8 +56,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   final BarberAvailabilityRemoteDataSource _availabilityDataSource =
       sl<BarberAvailabilityRemoteDataSource>();
-  final PaymentMethodRepository _paymentMethodRepository =
-      sl<PaymentMethodRepository>();
   final PromotionRemoteDataSource _promotionDataSource =
       sl<PromotionRemoteDataSource>();
 
@@ -72,7 +67,9 @@ class _BookingScreenState extends State<BookingScreen> {
   void initState() {
     super.initState();
     _initBarber();
-    context.read<PaymentMethodCubit>().loadPaymentMethods();
+    context.read<PaymentMethodCubit>().loadPaymentMethods(
+      barberId: widget.barberId,
+    );
   }
 
   Future<void> _initBarber() async {
@@ -231,76 +228,12 @@ class _BookingScreenState extends State<BookingScreen> {
         );
         return;
       }
-      // Check if payment method has config (needs payment details screen)
-      if (_selectedPayment != null) {
-        PaymentMethodEntity? methodToUse;
-
-        try {
-          // Always try to fetch the payment method with config to ensure we have the latest data
-          final result = await _paymentMethodRepository
-              .getPaymentMethodWithConfig(_selectedPayment!);
-
-          result.fold(
-            (failure) {
-              // If we can't fetch config, check if the method from the list has config
-              final paymentMethods = context.read<PaymentMethodCubit>().state;
-              if (paymentMethods is PaymentMethodLoaded) {
-                try {
-                  final method = paymentMethods.paymentMethods.firstWhere(
-                    (m) => m.id == _selectedPayment,
-                  );
-                  methodToUse = method;
-                } catch (e) {
-                  // Method not found in list
-                }
-              }
-            },
-            (methodWithConfig) {
-              methodToUse = methodWithConfig;
-            },
-          );
-
-          // If method has type and config, navigate to payment details screen
-          if (methodToUse != null &&
-              methodToUse!.type != null &&
-              methodToUse!.config != null &&
-              methodToUse!.config!.isNotEmpty) {
-            await _navigateToPaymentDetails(methodToUse!);
-            return;
-          }
-        } catch (e) {
-          // Error fetching method, continue normally
-          if (mounted) {
-            debugPrint('Error fetching payment method config: $e');
-          }
-        }
-      }
+      // Instrucciones del barbero se muestran en el paso de pago (solo lectura).
+      // La pantalla de detalle/comprobante se activará cuando el barbero configure datos estructurados.
       setState(() => _currentStep = 3);
     } else {
       // Confirm booking
       _confirmBooking();
-    }
-  }
-
-  Future<void> _navigateToPaymentDetails(PaymentMethodEntity method) async {
-    final proofUrl = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => PaymentDetailsScreen(
-          paymentMethod: method,
-          barberId: _selectedBarber!.id,
-          serviceId: _selectedService,
-          date: _selectedDate,
-          time: _selectedTime!,
-          price: _totalPrice,
-        ),
-      ),
-    );
-    if (proofUrl != null && mounted) {
-      setState(() {
-        _paymentProof = proofUrl;
-      });
-      setState(() => _currentStep = 3);
     }
   }
 
@@ -475,6 +408,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                 loadingServices: _loadingServices,
                                 selectedServiceId: _selectedService,
                                 activePromotion: _activePromotion,
+                                currencySymbol:
+                                    _selectedBarber?.priceCurrencySymbol,
                                 onServiceSelected: (serviceId) {
                                   setState(() {
                                     _selectedService = serviceId;
@@ -536,6 +471,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                 basePrice: _basePrice,
                                 discountAmount: _discountAmount,
                                 totalPrice: _totalPrice,
+                                currencySymbol:
+                                    _selectedBarber?.priceCurrencySymbol,
                               ),
                             )
                             .animate(key: ValueKey('step_3'))

@@ -20,6 +20,12 @@ class BarberEntity extends Equatable {
   final String? instagramUrl;
   final String? tiktokUrl;
   final String? phone;
+  final String? country;
+  final String? timezone;
+  /// Moneda de los precios del barbero (ISO 4217, ej. COP).
+  final String? priceCurrencyCode;
+  /// Símbolo para UI (ej. COP$, MX$).
+  final String? priceCurrencySymbol;
   final bool isLastWinner;
   final int top1Count;
   final int top2Count;
@@ -44,6 +50,10 @@ class BarberEntity extends Equatable {
     this.instagramUrl,
     this.tiktokUrl,
     this.phone,
+    this.country,
+    this.timezone,
+    this.priceCurrencyCode,
+    this.priceCurrencySymbol,
     this.isLastWinner = false,
     this.top1Count = 0,
     this.top2Count = 0,
@@ -70,6 +80,10 @@ class BarberEntity extends Equatable {
     instagramUrl,
     tiktokUrl,
     phone,
+    country,
+    timezone,
+    priceCurrencyCode,
+    priceCurrencySymbol,
     isLastWinner,
     top1Count,
     top2Count,

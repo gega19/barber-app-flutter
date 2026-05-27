@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/models/promotion_model.dart';
+import '../../../core/utils/price_display.dart';
 
 /// Widget para mostrar el desglose de precios con descuentos
 class PriceBreakdownWidget extends StatelessWidget {
@@ -8,6 +9,7 @@ class PriceBreakdownWidget extends StatelessWidget {
   final double discountAmount;
   final double totalPrice;
   final PromotionModel? promotion;
+  final String? currencySymbol;
 
   const PriceBreakdownWidget({
     super.key,
@@ -15,6 +17,7 @@ class PriceBreakdownWidget extends StatelessWidget {
     required this.discountAmount,
     required this.totalPrice,
     this.promotion,
+    this.currencySymbol,
   });
 
   @override
@@ -45,7 +48,7 @@ class PriceBreakdownWidget extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '\$${basePrice.toStringAsFixed(2)}',
+                        PriceDisplay.format(basePrice, currencySymbol: currencySymbol),
                         style: TextStyle(
                           color: AppColors.textSecondary,
                           fontSize: 16,
@@ -79,7 +82,7 @@ class PriceBreakdownWidget extends StatelessWidget {
                         ],
                       ),
                       Text(
-                        '-\$${discountAmount.toStringAsFixed(2)}',
+                        '-${PriceDisplay.format(discountAmount, currencySymbol: currencySymbol)}',
                         style: const TextStyle(
                           color: AppColors.primaryGold,
                           fontSize: 16,
@@ -112,7 +115,7 @@ class PriceBreakdownWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '\$${totalPrice.toStringAsFixed(2)}',
+                  PriceDisplay.format(totalPrice, currencySymbol: currencySymbol),
                   style: const TextStyle(
                     color: AppColors.primaryGold,
                     fontSize: 24,

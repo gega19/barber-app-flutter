@@ -15,6 +15,7 @@ abstract class AppointmentRemoteDataSource {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   });
@@ -145,6 +146,7 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   }) async {
@@ -166,6 +168,8 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
           'date': dateStr,
           'time': time,
           'paymentMethod': paymentMethod,
+          if (barberPaymentOptionId != null && barberPaymentOptionId.isNotEmpty)
+            'barberPaymentOptionId': barberPaymentOptionId,
           'currentTime': currentTime, // Enviar hora local del cliente
           if (paymentProof != null && paymentProof.isNotEmpty)
             'paymentProof': paymentProof,

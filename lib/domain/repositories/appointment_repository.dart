@@ -23,6 +23,7 @@ abstract class AppointmentRepository {
     required DateTime date,
     required String time,
     required String paymentMethod,
+    String? barberPaymentOptionId,
     String? paymentProof,
     String? notes,
   });

@@ -23,6 +23,8 @@ import '../../../domain/repositories/competition_repository.dart';
 import '../../../data/repositories/competition_repository_impl.dart';
 import '../../../domain/repositories/barber_dashboard_repository.dart';
 import '../../../data/repositories/barber_dashboard_repository_impl.dart';
+import '../../../domain/repositories/country_repository.dart';
+import '../../../data/repositories/country_repository_impl.dart';
 
 /// Módulo para registrar todos los Repositories
 class RepositoriesModule {
@@ -62,6 +64,9 @@ class RepositoriesModule {
     );
     sl.registerLazySingleton<BarberDashboardRepository>(
       () => BarberDashboardRepositoryImpl(sl()),
+    );
+    sl.registerLazySingleton<CountryRepository>(
+      () => CountryRepositoryImpl(remoteDataSource: sl()),
     );
   }
 }

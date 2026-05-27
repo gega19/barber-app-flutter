@@ -11,10 +11,12 @@ class GetBestWorkplacesWithTotalUseCase {
   Future<Either<Failure, WorkplaceListResult>> call({
     int limit = 10,
     int offset = 0,
+    String? country,
   }) async {
     return await repository.getBestWorkplacesWithTotal(
       limit: limit,
       offset: offset,
+      country: country,
     );
   }
 }

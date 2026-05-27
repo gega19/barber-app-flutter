@@ -16,6 +16,7 @@ import '../../../data/datasources/remote/fcm_token_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_course_remote_datasource.dart';
 import '../../../data/datasources/remote/competition_remote_datasource.dart';
 import '../../../data/datasources/remote/barber_dashboard_remote_datasource.dart';
+import '../../../data/datasources/remote/country_remote_datasource.dart';
 
 /// Módulo para registrar todos los DataSources
 class DataSourcesModule {
@@ -70,6 +71,9 @@ class DataSourcesModule {
     );
     sl.registerLazySingleton<BarberDashboardRemoteDataSource>(
       () => BarberDashboardRemoteDataSourceImpl(sl()),
+    );
+    sl.registerLazySingleton<CountryRemoteDataSource>(
+      () => CountryRemoteDataSourceImpl(sl()),
     );
   }
 }

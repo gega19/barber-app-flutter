@@ -28,7 +28,8 @@ class AppointmentCard extends StatelessWidget {
 
   Widget _buildCard(BuildContext context) {
     final statusConfig = AppointmentUtils.getStatusConfig(appointment.status);
-    final dateFormat = AppointmentUtils.formatAppointmentDate(appointment.date);
+    final dateFormat =
+        AppointmentUtils.formatAppointmentEntityDate(appointment);
 
     // Usuario es el barbero de esta cita si tiene barberId y:
     // - la cita no trae barber (lista de citas del barbero) o

@@ -582,6 +582,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ],
+
+                            // Button to toggle between login and register
+                            TextButton(
+                              onPressed: _toggleAuthMode,
+                              child: Text(
+                                _isLogin
+                                    ? '¿No tienes cuenta? Regístrate'
+                                    : '¿Ya tienes cuenta? Inicia sesión',
+                                style: const TextStyle(
+                                  color: AppColors.primaryGold,
+                                ),
+                              ),
+                            ),
                             TextButton(
                               onPressed: () => context.go('/home'),
                               child: Text(
@@ -594,18 +607,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   decoration: TextDecoration.underline,
                                   decorationColor: AppColors.textSecondary
                                       .withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ),
-                            // Button to toggle between login and register
-                            TextButton(
-                              onPressed: _toggleAuthMode,
-                              child: Text(
-                                _isLogin
-                                    ? '¿No tienes cuenta? Regístrate'
-                                    : '¿Ya tienes cuenta? Inicia sesión',
-                                style: const TextStyle(
-                                  color: AppColors.primaryGold,
                                 ),
                               ),
                             ),

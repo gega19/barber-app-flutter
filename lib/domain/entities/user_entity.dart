@@ -11,6 +11,7 @@ class UserEntity extends Equatable {
   final bool phoneVerified;
   final String? location;
   final String? country;
+  final String? suggestedCountry;
   final String? gender;
   final String role;
   final bool isBarber;
@@ -27,6 +28,7 @@ class UserEntity extends Equatable {
     this.phoneVerified = false,
     this.location,
     this.country,
+    this.suggestedCountry,
     this.gender,
     this.role = 'CLIENT',
     this.isBarber = false,
@@ -45,6 +47,7 @@ class UserEntity extends Equatable {
     phoneVerified,
     location,
     country,
+    suggestedCountry,
     gender,
     role,
     isBarber,

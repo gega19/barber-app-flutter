@@ -44,7 +44,12 @@ class _HomeScreenState extends State<HomeScreen>
 
     context.read<BarberCubit>().loadBarbers(reset: true);
     context.read<WorkplaceCubit>().loadWorkplaces(reset: true);
-    context.read<AppointmentCubit>().loadAppointments();
+
+    final authState = context.read<AuthCubit>().state;
+    if (authState is AuthAuthenticated ||
+        authState is AuthProfileUpdateError) {
+      context.read<AppointmentCubit>().loadAppointments();
+    }
     _requestNotificationPermission();
 
     _tabController.addListener(() {
