@@ -5,6 +5,9 @@ class AppConstants {
 
   static String get baseUrl => Environment.config.apiBaseUrl;
 
+  /// OAuth 2.0 Web Client ID for Google Sign-In (must match backend GOOGLE_CLIENT_ID).
+  static String get googleWebClientId => Environment.config.googleWebClientId;
+
   static const Duration connectTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);
 

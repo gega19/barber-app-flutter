@@ -4,11 +4,15 @@ class AppConfig {
   final EnvironmentType environment;
   final String apiBaseUrl;
   final bool enableAnalytics;
+  /// OAuth 2.0 Web Client ID (same as backend GOOGLE_CLIENT_ID).
+  /// Pass via --dart-define=GOOGLE_WEB_CLIENT_ID=xxx
+  final String googleWebClientId;
 
   AppConfig({
     required this.environment,
     required this.apiBaseUrl,
     this.enableAnalytics = false,
+    this.googleWebClientId = '',
   });
 }
 

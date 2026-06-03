@@ -8,6 +8,8 @@ import 'config/environment.dart';
 /// - Emulador Android: 10.0.2.2 (por defecto).
 /// - Dispositivo físico: IP del Mac en la red. Ejemplo: DEV_API_HOST=192.168.1.100
 ///   O script: ./scripts/run_dev_device.sh
+/// - Google Sign-In: --dart-define=GOOGLE_WEB_CLIENT_ID=<Web Client ID>
+///   (mismo valor que GOOGLE_CLIENT_ID en el backend)
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -24,6 +26,7 @@ void main() {
       environment: EnvironmentType.dev,
       apiBaseUrl: apiBaseUrl,
       enableAnalytics: false,
+      googleWebClientId: const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
     ),
   );
 

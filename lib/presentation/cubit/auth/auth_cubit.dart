@@ -2,7 +2,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../domain/entities/user_entity.dart';
 import '../../../domain/usecases/auth/login_usecase.dart';
+import '../../../domain/usecases/auth/google_login_usecase.dart';
 import '../../../domain/usecases/auth/register_usecase.dart';
+import '../../../core/services/google_auth_service.dart';
 import '../../../domain/usecases/auth/logout_usecase.dart';
 import '../../../domain/usecases/auth/get_current_user_usecase.dart';
 import '../../../domain/usecases/auth/update_profile_usecase.dart';
@@ -27,6 +29,8 @@ part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final LoginUseCase loginUseCase;
+  final GoogleLoginUseCase googleLoginUseCase;
+  final GoogleAuthService googleAuthService;
   final RegisterUseCase registerUseCase;
   final LogoutUseCase logoutUseCase;
   final GetCurrentUserUseCase getCurrentUserUseCase;
@@ -41,6 +45,8 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({
     required this.loginUseCase,
+    required this.googleLoginUseCase,
+    required this.googleAuthService,
     required this.registerUseCase,
     required this.logoutUseCase,
     required this.getCurrentUserUseCase,
@@ -140,6 +146,42 @@ class AuthCubit extends Cubit<AuthState> {
     });
   }
 
+  Future<void> loginWithGoogle() async {
+    emit(AuthLoading());
+
+    try {
+      final idToken = await googleAuthService.getIdToken();
+      final result = await googleLoginUseCase(idToken: idToken);
+
+      result.fold((failure) => emit(AuthError(failure.message)), (user) async {
+        try {
+          final isValid = await SecureStorageService.validateCredentialsForUser(
+            user.id,
+          );
+          if (!isValid) {
+            await SecureStorageService.clearCredentials();
+          }
+        } catch (e) {
+          print('Error validating biometric credentials: $e');
+        }
+
+        if (user.mustUpdatePassword) {
+          emit(AuthRequiresPasswordChange(user));
+        } else {
+          emit(AuthAuthenticated(user));
+          await _registerFcmToken();
+          await analyticsService.trackEvent(
+            eventName: 'user_logged_in_google',
+            eventType: 'user_action',
+          );
+          await analyticsService.startNewSession();
+        }
+      });
+    } catch (e) {
+      emit(AuthError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
   Future<void> register({
     required String name,
     required String email,
@@ -185,6 +227,12 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       // No emitir error, solo loggear
       print('Error clearing biometric credentials: $e');
+    }
+
+    try {
+      await googleAuthService.signOut();
+    } catch (e) {
+      print('Error signing out from Google: $e');
     }
 
     final result = await logoutUseCase();

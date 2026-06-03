@@ -20,6 +20,8 @@ class CubitsModule {
     sl.registerSingleton<AuthCubit>(
       AuthCubit(
         loginUseCase: sl(),
+        googleLoginUseCase: sl(),
+        googleAuthService: sl(),
         registerUseCase: sl(),
         logoutUseCase: sl(),
         getCurrentUserUseCase: sl(),

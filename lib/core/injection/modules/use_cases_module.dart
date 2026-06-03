@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import '../../../domain/usecases/auth/login_usecase.dart';
+import '../../../domain/usecases/auth/google_login_usecase.dart';
 import '../../../domain/usecases/auth/register_usecase.dart';
 import '../../../domain/usecases/auth/logout_usecase.dart';
 import '../../../domain/usecases/auth/get_current_user_usecase.dart';
@@ -52,6 +53,7 @@ class UseCasesModule {
   static void register(GetIt sl) {
     // Auth UseCases
     sl.registerLazySingleton(() => LoginUseCase(sl()));
+    sl.registerLazySingleton(() => GoogleLoginUseCase(sl()));
     sl.registerLazySingleton(() => RegisterUseCase(sl()));
     sl.registerLazySingleton(() => LogoutUseCase(sl()));
     sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));

@@ -46,6 +46,9 @@ dependencies:
   share_plus: ^10.1.3
   qr_flutter: ^4.1.0
 
+  # Google Sign-In
+  google_sign_in: ^6.2.2
+
   # Biometric Authentication
   local_auth: ^3.0.0
 

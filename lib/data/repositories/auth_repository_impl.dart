@@ -48,6 +48,33 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Either<Failure, UserEntity>> loginWithGoogle({
+    required String idToken,
+  }) async {
+    try {
+      if (idToken.isEmpty) {
+        return const Left(ValidationFailure('Token de Google inválido'));
+      }
+
+      final authResponse = await remoteDataSource.loginWithGoogle(
+        idToken: idToken,
+      );
+
+      await localStorage.saveToken(authResponse.accessToken);
+      await localStorage.saveRefreshToken(authResponse.refreshToken);
+      await localStorage.saveUserData(userModelToJson(authResponse.user));
+
+      return Right(authResponse.user);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
+    }
+  }
+
+  @override
   Future<Either<Failure, UserEntity>> register({
     required String name,
     required String email,

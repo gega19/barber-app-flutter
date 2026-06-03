@@ -568,6 +568,77 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                             ),
+                            if (_isLogin) ...[
+                              const SizedBox(height: 20),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Divider(
+                                      color: AppColors.borderGold.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                    ),
+                                    child: Text(
+                                      'o',
+                                      style: TextStyle(
+                                        color: AppColors.textSecondary,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Divider(
+                                      color: AppColors.borderGold.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              BlocBuilder<AuthCubit, AuthState>(
+                                builder: (context, state) {
+                                  final isLoading = state is AuthLoading;
+
+                                  return OutlinedButton.icon(
+                                    onPressed: isLoading
+                                        ? null
+                                        : () => context
+                                            .read<AuthCubit>()
+                                            .loginWithGoogle(),
+                                    icon: const Icon(
+                                      Icons.g_mobiledata,
+                                      color: AppColors.textPrimary,
+                                      size: 28,
+                                    ),
+                                    label: const Text(
+                                      'Continuar con Google',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      minimumSize: const Size(
+                                        double.infinity,
+                                        48,
+                                      ),
+                                      side: BorderSide(
+                                        color: AppColors.borderGold,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
                             const SizedBox(height: 16),
                             if (_isLogin) ...[
                               TextButton(

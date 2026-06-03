@@ -10,6 +10,11 @@ abstract class AuthRepository {
     required String password,
   });
 
+  /// Inicia sesión con Google (idToken del SDK)
+  Future<Either<Failure, UserEntity>> loginWithGoogle({
+    required String idToken,
+  });
+
   /// Registra un nuevo usuario
   Future<Either<Failure, UserEntity>> register({
     required String name,

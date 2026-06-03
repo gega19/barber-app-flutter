@@ -22,6 +22,7 @@ void main() async {
         environment: EnvironmentType.prod,
         apiBaseUrl: 'https://barber-api.corporacionceg.com',
         enableAnalytics: true,
+        googleWebClientId: const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID'),
       ),
     );
   }

@@ -7,6 +7,8 @@ import '../../../core/utils/logger.dart';
 abstract class AuthRemoteDataSource {
   Future<AuthResponse> login({required String email, required String password});
 
+  Future<AuthResponse> loginWithGoogle({required String idToken});
+
   Future<AuthResponse> register({
     required String name,
     required String email,
@@ -144,6 +146,49 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw ServerException('Error desconocido: ${e.message}');
     } catch (e) {
       appLogger.e('Unexpected error in login', error: e);
+      throw ServerException('Error inesperado: ${e.toString()}');
+    }
+  }
+
+  @override
+  Future<AuthResponse> loginWithGoogle({required String idToken}) async {
+    try {
+      final response = await dio.post(
+        '${AppConstants.baseUrl}/api/auth/google',
+        data: {'idToken': idToken},
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data['data'] as Map<String, dynamic>;
+        return AuthResponse.fromJson(data);
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: response.data['message'] ?? 'Error en login con Google',
+        );
+      }
+    } on DioException catch (e) {
+      appLogger.e('Google login error: ${e.message}', error: e);
+
+      if (e.response != null) {
+        throw ServerException(_extractErrorMessage(e.response!.data));
+      }
+
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.receiveTimeout) {
+        throw NetworkException('Error de conexión. Verifica tu internet.');
+      }
+
+      if (e.type == DioExceptionType.connectionError) {
+        throw NetworkException(
+          'No se puede conectar al servidor. Verifica la IP del backend.',
+        );
+      }
+
+      throw ServerException('Error desconocido: ${e.message}');
+    } catch (e) {
+      appLogger.e('Unexpected error in Google login', error: e);
       throw ServerException('Error inesperado: ${e.toString()}');
     }
   }
